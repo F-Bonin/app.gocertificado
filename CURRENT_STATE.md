@@ -121,3 +121,4 @@
 | 2026-03-04 | Correção de bugs de DOM manipulation, isolando as mudanças de estado às células corretas da tabela. | Gemini CLI |
 | 2026-03-04 | Atualização do roteamento raiz e LOGIN_REDIRECT_URL para apontarem para o novo Dashboard. | Gemini CLI |
 | 2026-03-04 | Adicionada Feature Flag WAHA_ENABLED em settings.py e whatsapp_sender.py para habilitar/desabilitar disparos via WhatsApp. | Gemini CLI |
+| 2026-03-09 | Sincronização da Página de Verificação com dados reais (Course/Instructor) e melhoria no select_related | Gemini CLI |

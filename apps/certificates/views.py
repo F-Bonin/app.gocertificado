@@ -323,7 +323,8 @@ class VerifyCertificateView(View):
             context["searched"] = True
             try:
                 cert = Certificate.objects.select_related(
-                    "registration__course__company"
+                    "registration__course__company",
+                    "registration__course__signature_1"
                 ).get(numeric_code=code)
                 context["certificate"] = cert
             except Certificate.DoesNotExist:

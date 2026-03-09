@@ -46,27 +46,27 @@
           <hr>
           <dl class="row mb-0">
             <dt class="col-sm-4">Participante</dt>
-            <dd class="col-sm-8 fw-semibold">{{ certificate.registration.full_name }}</dd>
+            <dd class="col-sm-8 fw-semibold">{{ certificate.registration.full_name|default:"" }}</dd>
 
             <dt class="col-sm-4">Treinamento</dt>
-            <dd class="col-sm-8">{{ certificate.registration.course_name }}</dd>
+            <dd class="col-sm-8">{{ certificate.registration.course.name|default:certificate.registration.course_name|default:"" }}</dd>
 
             <dt class="col-sm-4">Carga horária</dt>
-            <dd class="col-sm-8">{{ certificate.registration.course_workload }} horas</dd>
+            <dd class="col-sm-8">{{ certificate.registration.course.hours|default:certificate.registration.course_workload|default:"" }}h</dd>
 
             <dt class="col-sm-4">Local</dt>
             <dd class="col-sm-8">
-              {{ certificate.registration.city }} / {{ certificate.registration.state }}
+              {{ certificate.registration.course.city|default:certificate.registration.city|default:"" }} / {{ certificate.registration.course.state|default:certificate.registration.state|default:"" }}
             </dd>
 
             <dt class="col-sm-4">CPF</dt>
             <dd class="col-sm-8 font-monospace">{{ certificate.registration.cpf_masked }}</dd>
 
-            {% if certificate.registration.course %}
+            {% if certificate.registration.course.signature_1 %}
               <dt class="col-sm-4">Instrutor</dt>
               <dd class="col-sm-8">
-                {{ certificate.registration.course.signature_1.full_name }}<br>
-                <small class="text-muted">{{ certificate.registration.course.signature_1.credentials }}</small>
+                {{ certificate.registration.course.signature_1.full_name|default:"" }}<br>
+                <small class="text-muted">{{ certificate.registration.course.signature_1.role|default:"" }}</small>
               </dd>
             {% endif %}
 
