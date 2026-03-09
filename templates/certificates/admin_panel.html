@@ -1,0 +1,417 @@
+{% extends "painel/base_painel.html" %}
+{% block title %}Painel — Emissão de Certificados{% endblock %}
+
+{% block extra_head %}
+<style>
+  .table th { background: #1a3a5c; color: #fff; font-size: .8rem; text-transform: uppercase; }
+  .status-badge { font-size: .75rem; padding: .3em .65em; border-radius: 20px; }
+  .action-cell { white-space: nowrap; }
+  .btn-gold { background: #c8a45a; color: #fff; }
+  .btn-gold:hover { background: #b08d4a; color: #fff; }
+  .spin { animation: spin 1s linear infinite; }
+  @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4 g-3 align-items-center">
+  <div class="col-lg-6">
+    <h4 class="fw-bold mb-0">
+      <i class="bi bi-award-fill me-2 text-primary"></i>Central de Certificados
+    </h4>
+    <span class="text-muted small">Gerencie as inscrições e emissões da sua empresa</span>
+  </div>
+  <div class="col-lg-6 text-lg-end">
+    <a href="{% url 'certificates:link_generator' %}" class="btn btn-outline-primary btn-sm">
+      <i class="bi bi-link-45deg me-1"></i>Gerador de Links
+    </a>
+  </div>
+</div>
+
+<!-- Filtros e Ações em Massa -->
+<div class="card mb-4 p-3 bg-light border-0 shadow-sm">
+  <div class="row g-3 align-items-end">
+    <!-- Filtros -->
+    <div class="col-md-9">
+      <form method="get" class="row g-2 align-items-end">
+        <div class="col-md-5">
+          <label class="form-label small fw-semibold">Treinamento</label>
+          <input type="text" name="course" value="{{ filter_course }}"
+                 class="form-control form-control-sm" placeholder="Nome do curso...">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label small fw-semibold">Status</label>
+          <select name="status" class="form-select form-select-sm">
+            <option value="">Todos</option>
+            {% for val, label in status_choices %}
+              <option value="{{ val }}" {% if filter_status == val %}selected{% endif %}>
+                {{ label }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <div class="d-flex gap-1">
+            <button type="submit" class="btn btn-primary btn-sm px-3" title="Filtrar">
+              <i class="bi bi-search"></i>
+            </button>
+            <a href="{% url 'certificates:panel' %}" class="btn btn-outline-secondary btn-sm" title="Limpar Filtros">
+              <i class="bi bi-x-lg"></i>
+            </a>
+            <a href="{% url 'certificates:export_csv' %}?course={{ filter_course }}&status={{ filter_status }}"
+               class="btn btn-outline-success btn-sm" title="Exportar CSV">
+              <i class="bi bi-file-earmark-spreadsheet"></i>
+            </a>
+          </div>
+        </div>
+      </form>
+    </div>
+    
+    <!-- Ação em Massa -->
+    <div class="col-md-3">
+      <button type="button" class="btn btn-gold btn-sm w-100" id="btn-bulk-issue" data-url="{% url 'certificates:bulk_issue' %}">
+        <i class="bi bi-rocket-takeoff-fill me-1"></i> Emitir para os Pendentes
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Tabela de participantes -->
+<div class="card border-0 shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead>
+        <tr>
+          <th class="ps-4">Participante</th>
+          <th>Treinamento</th>
+          <th class="text-center">Local/Data</th>
+          <th class="text-center">Status</th>
+          <th class="action-cell pe-4 text-end">Ação</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for reg in registrations %}
+        <tr id="row-{{ reg.pk }}" data-reg-id="{{ reg.pk }}" data-status="{{ reg.status }}">
+          <td class="ps-4">
+            <div class="fw-bold">{{ reg.full_name }}</div>
+            <div class="text-muted small"><span class="font-monospace">{{ reg.cpf }}</span> • {{ reg.email }}</div>
+          </td>
+          <td>
+            <div class="small fw-semibold">{{ reg.course.name|default:"-" }}</div>
+            <div class="text-muted small">Carga Horária: {{ reg.course.hours }}h</div>
+          </td>
+          <td class="text-center">
+            <div class="small">{{ reg.course.city }} / {{ reg.course.state }}</div>
+            <div class="text-muted small">{{ reg.course.start_date|date:"d/m/Y" }}</div>
+          </td>
+          <td class="status-col text-center" id="status-{{ reg.pk }}">
+            {% if reg.status == "sent" %}
+              <span class="badge bg-success-subtle text-success border border-success border-opacity-25 status-badge">
+                <i class="bi bi-check2-circle me-1"></i>Enviado
+              </span>
+            {% else %}
+              <span class="badge bg-warning-subtle text-warning-emphasis border border-warning border-opacity-25 status-badge">
+                <i class="bi bi-clock me-1"></i>Pendente
+              </span>
+            {% endif %}
+          </td>
+          <td class="action-cell pe-4 text-end" id="actions-{{ reg.pk }}">
+            <div class="d-flex justify-content-end gap-1">
+              {% if reg.status == "sent" %}
+                <!-- Reenviar -->
+                <button
+                  class="btn btn-success btn-sm btn-send"
+                  data-url="{% url 'certificates:send' reg.pk %}"
+                  data-row="row-{{ reg.pk }}"
+                  data-id="{{ reg.pk }}"
+                  data-name="{{ reg.full_name }}"
+                  title="Reenviar Certificado"
+                >
+                  <i class="bi bi-rocket-takeoff me-1"></i> Reenviar
+                </button>
+                
+                <!-- Reset Status -->
+                <button
+                  type="button"
+                  class="btn btn-outline-warning btn-sm btn-reset"
+                  data-url="{% url 'certificates:reset_status' reg.pk %}"
+                  data-id="{{ reg.pk }}"
+                  data-name="{{ reg.full_name }}"
+                  title="Marcar como Pendente"
+                >
+                  <i class="bi bi-arrow-counterclockwise"></i>
+                </button>
+              {% else %}
+                <!-- Enviar pela primeira vez -->
+                <button
+                  class="btn btn-gold btn-sm btn-send"
+                  data-url="{% url 'certificates:send' reg.pk %}"
+                  data-row="row-{{ reg.pk }}"
+                  data-id="{{ reg.pk }}"
+                  data-name="{{ reg.full_name }}"
+                  {% if not reg.course %}disabled title="Vincule um curso primeiro"{% endif %}
+                >
+                  <i class="bi bi-send-fill me-1"></i> Enviar Certificado
+                </button>
+              {% endif %}
+              
+              <!-- Excluir -->
+              <button 
+                class="btn btn-outline-danger btn-sm btn-delete" 
+                data-url="{% url 'certificates:delete' reg.pk %}" 
+                data-name="{{ reg.full_name }}"
+                title="Excluir"
+              >
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="5" class="text-center text-muted py-5">
+            Nenhuma inscrição encontrada para os filtros aplicados.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Paginação -->
+{% if registrations.has_other_pages %}
+<nav class="mt-4">
+  <ul class="pagination justify-content-center pagination-sm">
+    {% if registrations.has_previous %}
+      <li class="page-item">
+        <a class="page-link" href="?page={{ registrations.previous_page_number }}{% if filter_course %}&course={{ filter_course }}{% endif %}{% if filter_status %}&status={{ filter_status }}{% endif %}">Anterior</a>
+      </li>
+    {% endif %}
+
+    {% for i in registrations.paginator.page_range %}
+      {% if registrations.number == i %}
+        <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+      {% elif i > registrations.number|add:'-3' and i < registrations.number|add:'3' %}
+        <li class="page-item">
+          <a class="page-link" href="?page={{ i }}{% if filter_course %}&course={{ filter_course }}{% endif %}{% if filter_status %}&status={{ filter_status }}{% endif %}">{{ i }}</a>
+        </li>
+      {% endif %}
+    {% endfor %}
+
+    {% if registrations.has_next %}
+      <li class="page-item">
+        <a class="page-link" href="?page={{ registrations.next_page_number }}{% if filter_course %}&course={{ filter_course }}{% endif %}{% if filter_status %}&status={{ filter_status }}{% endif %}">Próxima</a>
+      </li>
+    {% endif %}
+  </ul>
+</nav>
+{% endif %}
+
+<!-- Modal de confirmação -->
+<div class="modal fade" id="confirmModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header border-bottom-0">
+        <h5 class="modal-title fw-bold">Confirmar Emissão</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body text-center py-4" id="confirmModalBody">
+        Deseja gerar e enviar o certificado?
+      </div>
+      <div class="modal-footer border-top-0 justify-content-center pb-4">
+        <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary px-4" id="confirmBtn">
+          <i class="bi bi-send-fill me-1"></i>Confirmar Envio
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    function getCsrfToken() {
+        const node = document.querySelector('[name=csrfmiddlewaretoken]');
+        return node ? node.value : '';
+    }
+
+    // Função segura para extrair o ID da inscrição a partir de qualquer botão da linha
+    function getIdFromRow(row) {
+        const btn = row.querySelector('[data-url*="/painel/enviar/"], [data-url*="/painel/excluir/"]');
+        if (!btn) return null;
+        const parts = btn.dataset.url.split('/').filter(p => p);
+        return parts[parts.length - 1];
+    }
+
+    // ==========================================
+    // 1. CLIQUE NOS BOTÕES
+    // ==========================================
+    document.body.addEventListener('click', function(event) {
+        
+        // --- ENVIO EM MASSA ---
+        const btnBulk = event.target.closest('#btn-bulk-issue');
+        if (btnBulk) {
+            event.preventDefault();
+            const courseInput = document.querySelector('input[name="course"]');
+            const courseFilter = courseInput ? courseInput.value : '';
+
+            if (confirm("Enviar certificados PENDENTES para a fila de processamento?")) {
+                btnBulk.innerHTML = '<i class="bi bi-arrow-repeat spin"></i> Processando...';
+                btnBulk.disabled = true;
+
+                const formData = new FormData();
+                formData.append('course', courseFilter);
+
+                fetch(btnBulk.dataset.url, {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': getCsrfToken(), 'X-Requested-With': 'XMLHttpRequest' },
+                    body: formData
+                }).then(r => r.json()).then(data => {
+                    if (data.ok) {
+                        btnBulk.innerHTML = '<i class="bi bi-check-lg"></i> Processamento Concluído';
+                        btnBulk.classList.replace('btn-gold', 'btn-success');
+                        
+                        // Troca APENAS o crachá de Status, blindando a coluna de Ações
+                        document.querySelectorAll('tbody tr').forEach(row => {
+                            const statusBadge = row.querySelector('.status-badge');
+                            if(statusBadge && statusBadge.innerHTML.includes('Pendente')) {
+                                statusBadge.outerHTML = '<span class="badge bg-info text-dark status-badge"><i class="bi bi-arrow-repeat spin"></i> Processando...</span>';
+                            }
+                        });
+                    }
+                });
+            }
+            return;
+        }
+
+        // --- BOTÃO EXCLUIR ---
+        const btnDelete = event.target.closest('.btn-delete');
+        if (btnDelete) {
+            event.preventDefault();
+            if (confirm("Tem certeza que deseja excluir?")) {
+                fetch(btnDelete.dataset.url, {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': getCsrfToken(), 'X-Requested-With': 'XMLHttpRequest' }
+                }).then(r => r.json()).then(data => {
+                    if (data.ok) {
+                        const row = btnDelete.closest('tr');
+                        row.style.transition = "opacity 0.3s";
+                        row.style.opacity = 0;
+                        setTimeout(() => row.remove(), 300);
+                    }
+                });
+            }
+            return;
+        }
+
+        // --- ENVIAR INDIVIDUAL ou REENVIAR ---
+        const actionBtn = event.target.closest('.btn-send, .btn-re-send');
+        if (actionBtn) {
+            event.preventDefault();
+            const row = actionBtn.closest('tr');
+
+            if (row) {
+                const statusBadge = row.querySelector('.status-badge');
+                if(statusBadge) {
+                    statusBadge.outerHTML = '<span class="badge bg-info text-dark status-badge"><i class="bi bi-arrow-repeat spin"></i> Processando...</span>';
+                }
+            }
+
+            fetch(actionBtn.dataset.url, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': getCsrfToken(), 'X-Requested-With': 'XMLHttpRequest' }
+            }).then(r => r.json()).then(data => { /* Polling assume daqui */ });
+            return;
+        }
+        
+        // --- RESETAR (Retornar para Pendente) ---
+        const btnReset = event.target.closest('.btn-reset');
+        if (btnReset) {
+            event.preventDefault();
+            const row = btnReset.closest('tr');
+            const id = getIdFromRow(row);
+
+            fetch(btnReset.dataset.url, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': getCsrfToken(), 'X-Requested-With': 'XMLHttpRequest' }
+            }).then(r => r.json()).then(data => {
+                if (data.ok && row) {
+                    const statusBadge = row.querySelector('.status-badge');
+                    if (statusBadge) {
+                        statusBadge.outerHTML = '<span class="badge bg-warning-subtle text-warning-emphasis border border-warning border-opacity-25 status-badge"><i class="bi bi-clock"></i> Pendente</span>';
+                    }
+                    const actionCell = row.querySelector('.btn-delete').closest('td');
+                    if (actionCell) {
+                        actionCell.innerHTML = `
+                            <div class="d-flex justify-content-end gap-1">
+                                <button class="btn btn-gold btn-sm btn-send" data-url="/painel/enviar/${id}/"><i class="bi bi-send-fill"></i> Enviar Certificado</button>
+                                <button class="btn btn-outline-danger btn-sm btn-delete ms-1" data-url="/painel/excluir/${id}/" title="Excluir"><i class="bi bi-trash"></i></button>
+                            </div>
+                        `;
+                    }
+                }
+            });
+            return;
+        }
+    });
+
+    // ==========================================
+    // 2. MOTOR DE POLLING (Tempo Real - Varredura a cada 4s)
+    // ==========================================
+    setInterval(() => {
+        const pendingIds = [];
+        const elementMap = {};
+
+        document.querySelectorAll('tbody tr').forEach(row => {
+            const statusBadge = row.querySelector('.status-badge');
+            if (statusBadge && (statusBadge.innerHTML.includes('Pendente') || statusBadge.innerHTML.includes('Processando'))) {
+                const id = getIdFromRow(row);
+                if (id && !pendingIds.includes(id)) {
+                    pendingIds.push(id);
+                    elementMap[id] = row;
+                }
+            }
+        });
+
+        if (pendingIds.length === 0) return;
+
+        fetch(`/painel/check-status/?ids=${pendingIds.join(',')}`, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.statuses) {
+                for (const [id, status] of Object.entries(data.statuses)) {
+                    if (status === 'sent') {
+                        const row = elementMap[id];
+                        if (row) {
+                            // 1. Atualiza APENAS o crachá de STATUS
+                            const statusBadge = row.querySelector('.status-badge');
+                            if (statusBadge) {
+                                statusBadge.outerHTML = '<span class="badge bg-success-subtle text-success border border-success border-opacity-25 status-badge"><i class="bi bi-check2-circle"></i> Enviado</span>';
+                            }
+                            
+                            // 2. Atualiza a célula de AÇÕES com os 3 botões (Reenviar, Resetar, Excluir)
+                            const deleteBtn = row.querySelector('.btn-delete');
+                            if (deleteBtn) {
+                                const actionCell = deleteBtn.closest('td');
+                                actionCell.innerHTML = `
+                                    <div class="d-flex justify-content-end gap-1">
+                                        <button class="btn btn-success btn-sm btn-re-send" data-url="/painel/enviar/${id}/"><i class="bi bi-rocket-takeoff"></i> Reenviar</button>
+                                        <button class="btn btn-outline-warning btn-sm btn-reset" data-url="/painel/resetar/${id}/" title="Retornar para Pendente"><i class="bi bi-arrow-counterclockwise"></i></button>
+                                        <button class="btn btn-outline-danger btn-sm btn-delete ms-1" data-url="/painel/excluir/${id}/" title="Excluir"><i class="bi bi-trash"></i></button>
+                                    </div>
+                                `;
+                            }
+                        }
+                    }
+                }
+            }
+        }).catch(e => console.error("Polling falhou:", e));
+    }, 4000);
+});
+</script>
+{% endblock %}

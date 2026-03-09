@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% block title %}Alunos / Participantes{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-users"></i> Alunos / Participantes</h2>
+    <a href="{% url 'certificates:export_csv' %}" class="btn btn-success shadow-sm"><i class="fas fa-file-excel me-2"></i> Exportar para Excel (CSV)</a>
+</div>
+
+<!-- Filtros -->
+<div class="card mb-4 shadow-sm">
+    <div class="card-body">
+        <form method="GET" class="row g-3">
+            <div class="col-md-4">
+                <input type="text" name="name" class="form-control" placeholder="Nome do Aluno" value="{{ q_name }}">
+            </div>
+            <div class="col-md-3">
+                <input type="text" name="cpf" class="form-control" placeholder="CPF" value="{{ q_cpf }}">
+            </div>
+            <div class="col-md-4">
+                <input type="text" name="course" class="form-control" placeholder="Nome do Treinamento" value="{{ q_course }}">
+            </div>
+            <div class="col-md-1 d-grid">
+                <button type="submit" class="btn btn-primary" title="Filtrar"><i class="fas fa-search"></i> Buscar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Lista Agrupada por CPF -->
+{% regroup registrations by cpf as student_list %}
+<div class="accordion" id="accordionStudents">
+    {% for student in student_list %}
+    <div class="accordion-item mb-2 border rounded shadow-sm">
+        <h2 class="accordion-header" id="heading-{{ forloop.counter }}">
+            <button class="accordion-button collapsed bg-light" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{{ forloop.counter }}">
+                <strong>{{ student.list.0.full_name }}</strong> &nbsp; | &nbsp; CPF: {{ student.grouper }} &nbsp; | &nbsp; <span class="badge bg-secondary ms-2">{{ student.list|length }} Treinamento(s)</span>
+            </button>
+        </h2>
+        <div id="collapse-{{ forloop.counter }}" class="accordion-collapse collapse" data-bs-parent="#accordionStudents">
+            <div class="accordion-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-3">Treinamento</th>
+                                <th>Data</th>
+                                <th>Certificado</th>
+                                <th class="text-end pe-3">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for reg in student.list %}
+                            <tr>
+                                <td class="ps-3">{{ reg.course.name }}</td>
+                                <td>{{ reg.course.start_date|date:"d/m/Y" }}</td>
+                                <td>
+                                    {% if reg.certificate and reg.certificate.pdf_file %}
+                                        <a href="{{ reg.certificate.pdf_file.url }}" target="_blank" class="btn btn-sm btn-outline-primary">Ver Certificado</a>
+                                    {% else %}
+                                        <span class="badge bg-light text-dark border">Não gerado</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end pe-3" id="actions-{{ reg.pk }}">
+                                    {% if reg.status == 'sent' %}
+                                        <button class="btn btn-success btn-sm btn-re-send" data-url="/painel/enviar/{{ reg.pk }}/">Reenviar</button>
+                                        <button class="btn btn-outline-warning btn-sm btn-reset" data-url="/painel/resetar/{{ reg.pk }}/" title="Retornar para Pendente">⟲</button>
+                                    {% else %}
+                                        <button class="btn btn-gold btn-sm btn-send" data-url="/painel/enviar/{{ reg.pk }}/">Enviar Certificado</button>
+                                    {% endif %}
+                                    <button class="btn btn-outline-danger btn-sm btn-delete ms-1" data-url="/painel/excluir/{{ reg.pk }}/" title="Excluir Inscrição">Excluir</button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="alert alert-info text-center">Nenhum aluno encontrado com estes filtros.</div>
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Reutiliza a lógica AJAX de atualização e exclusão já construída
+document.addEventListener('DOMContentLoaded', function() {
+    document.body.addEventListener('click', function(event) {
+        // Interceptar Excluir
+        if (event.target.closest('.btn-delete')) {
+            event.preventDefault();
+            const btn = event.target.closest('.btn-delete');
+            if (confirm("Tem certeza que deseja excluir esta inscrição?")) {
+                fetch(btn.dataset.url, {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': '{{ csrf_token }}', 'X-Requested-With': 'XMLHttpRequest' }
+                }).then(r => r.json()).then(data => {
+                    if (data.ok) {
+                        const row = btn.closest('tr');
+                        row.style.transition = "opacity 0.3s";
+                        row.style.opacity = 0;
+                        setTimeout(() => {
+                            row.remove();
+                            // Se não houver mais linhas no tbody, recarrega a página para atualizar as contagens/sanfona
+                            if (document.querySelectorAll('tbody tr').length === 0) location.reload();
+                        }, 300);
+                    }
+                });
+            }
+            return;
+        }
+        
+        // Interceptar Enviar / Reenviar / Resetar
+        const actionBtn = event.target.closest('.btn-send, .btn-re-send, .btn-reset');
+        if (actionBtn) {
+            event.preventDefault();
+            const url = actionBtn.dataset.url;
+            // Extrai o ID da URL para achar a TD correspondente
+            const parts = url.split('/').filter(p => p);
+            const id = parts[parts.length - 1]; 
+            
+            fetch(url, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': '{{ csrf_token }}', 'X-Requested-With': 'XMLHttpRequest' }
+            }).then(r => r.json()).then(data => {
+                if (data.ok) {
+                    const actionsTd = document.getElementById(`actions-${id}`);
+                    if (actionBtn.classList.contains('btn-reset')) {
+                        actionsTd.innerHTML = `<button class="btn btn-gold btn-sm btn-send" data-url="/painel/enviar/${id}/">Enviar Certificado</button> <button class="btn btn-outline-danger btn-sm btn-delete ms-1" data-url="/painel/excluir/${id}/" title="Excluir Inscrição">Excluir</button>`;
+                    } else {
+                        actionsTd.innerHTML = `<button class="btn btn-success btn-sm btn-re-send" data-url="/painel/enviar/${id}/">Reenviar</button> <button class="btn btn-outline-warning btn-sm btn-reset" data-url="/painel/resetar/${id}/" title="Retornar para Pendente">⟲</button> <button class="btn btn-outline-danger btn-sm btn-delete ms-1" data-url="/painel/excluir/${id}/" title="Excluir Inscrição">Excluir</button>`;
+                    }
+                }
+            });
+        }
+    });
+});
+</script>
+{% endblock %}

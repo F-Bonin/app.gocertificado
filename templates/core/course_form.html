@@ -1,0 +1,257 @@
+{% extends 'painel/base_painel.html' %}
+
+{% block title %}
+    {% if object %}Editar Treinamento{% else %}Novo Treinamento{% endif %} | e-Certificado
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="d-flex align-items-center mb-4">
+            <a href="{% url 'core:course_list' %}" class="btn btn-outline-secondary btn-sm me-3">
+                <i class="bi bi-arrow-left"></i> Voltar
+            </a>
+            <h2 class="h4 mb-0 text-primary">
+                <i class="bi bi-journal-plus me-2"></i>
+                {% if object %}Editar Treinamento{% else %}Novo Treinamento{% endif %}
+            </h2>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-body p-4">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.name.id_for_label }}" class="form-label fw-bold small text-muted">
+                            {{ form.name.label }}
+                        </label>
+                        {{ form.name }}
+                        {% if form.name.errors %}
+                            <div class="text-danger small mt-1">{{ form.name.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label for="{{ form.start_date.id_for_label }}" class="form-label fw-bold small text-muted">
+                                {{ form.start_date.label }}
+                            </label>
+                            {{ form.start_date }}
+                            {% if form.start_date.errors %}
+                                <div class="text-danger small mt-1">{{ form.start_date.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            <label for="{{ form.end_date.id_for_label }}" class="form-label fw-bold small text-muted">
+                                {{ form.end_date.label }}
+                            </label>
+                            {{ form.end_date }}
+                            {% if form.end_date.errors %}
+                                <div class="text-danger small mt-1">{{ form.end_date.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            <label for="{{ form.hours.id_for_label }}" class="form-label fw-bold small text-muted">
+                                {{ form.hours.label }}
+                            </label>
+                            {{ form.hours }}
+                            {% if form.hours.errors %}
+                                <div class="text-danger small mt-1">{{ form.hours.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-8">
+                            <label for="{{ form.city.id_for_label }}" class="form-label fw-bold small text-muted">
+                                {{ form.city.label }}
+                            </label>
+                            {{ form.city }}
+                            {% if form.city.errors %}
+                                <div class="text-danger small mt-1">{{ form.city.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            <label for="{{ form.state.id_for_label }}" class="form-label fw-bold small text-muted">
+                                {{ form.state.label }}
+                            </label>
+                            {{ form.state }}
+                            {% if form.state.errors %}
+                                <div class="text-danger small mt-1">{{ form.state.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <hr class="my-4 opacity-10">
+
+                    <div class="mb-4">
+                        <label for="{{ form.num_signatures.id_for_label }}" class="form-label fw-bold small text-muted">
+                            {{ form.num_signatures.label }}
+                        </label>
+                        {{ form.num_signatures }}
+                    </div>
+
+                    <div class="row mb-3" id="div_sig1">
+                        <div class="col-md-12">
+                            <label for="{{ form.signature_1.id_for_label }}" class="form-label fw-bold small text-muted">
+                                {{ form.signature_1.label }}
+                            </label>
+                            {{ form.signature_1 }}
+                        </div>
+                    </div>
+
+                    <div class="row mb-3" id="div_sig2">
+                        <div class="col-md-12">
+                            <label for="{{ form.signature_2.id_for_label }}" class="form-label fw-bold small text-muted">
+                                {{ form.signature_2.label }}
+                            </label>
+                            {{ form.signature_2 }}
+                        </div>
+                    </div>
+
+                    <div class="row mb-3" id="div_sig3">
+                        <div class="col-md-12">
+                            <label for="{{ form.signature_3.id_for_label }}" class="form-label fw-bold small text-muted">
+                                {{ form.signature_3.label }}
+                            </label>
+                            {{ form.signature_3 }}
+                        </div>
+                    </div>
+
+                    <hr class="my-4 opacity-10">
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{% url 'core:course_list' %}" class="btn btn-light px-4">Cancelar</a>
+                        <button type="button" class="btn btn-primary px-5 shadow-sm" id="btn-salvar-treinamento">
+                            <i class="bi bi-check2-circle me-1"></i> Salvar Treinamento
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        {% if not object %}
+        <div class="alert alert-info mt-4 small border-0 shadow-sm">
+            <i class="bi bi-info-circle-fill me-2"></i>
+            Ao salvar, um <strong>Link Único</strong> de inscrição será gerado automaticamente para este treinamento.
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal de Confirmação de Assinatura -->
+<div class="modal fade" id="noSignatureModal" tabindex="-1" aria-labelledby="noSignatureModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-warning">
+      <div class="modal-header bg-warning text-dark">
+        <h5 class="modal-title" id="noSignatureModalLabel"><i class="bi bi-exclamation-triangle-fill me-2"></i> Atenção: Nenhuma Assinatura</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+      </div>
+      <div class="modal-body text-center py-4">
+        <p class="mb-0 fs-5">Você não selecionou nenhuma assinatura para este treinamento.</p>
+        <p class="text-muted mt-2">O certificado será gerado <strong>sem assinaturas</strong> no rodapé.</p>
+      </div>
+      <div class="modal-footer justify-content-center">
+        <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Cancelar e Voltar</button>
+        <button type="button" class="btn btn-warning px-4" id="btn-confirm-submit">Prosseguir sem Assinatura</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    
+    // --- 1. BARREIRA DE DATAS ---
+    const startDate = document.getElementById('id_start_date');
+    const endDate = document.getElementById('id_end_date');
+    if (startDate && endDate) {
+        if (startDate.value) endDate.min = startDate.value;
+        startDate.addEventListener('change', function() {
+            endDate.min = this.value;
+            if (endDate.value && endDate.value < this.value) endDate.value = '';
+        });
+    }
+
+    // --- 2. TOGGLE DE ASSINATURAS ---
+    const numSignatures = document.getElementById('id_num_signatures');
+    // Buscamos pelo atributo 'name' gerado pelo Django, que é infalível
+    const sig2 = document.querySelector('[name="signature_2"]');
+    const sig3 = document.querySelector('[name="signature_3"]');
+
+    function toggleSignatures() {
+        if (!numSignatures) return;
+        const val = parseInt(numSignatures.value) || 1;
+        const sig2Container = sig2 ? (sig2.closest('.form-group') || sig2.parentElement) : null;
+        const sig3Container = sig3 ? (sig3.closest('.form-group') || sig3.parentElement) : null;
+
+        if (val === 1) {
+            if (sig2Container) sig2Container.style.display = 'none';
+            if (sig3Container) sig3Container.style.display = 'none';
+            if (sig2) sig2.selectedIndex = 0;
+            if (sig3) sig3.selectedIndex = 0;
+        } else if (val === 2) {
+            if (sig2Container) sig2Container.style.display = '';
+            if (sig3Container) sig3Container.style.display = 'none';
+            if (sig3) sig3.selectedIndex = 0;
+        } else if (val >= 3) {
+            if (sig2Container) sig2Container.style.display = '';
+            if (sig3Container) sig3Container.style.display = '';
+        }
+    }
+    if (numSignatures) {
+        numSignatures.addEventListener('change', toggleSignatures);
+        toggleSignatures(); 
+    }
+
+    // --- 3. BOTÃO DE SALVAR BLINDADO (CONTROLE TOTAL DO JS) ---
+    const btnSalvar = document.getElementById('btn-salvar-treinamento');
+    if (btnSalvar) {
+        btnSalvar.addEventListener('click', function() {
+            const form = this.closest('form');
+            const sig1 = document.querySelector('[name="signature_1"]');
+
+            // Aciona os balõezinhos vermelhos de "Campo obrigatório" nativos do navegador
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+
+            // Verifica de forma absoluta se a Assinatura 1 está vazia
+            let isSignatureEmpty = true;
+            if (sig1 && sig1.options.length > 0) {
+                const selectedValue = sig1.options[sig1.selectedIndex].value;
+                if (selectedValue !== '') {
+                    isSignatureEmpty = false; // Tem um ID preenchido
+                }
+            }
+
+            if (isSignatureEmpty) {
+                const modalEl = document.getElementById('noSignatureModal');
+                if (modalEl && typeof bootstrap !== 'undefined') {
+                    const modal = new bootstrap.Modal(modalEl);
+                    modal.show(); // Sobe o modal
+                    
+                    document.getElementById('btn-confirm-submit').onclick = function() {
+                        modal.hide();
+                        form.submit(); // Envia pro banco
+                    };
+                } else {
+                    // Fallback nativo 100% à prova de falhas
+                    if (confirm("Você não escolheu NENHUMA assinatura. O certificado sairá sem assinaturas no rodapé. Deseja prosseguir?")) {
+                        form.submit();
+                    }
+                }
+            } else {
+                // Preencheu tudo direitinho, salva direto
+                form.submit();
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

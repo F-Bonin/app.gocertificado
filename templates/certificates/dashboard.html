@@ -1,0 +1,140 @@
+{% extends "painel/base_painel.html" %}
+{% block title %}Dashboard — Estatísticas{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h4 class="fw-bold mb-0">Dashboard</h4>
+        <p class="text-muted small">Métricas e acompanhamento em tempo real</p>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Total Inscrições -->
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm p-3 h-100">
+            <div class="d-flex align-items-center">
+                <div class="bg-primary bg-opacity-10 text-primary p-3 rounded-3 me-3">
+                    <i class="bi bi-people-fill fs-4"></i>
+                </div>
+                <div>
+                    <h3 class="fw-bold mb-0">{{ stats.total_registrations }}</h3>
+                    <small class="text-muted">Total de Alunos</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Emitidos -->
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm p-3 h-100">
+            <div class="d-flex align-items-center">
+                <div class="bg-success bg-opacity-10 text-success p-3 rounded-3 me-3">
+                    <i class="bi bi-award-fill fs-4"></i>
+                </div>
+                <div>
+                    <h3 class="fw-bold mb-0">{{ stats.total_issued }}</h3>
+                    <small class="text-muted">Certificados Emitidos</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pendentes -->
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm p-3 h-100">
+            <div class="d-flex align-items-center">
+                <div class="bg-warning bg-opacity-10 text-warning p-3 rounded-3 me-3">
+                    <i class="bi bi-clock-fill fs-4"></i>
+                </div>
+                <div>
+                    <h3 class="fw-bold mb-0">{{ stats.pending }}</h3>
+                    <small class="text-muted">Aguardando Emissão</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Nas últimas 24h -->
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm p-3 h-100 bg-primary text-white">
+            <div class="d-flex align-items-center">
+                <div class="bg-white bg-opacity-20 p-3 rounded-3 me-3">
+                    <i class="bi bi-lightning-fill fs-4"></i>
+                </div>
+                <div>
+                    <h3 class="fw-bold mb-0">{{ stats.issued_24h }}</h3>
+                    <small class="opacity-75">Emitidos (24h)</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Top Treinamentos -->
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-0 py-3">
+                <h6 class="fw-bold mb-0">Principais Treinamentos (Top 5)</h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light small text-muted">
+                            <tr>
+                                <th class="ps-4">Treinamento</th>
+                                <th class="text-center">Inscritos</th>
+                                <th class="text-end pe-4">Desempenho</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in stats.top_courses %}
+                            <tr>
+                                <td class="ps-4">
+                                    <span class="fw-semibold small">{{ item.course__name }}</span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-light text-dark">{{ item.total }}</span>
+                                </td>
+                                <td class="text-end pe-4">
+                                    <div class="progress" style="height: 6px;">
+                                        <div class="progress-bar bg-primary" role="progressbar" style="width: 100%"></div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="3" class="text-center text-muted py-4 small">Nenhum treinamento registrado.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Distribuição por Status -->
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-0 py-3">
+                <h6 class="fw-bold mb-0">Distribuição de Status</h6>
+            </div>
+            <div class="card-body">
+                {% for item in stats.status_dist %}
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span class="small text-muted">
+                        <i class="bi bi-circle-fill me-2 {% if item.raw_status == 'sent' %}text-success{% else %}text-warning{% endif %}" style="font-size: 8px;"></i>
+                        {{ item.label }}
+                    </span>
+                    <span class="fw-bold small">{{ item.total }}</span>
+                </div>
+                {% empty %}
+                <p class="text-center text-muted small">Sem dados.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,139 @@
+{% extends 'painel/base_painel.html' %}
+
+{% block title %}Meus Treinamentos | e-Certificado{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="h4 mb-0 text-primary">
+        <i class="bi bi-journal-check me-2"></i>Meus Treinamentos
+    </h2>
+    <a href="{% url 'core:course_create' %}" class="btn btn-primary shadow-sm">
+        <i class="bi bi-plus-lg me-2"></i>Novo Treinamento
+    </a>
+</div>
+
+<!-- Filtros -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <label for="name" class="form-label small fw-bold">Nome do Treinamento</label>
+                <input type="text" name="name" id="name" class="form-control" placeholder="Buscar por nome..." value="{{ request.GET.name }}">
+            </div>
+            <div class="col-md-3">
+                <label for="date" class="form-label small fw-bold">Data</label>
+                <input type="date" name="date" id="date" class="form-control" value="{{ request.GET.date }}">
+            </div>
+            <div class="col-md-3">
+                <label for="instructor" class="form-label small fw-bold">Instrutor</label>
+                <select name="instructor" id="instructor" class="form-select">
+                    <option value="">Todos</option>
+                    {% for instr in instructors %}
+                        <option value="{{ instr.id }}" {% if request.GET.instructor == instr.id|stringformat:"s" %}selected{% endif %}>{{ instr.full_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2 d-flex align-items-end gap-2">
+                <button type="submit" class="btn btn-secondary flex-grow-1">
+                    <i class="bi bi-filter"></i> Filtrar
+                </button>
+                <button type="submit" name="export" value="csv" class="btn btn-outline-success">
+                    <i class="bi bi-file-earmark-spreadsheet"></i> CSV
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Listagem -->
+<div class="card shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="ps-4">Nome</th>
+                        <th>Período</th>
+                        <th>Local</th>
+                        <th>Instrutor</th>
+                        <th>Link de Inscrição</th>
+                        <th class="text-end pe-4">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for course in courses %}
+                    <tr>
+                        <td class="ps-4 fw-bold">{{ course.name }}</td>
+                        <td>
+                            {{ course.start_date|date:"d/m/Y" }} 
+                            {% if course.end_date and course.end_date != course.start_date %}
+                                a {{ course.end_date|date:"d/m/Y" }}
+                            {% endif %}
+                        </td>
+                        <td>{{ course.city }}/{{ course.state }}</td>
+                        <td>{{ course.signature_1.full_name|default:"N/A" }}</td>
+                        <td>
+                            {% if course.link_hash %}
+                            <div class="input-group input-group-sm" style="max-width: 300px;">
+                                <input type="text" class="form-control bg-light" readonly id="link-{{ course.id }}"
+                                       value="{{ request.scheme }}://{{ request.get_host }}{% url 'registrations:form' course.link_hash %}">
+                                <button class="btn btn-outline-primary" type="button" onclick="copyLink('link-{{ course.id }}')">
+                                    <i class="bi bi-clipboard"></i> Copiar
+                                </button>
+                            </div>
+                            {% else %}
+                            <a href="{% url 'core:course_generate_link' course.id %}" class="btn btn-sm btn-outline-warning">
+                                <i class="bi bi-link-45deg"></i> Gerar Link
+                            </a>
+                            {% endif %}
+                        </td>
+                        <td class="text-end pe-4">
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'core:course_update' course.id %}" class="btn btn-outline-secondary" title="Editar">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <a href="{% url 'core:course_clone' course.id %}" class="btn btn-outline-info" title="Clonar">
+                                    <i class="bi bi-copy"></i>
+                                </a>
+                                <a href="{% url 'core:course_delete' course.id %}" class="btn btn-outline-danger" title="Excluir">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5 text-muted">
+                            <i class="bi bi-journal-x h1 d-block mb-3"></i>
+                            Nenhum treinamento encontrado.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function copyLink(id) {
+        var copyText = document.getElementById(id);
+        copyText.select();
+        copyText.setSelectionRange(0, 99999);
+        navigator.clipboard.writeText(copyText.value).then(() => {
+            // Mostrar Toast de sucesso usando o sistema do base_painel
+            const toastElement = document.getElementById('liveToast');
+            const toastBody = document.getElementById('toastMessage');
+            const toastTitle = document.getElementById('toastTitle');
+            
+            toastTitle.innerText = "Sucesso";
+            toastBody.innerText = "Link copiado para a área de transferência!";
+            
+            const toast = new bootstrap.Toast(toastElement);
+            toast.show();
+        });
+    }
+</script>
+{% endblock %}

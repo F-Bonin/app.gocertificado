@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}Verificar Autenticidade do Certificado{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-7">
+
+    <div class="card p-4 p-md-5 mb-4">
+      <div class="text-center mb-4">
+        <i class="bi bi-shield-check display-4 text-primary"></i>
+        <h3 class="fw-bold mt-2">Verificar Autenticidade</h3>
+        <p class="text-muted">
+          Digite o código numérico impresso no certificado ou<br>
+          escaneie o QR Code para verificar automaticamente.
+        </p>
+      </div>
+
+      <form method="get" action="{% url 'certificates:verify' %}">
+        <div class="input-group input-group-lg">
+          <span class="input-group-text"><i class="bi bi-upc-scan"></i></span>
+          <input type="text"
+                 name="code"
+                 class="form-control"
+                 placeholder="000000000000  (12 dígitos)"
+                 maxlength="15"
+                 value="{{ request.GET.code|default:'' }}"
+                 inputmode="numeric">
+          <button class="btn btn-primary" type="submit">
+            Verificar
+          </button>
+        </div>
+      </form>
+    </div>
+
+    {% if searched %}
+      {% if certificate %}
+        <!-- CERTIFICADO VÁLIDO -->
+        <div class="card border-success p-4">
+          <div class="d-flex align-items-center mb-3">
+            <i class="bi bi-patch-check-fill text-success fs-2 me-3"></i>
+            <div>
+              <h5 class="mb-0 text-success fw-bold">Certificado Válido</h5>
+              <small class="text-muted">Documento autêntico emitido por {{ certificate.registration.course.company.name|default:"—" }}</small>
+            </div>
+          </div>
+          <hr>
+          <dl class="row mb-0">
+            <dt class="col-sm-4">Participante</dt>
+            <dd class="col-sm-8 fw-semibold">{{ certificate.registration.full_name }}</dd>
+
+            <dt class="col-sm-4">Treinamento</dt>
+            <dd class="col-sm-8">{{ certificate.registration.course_name }}</dd>
+
+            <dt class="col-sm-4">Carga horária</dt>
+            <dd class="col-sm-8">{{ certificate.registration.course_workload }} horas</dd>
+
+            <dt class="col-sm-4">Local</dt>
+            <dd class="col-sm-8">
+              {{ certificate.registration.city }} / {{ certificate.registration.state }}
+            </dd>
+
+            <dt class="col-sm-4">CPF</dt>
+            <dd class="col-sm-8 font-monospace">{{ certificate.registration.cpf_masked }}</dd>
+
+            {% if certificate.registration.course %}
+              <dt class="col-sm-4">Instrutor</dt>
+              <dd class="col-sm-8">
+                {{ certificate.registration.course.signature_1.full_name }}<br>
+                <small class="text-muted">{{ certificate.registration.course.signature_1.credentials }}</small>
+              </dd>
+            {% endif %}
+
+            <dt class="col-sm-4">Emitido em</dt>
+            <dd class="col-sm-8">{{ certificate.emitted_at|date:"d/m/Y \à\s H:i" }}</dd>
+
+            <dt class="col-sm-4">Código</dt>
+            <dd class="col-sm-8 font-monospace fw-bold">
+              {{ certificate.numeric_code_formatted }}
+            </dd>
+          </dl>
+        </div>
+
+      {% else %}
+        <!-- NÃO ENCONTRADO -->
+        <div class="card border-danger p-4 text-center">
+          <i class="bi bi-x-circle-fill text-danger display-4 mb-3"></i>
+          <h5 class="text-danger">Certificado não encontrado</h5>
+          <p class="text-muted mb-0">
+            Nenhum certificado foi encontrado com esse código.<br>
+            Verifique se digitou corretamente (12 dígitos, sem espaços).
+          </p>
+        </div>
+      {% endif %}
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}

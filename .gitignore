@@ -1,0 +1,72 @@
+# ============================================================
+# .gitignore — Sistema de Certificados
+# ============================================================
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+parts/
+var/
+sdist/
+develop-eggs/
+.installed.cfg
+lib/
+lib64/
+
+# Virtualenv
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Django
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+media/
+staticfiles/
+
+# Secrets
+.env
+.env.*
+!.env.example
+secrets.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Tests
+.coverage
+.pytest_cache/
+htmlcov/
+.tox/
+
+# Migrations (manter as iniciais, ignorar as de desenvolvimento)
+# apps/*/migrations/*.py  ← NÃO ignorar, versionar migrations
+
+# Certificados gerados (não versionar PDFs)
+media/
+*.pdf
+
+# Node (caso use assets)
+node_modules/
+npm-debug.log
+
+# Docker
+*.env.docker

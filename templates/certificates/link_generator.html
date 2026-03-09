@@ -1,0 +1,109 @@
+{% extends "painel/base_painel.html" %}
+
+{% block title %}Gerador de Link de Treinamento - e-Certificado{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0"><i class="bi bi-link-45deg me-2 text-primary"></i>Gerador de Link de Treinamento</h5>
+            </div>
+            <div class="card-body p-4">
+                <p class="text-muted small mb-4">
+                    Preencha os dados abaixo para gerar uma URL de inscrição personalizada. 
+                    Ao acessar este link, o aluno verá o formulário com os dados do curso já preenchidos e o instrutor será vinculado automaticamente.
+                </p>
+
+                <form method="post" class="needs-validation">
+                    {% csrf_token %}
+                    
+                    <div class="row g-3">
+                        <div class="col-md-12">
+                            <label class="form-label fw-bold small text-uppercase">{{ form.instructor.label }}</label>
+                            {{ form.instructor.errors }}
+                            <select name="{{ form.instructor.name }}" class="form-select" required>
+                                {% for choice in form.instructor.field.choices %}
+                                    <option value="{{ choice.0 }}" {% if form.instructor.value == choice.0 %}selected{% endif %}>{{ choice.1 }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-12">
+                            <label class="form-label fw-bold small text-uppercase">{{ form.course_name.label }}</label>
+                            {{ form.course_name.errors }}
+                            <input type="text" name="{{ form.course_name.name }}" class="form-control" value="{{ form.course_name.value|default_if_none:'' }}" required>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-uppercase">{{ form.city.label }}</label>
+                            {{ form.city.errors }}
+                            <input type="text" name="{{ form.city.name }}" class="form-control" value="{{ form.city.value|default_if_none:'' }}" required>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-uppercase">{{ form.state.label }}</label>
+                            {{ form.state.errors }}
+                            <input type="text" name="{{ form.state.name }}" class="form-control" value="{{ form.state.value|default_if_none:'' }}" maxlength="2" placeholder="EX: SP" required>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-uppercase">{{ form.course_date.label }}</label>
+                            {{ form.course_date.errors }}
+                            <input type="date" name="{{ form.course_date.name }}" class="form-control" value="{{ form.course_date.value|default_if_none:'' }}" required>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-uppercase">{{ form.course_workload.label }}</label>
+                            {{ form.course_workload.errors }}
+                            <input type="number" name="{{ form.course_workload.name }}" class="form-control" value="{{ form.course_workload.value|default_if_none:'' }}" min="1" required>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-gear-fill me-2"></i>Gerar Link de Inscrição
+                        </button>
+                    </div>
+                </form>
+
+                {% if generated_url %}
+                <div class="mt-5 p-4 bg-light rounded border border-primary border-opacity-25">
+                    <h6 class="fw-bold text-primary mb-3"><i class="bi bi-check-circle-fill me-2"></i>Link Gerado com Sucesso!</h6>
+                    <div class="input-group">
+                        <input type="text" id="generatedUrl" class="form-control bg-white" value="{{ generated_url }}" readonly>
+                        <button class="btn btn-outline-primary" type="button" onclick="copyToClipboard()">
+                            <i class="bi bi-clipboard me-1"></i>Copiar
+                        </button>
+                    </div>
+                    <div id="copyFeedback" class="form-text text-success mt-2" style="display: none;">
+                        <i class="bi bi-check2"></i> URL copiada para a área de transferência!
+                    </div>
+                </div>
+                {% endif %}
+                
+                <div class="mt-4 text-center">
+                    <a href="{% url 'certificates:panel' %}" class="btn btn-link text-decoration-none text-muted">
+                        <i class="bi bi-arrow-left me-1"></i>Voltar ao Painel
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function copyToClipboard() {
+    var copyText = document.getElementById("generatedUrl");
+    copyText.select();
+    copyText.setSelectionRange(0, 99999); // Para dispositivos móveis
+    navigator.clipboard.writeText(copyText.value);
+    
+    var feedback = document.getElementById("copyFeedback");
+    feedback.style.display = "block";
+    setTimeout(function() {
+        feedback.style.display = "none";
+    }, 3000);
+}
+</script>
+{% endblock %}

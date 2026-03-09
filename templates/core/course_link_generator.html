@@ -1,0 +1,128 @@
+{% extends "painel/base_painel.html" %}
+
+{% block title %}Gerador de Link de Treinamento — {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-9">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-3 border-bottom d-flex align-items-center">
+                <i class="bi bi-link-45deg me-2 text-primary fs-4"></i>
+                <h5 class="mb-0 fw-bold">Gerador de Link de Inscrição</h5>
+            </div>
+            <div class="card-body p-4">
+                <p class="text-muted small mb-4">
+                    Preencha as informações do treinamento abaixo para gerar o link que será enviado aos alunos. 
+                    Ao acessar este link, os dados do curso aparecerão pré-preenchidos.
+                </p>
+
+                <div class="row g-3">
+                    <div class="col-md-12 mb-3">
+                        <label class="form-label fw-bold small text-uppercase">Instrutor Responsável</label>
+                        <select id="id_instructor" class="form-select">
+                            <option value="">Selecione um instrutor...</option>
+                            {% for instructor in instructors %}
+                                <option value="{{ instructor.id }}">{{ instructor.full_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-md-12 mb-3">
+                        <label class="form-label fw-bold small text-uppercase">Nome do Treinamento</label>
+                        <input type="text" id="id_course_name" class="form-control" placeholder="Ex: NR-10 Básico">
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold small text-uppercase">Cidade</label>
+                        <input type="text" id="id_city" class="form-control" placeholder="Ex: São Paulo">
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold small text-uppercase">Estado (UF)</label>
+                        <input type="text" id="id_state" class="form-control" maxlength="2" placeholder="EX: SP">
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold small text-uppercase">Data de Realização</label>
+                        <input type="date" id="id_course_date" class="form-control">
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold small text-uppercase">Carga Horária (horas)</label>
+                        <input type="number" id="id_course_workload" class="form-control" min="1" placeholder="Ex: 8">
+                    </div>
+                </div>
+
+                <div class="mt-4 d-grid">
+                    <button type="button" onclick="generateLink()" class="btn btn-primary btn-lg">
+                        <i class="bi bi-gear-fill me-2"></i>Gerar Link de Inscrição
+                    </button>
+                </div>
+
+                <!-- Área do Link Gerado -->
+                <div id="resultArea" class="mt-5 p-4 bg-light rounded border border-primary border-opacity-25" style="display: none;">
+                    <h6 class="fw-bold text-primary mb-3"><i class="bi bi-check-circle-fill me-2"></i>Link pronto para envio!</h6>
+                    <div class="input-group">
+                        <input type="text" id="generatedUrl" class="form-control bg-white" readonly>
+                        <button class="btn btn-outline-primary" type="button" onclick="copyToClipboard()">
+                            <i class="bi bi-clipboard me-1"></i>Copiar
+                        </button>
+                    </div>
+                    <div id="copyFeedback" class="form-text text-success mt-2" style="display: none;">
+                        <i class="bi bi-check2"></i> URL copiada com sucesso!
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function generateLink() {
+    const instructor = document.getElementById('id_instructor').value;
+    const courseName = document.getElementById('id_course_name').value;
+    const city = document.getElementById('id_city').value;
+    const state = document.getElementById('id_state').value;
+    const date = document.getElementById('id_course_date').value;
+    const workload = document.getElementById('id_course_workload').value;
+
+    if (!instructor || !courseName || !city || !state || !date || !workload) {
+        alert('Por favor, preencha todos os campos antes de gerar o link.');
+        return;
+    }
+
+    const baseUrl = window.location.origin + '/';
+    const params = new URLSearchParams({
+        instructor_id: instructor,
+        course_name: courseName,
+        city: city,
+        state: state,
+        course_date: date,
+        course_workload: workload
+    });
+
+    const fullUrl = `${baseUrl}?${params.toString()}`;
+    
+    document.getElementById('generatedUrl').value = fullUrl;
+    document.getElementById('resultArea').style.display = 'block';
+    
+    // Scroll suave até o resultado
+    document.getElementById('resultArea').scrollIntoView({ behavior: 'smooth' });
+}
+
+function copyToClipboard() {
+    const copyText = document.getElementById("generatedUrl");
+    copyText.select();
+    copyText.setSelectionRange(0, 99999);
+    navigator.clipboard.writeText(copyText.value);
+    
+    const feedback = document.getElementById("copyFeedback");
+    feedback.style.display = "block";
+    setTimeout(() => {
+        feedback.style.display = "none";
+    }, 3000);
+}
+</script>
+{% endblock %}

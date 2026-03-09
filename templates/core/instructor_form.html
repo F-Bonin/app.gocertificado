@@ -1,0 +1,86 @@
+{% extends "painel/base_painel.html" %}
+
+{% block title %}{% if object %}Editar Instrutor{% else %}Novo Instrutor{% endif %} — {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-3 border-bottom d-flex align-items-center">
+                <i class="bi bi-person-badge me-2 text-primary fs-4"></i>
+                <h5 class="mb-0 fw-bold">{% if object %}Editar Instrutor: {{ object.full_name }}{% else %}Novo Instrutor{% endif %}</h5>
+            </div>
+            <div class="card-body p-4">
+                <form method="post" enctype="multipart/form-data" novalidate>
+                    {% csrf_token %}
+                    
+                    <div class="row g-3">
+                        <div class="col-md-12 mb-3">
+                            <label class="form-label fw-bold small text-uppercase">{{ form.full_name.label }}</label>
+                            {{ form.full_name }}
+                            {% if form.full_name.errors %}<div class="text-danger small">{{ form.full_name.errors }}</div>{% endif %}
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold small text-uppercase">{{ form.role.label }}</label>
+                            {{ form.role }}
+                            {% if form.role.errors %}<div class="text-danger small">{{ form.role.errors }}</div>{% endif %}
+                            <div class="form-text small">Ex.: Diretor, Instrutor.</div>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold small text-uppercase">{{ form.credentials.label }}</label>
+                            {{ form.credentials }}
+                            {% if form.credentials.errors %}<div class="text-danger small">{{ form.credentials.errors }}</div>{% endif %}
+                        </div>
+
+                        <div class="col-md-8 mb-3">
+                            <label class="form-label fw-bold small text-uppercase">{{ form.email.label }}</label>
+                            {{ form.email }}
+                            {% if form.email.errors %}<div class="text-danger small">{{ form.email.errors }}</div>{% endif %}
+                        </div>
+
+                        <div class="col-md-4 mb-3 d-flex align-items-end">
+                            <div class="form-check mb-2 ms-2">
+                                {{ form.active }}
+                                <label class="form-check-label ms-1" for="{{ form.active.id_for_label }}">Instrutor Ativo</label>
+                            </div>
+                        </div>
+
+                        <div class="col-md-12 mb-3">
+                            <label class="form-label fw-bold small text-uppercase">{{ form.signature_image.label }}</label>
+                            {% if object.signature_image %}
+                            <div class="mb-2">
+                                <img src="{{ object.signature_image.url }}" alt="Assinatura" class="img-thumbnail" style="max-height: 80px; background: #eee;">
+                            </div>
+                            {% endif %}
+                            {{ form.signature_image }}
+                            {% if form.signature_image.errors %}<div class="text-danger small">{{ form.signature_image.errors }}</div>{% endif %}
+                            <div class="form-text small text-muted">Use imagem PNG com fundo transparente para melhor resultado no certificado.</div>
+                        </div>
+
+                        {% if object.signature %}
+                        <div class="col-md-12 mb-3">
+                            <label class="form-label fw-bold small text-uppercase text-muted">{{ form.signature.label }}</label>
+                            <div class="mb-2">
+                                <img src="{{ object.signature.url }}" alt="Assinatura Antiga" class="img-thumbnail opacity-50" style="max-height: 50px; background: #eee;">
+                            </div>
+                            <div class="form-text small text-muted italic">Assinatura legada para compatibilidade.</div>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mt-4 border-top pt-4">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save me-1"></i>Salvar Instrutor
+                        </button>
+                        <a href="{% url 'core:instructor_list' %}" class="btn btn-outline-secondary ms-2">
+                            <i class="bi bi-x me-1"></i>Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

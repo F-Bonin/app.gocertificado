@@ -1,0 +1,41 @@
+# ============================================================
+# requirements.txt
+# Python 3.12.10  |  Django 5.0
+# ============================================================
+
+# --- Framework ---
+Django==5.0.6
+django-environ==0.11.2
+
+# --- Banco de dados ---
+dj-database-url==2.2.0
+# PostgreSQL (opcional — descomente para produção)
+# psycopg2-binary==2.9.9
+
+# --- Geração de PDF ---
+reportlab==4.2.2
+Pillow==10.4.0
+
+# --- QR Code ---
+qrcode[pil]==7.4.2
+
+# --- WhatsApp (WAHA) ---
+httpx==0.27.0
+
+# --- E-mail / Templates ---
+# (usa o Django email backend nativo — sem dependência extra)
+
+# --- Utilitários ---
+python-dotenv==1.0.1
+celery==5.4.0          # fila de tarefas assíncronas
+redis==5.0.7           # broker para celery (redis gratuito no Upstash)
+django-celery-results==2.5.1
+
+# --- Segurança ---
+django-csp==3.8
+whitenoise==6.7.0      # serve arquivos estáticos em produção sem custo
+
+# --- Dev / QA ---
+django-debug-toolbar==4.4.2
+factory-boy==3.3.1
+coverage==7.5.4

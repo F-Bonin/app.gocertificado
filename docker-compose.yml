@@ -1,0 +1,44 @@
+version: "3.9"
+
+# ================================================================
+# docker-compose.yml
+# Serviços de suporte para desenvolvimento local (custo zero)
+# ================================================================
+# Uso: docker compose up -d
+# ================================================================
+
+services:
+
+  # Redis — broker para o Celery
+  redis:
+    image: redis:7-alpine
+    container_name: cert_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # WAHA — WhatsApp API não oficial
+  # Documentação: https://waha.devlike.pro
+  waha:
+    image: devlikeapro/waha:latest
+    container_name: cert_waha
+    ports:
+      - "3000:3000"
+    volumes:
+      - waha_sessions:/app/.sessions
+    environment:
+      # Descomente para habilitar autenticação na API WAHA
+      WHATSAPP_API_KEY: "e-certificado02-2026"
+      WHATSAPP_DEFAULT_ENGINE: WEBJS
+    restart: unless-stopped
+
+volumes:
+  redis_data:
+  waha_sessions:
