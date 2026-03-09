@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -17,16 +18,38 @@
 
     <div class="container">
         <div class="form-container">
-            <div class="text-center mb-4">
-                <h2 class="text-center fw-bold">Solicitação de Certificado</h2>
-                <p class="text-center text-muted">Preencha os campos do formulário para solicitar seu certificado.</p>
-            </div>
-
             <div class="card p-4 p-md-5">
+                <div class="text-center mb-4">
+                    <img src="{% static 'images/logo.png' %}" alt="Logo da Empresa" class="mb-3" style="max-height: 80px; object-fit: contain; width: auto;">
+                    <h2 class="fw-bold">Solicitação de Certificado</h2>
+                    <p class="text-muted">Preencha os campos do formulário para solicitar seu certificado.</p>
+                </div>
+
                 <form method="post" novalidate>
                     {% csrf_token %}
                     
-                    <!-- Campos ocultos de controle -->
+                    <div class="section-title">Dados do Treinamento</div>
+                    <div class="mb-4 bg-light p-3 rounded">
+                        <p class="mb-1"><strong>Treinamento:</strong> <span class="text-muted">{{ course.name }}</span></p>
+                        <p class="mb-1"><strong>Data do Treinamento:</strong> <span class="text-muted">{{ course.start_date|date:"d/m/Y" }}{% if course.end_date %} a {{ course.end_date|date:"d/m/Y" }}{% endif %}</span></p>
+                        <p class="mb-1"><strong>Nome da Instituição:</strong> <span class="text-muted">{{ course.institution_name|default:"Não informada" }}</span></p>
+                        <p class="mb-1"><strong>Cidade/Estado:</strong> <span class="text-muted">{{ course.city }} / {{ course.state }}</span></p>
+                        <p class="mb-0"><strong>Carga Horária:</strong> <span class="text-muted">{{ course.hours }}h</span></p>
+                    </div>
+
+                    {# Campos de treinamento ocultos para persistência no POST #}
+                    <div style="display: none;">
+                        {{ form.course_name }}
+                        {{ form.course_date }}
+                        {{ form.city }}
+                        {{ form.state }}
+                        {{ form.course_workload }}
+                        {{ form.institution_name }}
+                        {{ form.institution_street }}
+                        {{ form.institution_number }}
+                        {{ form.institution_neighborhood }}
+                        {{ form.institution_complement }}
+                    </div>
                     
                     <div class="section-title">Dados Pessoais</div>
 
@@ -93,13 +116,6 @@
                         {{ form.address }}
                         {% if form.address.errors %}<div class="text-danger small">{{ form.address.errors.0 }}</div>{% endif %}
                     </div>
-
-                    <div class="section-title mt-4">Dados do Treinamento</div>
-
-                    <p class="mb-1"><strong>Treinamento:</strong> {{ course.name }}</p>
-                    <p class="mb-1"><strong>Data:</strong> {{ course.start_date|date:"d/m/Y" }} {% if course.end_date %} a {{ course.end_date|date:"d/m/Y" }}{% endif %}</p>
-                    <p class="mb-1"><strong>Local:</strong> {{ course.city }} / {{ course.state }}</p>
-                    <p class="mb-0"><strong>Carga Horária:</strong> {{ course.hours }}h</p>
 
                     <div class="d-grid mt-4">
                         <button type="submit" class="btn btn-primary btn-lg shadow-sm">Enviar</button>

@@ -101,7 +101,7 @@
             <div class="text-muted small">Carga Horária: {{ reg.course.hours }}h</div>
           </td>
           <td class="text-center">
-            <div class="small">{{ reg.course.city }} / {{ reg.course.state }}</div>
+            <div class="small">{{ reg.course.institution_name|default:"-" }}</div>
             <div class="text-muted small">{{ reg.course.start_date|date:"d/m/Y" }}</div>
           </td>
           <td class="status-col text-center" id="status-{{ reg.pk }}">

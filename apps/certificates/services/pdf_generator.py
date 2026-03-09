@@ -97,43 +97,58 @@ def generate_certificate_pdf(certificate) -> bytes:
         start_d = course.start_date
         end_d = course.end_date
         if end_d and end_d != start_d:
-            date_string = f"realizado de {start_d.strftime('%d/%m/%Y')} a {end_d.strftime('%d/%m/%Y')}"
+            date_string = f"de {start_d.strftime('%d/%m/%Y')} a {end_d.strftime('%d/%m/%Y')}"
         else:
-            date_string = f"realizado em {start_d.strftime('%d/%m/%Y')}"
+            date_string = f"{start_d.strftime('%d/%m/%Y')}"
     else:
         # Fallback para dados da inscrição (legado ou manual)
-        course_date_str = reg.course_date.strftime('%d/%m/%Y') if reg.course_date else "N/A"
-        date_string = f"realizado em {course_date_str}"
+        date_string = reg.course_date.strftime('%d/%m/%Y') if reg.course_date else ""
 
-    # ── Corpo do Texto (Formatado) ─────────────────────────────────
+    # ── Corpo do Texto (Formatado em Linhas) ──────────────────────
     full_name = reg.full_name.upper()
-    course_name = course.name.upper() if course else reg.course_name.upper()
-    city = course.city.upper() if course else (reg.city.upper() if reg.city else "N/A")
-    state = course.state.upper() if course else (reg.state.upper() if reg.state else "N/A")
+    course_name_text = (course.name.upper() if course and course.name else reg.course_name.upper()) if (course and course.name or reg.course_name) else ""
+    institution_name = (course.institution_name if course and course.institution_name else reg.institution_name) or ""
+    city = (course.city.upper() if course and course.city else (reg.city.upper() if reg.city else ""))
+    state = (course.state.upper() if course and course.state else (reg.state.upper() if reg.state else ""))
     workload = course.hours if course else reg.course_workload
+    workload_str = f"{workload}h" if workload is not None else ""
     
-    styles = getSampleStyleSheet()
-    style_body = ParagraphStyle(
-        'CertBody',
-        parent=styles['Normal'],
-        fontName='Helvetica',
-        fontSize=16,
-        leading=24,
-        alignment=TA_CENTER,
-        textColor=COLOR_TEXT
-    )
-
-    text_content = (
-        f"Certificamos que<br/>"
-        f"<font size='24' color='#1a3a5c'><b>{full_name}</b></font><br/>"
-        f"portador do CPF {reg.cpf} concluiu com êxito o curso/treinamento "
-        f"<b>{course_name}</b> {date_string} em {city} / {state}.<br/>"
-        f"Carga Horária: {workload}h."
-    )
-
-    p = Paragraph(text_content, style_body)
-    p.wrapOn(c, w - 4 * cm, h)
-    p.drawOn(c, 2 * cm, h - 13 * cm)
+    # Linha 1: Certificamos que
+    c.setFont("Helvetica", 14)
+    c.setFillColor(COLOR_TEXT)
+    current_y = h - 8.23 * cm
+    c.drawCentredString(w / 2, current_y, "Certificamos que")
+    
+    # Linha 2: Nome do Participante (Destaque)
+    c.setFont("Helvetica-Bold", 24)
+    c.setFillColor(COLOR_PRIMARY)
+    current_y -= 1.0 * cm
+    c.drawCentredString(w / 2, current_y, full_name)
+    
+    # Linha 3: portador do CPF...
+    c.setFont("Helvetica", 14)
+    c.setFillColor(COLOR_TEXT)
+    current_y -= 0.9 * cm
+    c.drawCentredString(w / 2, current_y, f"portador do CPF {reg.cpf} concluiu com êxito o curso/treinamento")
+    
+    # Linha 4: Nome do Curso (Destaque)
+    c.setFont("Helvetica-Bold", 20)
+    c.setFillColor(COLOR_PRIMARY)
+    current_y -= 1.1 * cm
+    c.drawCentredString(w / 2, current_y, course_name_text)
+    
+    # Linha 5: Local...
+    c.setFont("Helvetica", 12)
+    c.setFillColor(COLOR_TEXT)
+    current_y -= 0.9 * cm
+    local_text = f"Local: {institution_name} realizado em {date_string} - {city}/{state}."
+    c.drawCentredString(w / 2, current_y, local_text)
+    
+    # Linha 6: Carga Horária...
+    c.setFont("Helvetica", 14)
+    c.setFillColor(black)
+    current_y -= 0.7 * cm
+    c.drawCentredString(w / 2, current_y, f"Carga Horária: {workload_str}.")
 
     # ── Assinaturas (Rodapé Dinâmico) ─────────────────────────────
     signatures = []
@@ -162,7 +177,7 @@ def generate_certificate_pdf(certificate) -> bytes:
                         sig_reader = _pil_to_reader(sig_img)
                         c.drawImage(
                             sig_reader,
-                            current_x, footer_y,
+                            current_x, footer_y - 0.7 * cm,
                             width=sig_width, height=2 * cm,
                             preserveAspectRatio=True, mask="auto"
                         )

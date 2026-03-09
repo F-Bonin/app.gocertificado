@@ -28,6 +28,8 @@ class RegistrationForm(forms.ModelForm):
             "full_name", "gender", "custom_gender", "profession",
             "birth_date", "email", "whatsapp",
             "rg", "cpf", "address",
+            "institution_name", "institution_street", "institution_number",
+            "institution_neighborhood", "institution_complement",
         ]
         widgets = {
             "full_name": forms.TextInput(attrs={
@@ -57,6 +59,11 @@ class RegistrationForm(forms.ModelForm):
                 "class": "form-control",
                 "placeholder": "Rua, número, bairro, cidade — CEP"
             }),
+            "institution_name": forms.TextInput(attrs={"class": "form-control"}),
+            "institution_street": forms.TextInput(attrs={"class": "form-control"}),
+            "institution_number": forms.TextInput(attrs={"class": "form-control"}),
+            "institution_neighborhood": forms.TextInput(attrs={"class": "form-control"}),
+            "institution_complement": forms.TextInput(attrs={"class": "form-control"}),
         }
         labels = {
             "full_name": "Nome completo",
@@ -66,6 +73,11 @@ class RegistrationForm(forms.ModelForm):
             "rg": "RG",
             "cpf": "CPF",
             "address": "Endereço completo",
+            "institution_name": "Nome da Instituição",
+            "institution_street": "Rua/Avenida",
+            "institution_number": "Número",
+            "institution_neighborhood": "Bairro",
+            "institution_complement": "Complemento",
         }
 
     def __init__(self, *args, **kwargs):

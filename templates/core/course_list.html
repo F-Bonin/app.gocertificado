@@ -70,13 +70,13 @@
                                 a {{ course.end_date|date:"d/m/Y" }}
                             {% endif %}
                         </td>
-                        <td>{{ course.city }}/{{ course.state }}</td>
+                        <td>{{ course.institution_name|default:"-" }}</td>
                         <td>{{ course.signature_1.full_name|default:"N/A" }}</td>
                         <td>
                             {% if course.link_hash %}
                             <div class="input-group input-group-sm" style="max-width: 300px;">
                                 <input type="text" class="form-control bg-light" readonly id="link-{{ course.id }}"
-                                       value="{{ request.scheme }}://{{ request.get_host }}{% url 'registrations:form' course.link_hash %}">
+                                       value="{{ request.scheme }}://{{ request.get_host }}{{ course.get_registration_url }}">
                                 <button class="btn btn-outline-primary" type="button" onclick="copyLink('link-{{ course.id }}')">
                                     <i class="bi bi-clipboard"></i> Copiar
                                 </button>

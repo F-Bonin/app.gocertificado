@@ -49,6 +49,11 @@ class LinkGeneratorView(View):
                 "state": data["state"],
                 "course_date": data["course_date"].isoformat(),
                 "course_workload": data["course_workload"],
+                "institution_name": data.get("institution_name", ""),
+                "institution_street": data.get("institution_street", ""),
+                "institution_number": data.get("institution_number", ""),
+                "institution_neighborhood": data.get("institution_neighborhood", ""),
+                "institution_complement": data.get("institution_complement", ""),
             }
             # Construir URL completa
             base_url = request.build_absolute_uri(reverse("registrations:form"))

@@ -68,6 +68,13 @@ class Course(models.Model):
     state = models.CharField("Estado (UF)", max_length=2)
     hours = models.PositiveIntegerField("Carga horária (horas)")
     
+    # Dados da Instituição
+    institution_name = models.CharField("Nome da Instituição", max_length=200, null=True, blank=True)
+    institution_street = models.CharField("Rua/Avenida", max_length=200, null=True, blank=True)
+    institution_number = models.CharField("Número", max_length=50, null=True, blank=True)
+    institution_neighborhood = models.CharField("Bairro", max_length=100, null=True, blank=True)
+    institution_complement = models.CharField("Complemento", max_length=100, null=True, blank=True)
+    
     signature_1 = models.ForeignKey(
         Instructor, 
         related_name='course_sig1', 
@@ -116,3 +123,28 @@ class Course(models.Model):
 
     def __str__(self):
         return f"{self.name} — {self.city} ({self.start_date})"
+
+    def get_registration_url(self):
+        """Constrói a URL de inscrição com todos os dados via QueryString."""
+        from django.urls import reverse
+        from urllib.parse import urlencode
+        
+        if not self.link_hash:
+            return ""
+            
+        base_url = reverse("registrations:form", kwargs={"link_hash": self.link_hash})
+        
+        params = {
+            "course_name": self.name,
+            "course_date": self.start_date.isoformat() if self.start_date else "",
+            "course_city": self.city,
+            "course_state": self.state,
+            "course_workload": self.hours,
+            "institution_name": self.institution_name or "",
+            "institution_street": self.institution_street or "",
+            "institution_number": self.institution_number or "",
+            "institution_neighborhood": self.institution_neighborhood or "",
+            "institution_complement": self.institution_complement or "",
+        }
+        
+        return f"{base_url}?{urlencode(params)}"

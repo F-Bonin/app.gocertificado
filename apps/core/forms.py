@@ -39,8 +39,11 @@ class CourseForm(forms.ModelForm):
     class Meta:
         model = Course
         fields = [
-            "name", "start_date", "end_date", "city", "state", 
-            "hours", "signature_1", "signature_2", "signature_3"
+            "name", "start_date", "end_date", "hours",
+            "institution_name", "institution_street", "institution_number",
+            "institution_neighborhood", "institution_complement",
+            "city", "state",
+            "signature_1", "signature_2", "signature_3"
         ]
         widgets = {
             "name": forms.TextInput(attrs={"class": "form-control"}),
@@ -49,6 +52,11 @@ class CourseForm(forms.ModelForm):
             "city": forms.TextInput(attrs={"class": "form-control"}),
             "state": forms.TextInput(attrs={"class": "form-control", "maxlength": "2", "placeholder": "UF"}),
             "hours": forms.NumberInput(attrs={"class": "form-control"}),
+            "institution_name": forms.TextInput(attrs={"class": "form-control"}),
+            "institution_street": forms.TextInput(attrs={"class": "form-control"}),
+            "institution_number": forms.TextInput(attrs={"class": "form-control"}),
+            "institution_neighborhood": forms.TextInput(attrs={"class": "form-control"}),
+            "institution_complement": forms.TextInput(attrs={"class": "form-control"}),
             "signature_1": forms.Select(attrs={"class": "form-select"}),
             "signature_2": forms.Select(attrs={"class": "form-select"}),
             "signature_3": forms.Select(attrs={"class": "form-select"}),

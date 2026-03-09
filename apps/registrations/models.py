@@ -46,6 +46,13 @@ class Registration(models.Model):
     # Endereço
     address = models.CharField("Endereço completo", max_length=400)
 
+    # Dados da Instituição
+    institution_name = models.CharField("Nome da Instituição", max_length=200, null=True, blank=True)
+    institution_street = models.CharField("Rua/Avenida", max_length=200, null=True, blank=True)
+    institution_number = models.CharField("Número", max_length=50, null=True, blank=True)
+    institution_neighborhood = models.CharField("Bairro", max_length=100, null=True, blank=True)
+    institution_complement = models.CharField("Complemento", max_length=100, null=True, blank=True)
+
     # Dados do treinamento (Campos Legados - Manter Null para não quebrar novas inscrições)
     course_name = models.CharField("Nome do curso/treinamento", max_length=300, null=True, blank=True)
     course_date = models.DateField(null=True, blank=True)

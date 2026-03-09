@@ -122,3 +122,13 @@
 | 2026-03-04 | Atualização do roteamento raiz e LOGIN_REDIRECT_URL para apontarem para o novo Dashboard. | Gemini CLI |
 | 2026-03-04 | Adicionada Feature Flag WAHA_ENABLED em settings.py e whatsapp_sender.py para habilitar/desabilitar disparos via WhatsApp. | Gemini CLI |
 | 2026-03-09 | Sincronização da Página de Verificação com dados reais (Course/Instructor) e melhoria no select_related | Gemini CLI |
+| 2026-03-09 | Adição de campos de Instituição nos modelos Registration e Course, atualização do formulário e gerador de links | Gemini CLI |
+| 2026-03-09 | Refatoração da página pública de solicitação (form.html): nova disposição, logo e campos de treinamento somente leitura | Gemini CLI |
+| 2026-03-09 | Atualização do layout de texto do PDF (6 linhas sequenciais) e tratamento de campos nulos de instituição | Gemini CLI |
+| 2026-03-09 | Implementação dos campos de Local/Instituição no CRUD de Treinamentos e geração de URL com QueryString | Gemini CLI |
+| 2026-03-09 | Reordenação visual dos campos de endereço no CRUD de Treinamentos (Cidade/Estado ao final) | Gemini CLI |
+| 2026-03-09 | Atualização das listagens (Meus Treinamentos e Central de Certificados) para exibir Nome da Instituição na coluna Local | Gemini CLI |
+| 2026-03-09 | Correção do caminho do logo na página pública (form.html) usando a tag static do Django | Gemini CLI |
+| 2026-03-09 | Ajustes de layout no PDF do certificado (coordenadas Y e tamanhos de fonte) para evitar sobreposição | Gemini CLI |
+| 2026-03-09 | Refinamento de coordenadas Y no PDF: deslocamento do bloco central (+40 pts) e da imagem da assinatura (-20 pts) para maior realismo | Gemini CLI |
+| 2026-03-09 | Sintonia fina no eixo Y do texto central do PDF (-15 pts) para criar respiro entre título e corpo | Gemini CLI |

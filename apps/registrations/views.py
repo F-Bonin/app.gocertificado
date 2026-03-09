@@ -14,6 +14,26 @@ class RegistrationCreateView(CreateView):
     template_name = "registrations/form.html"
     success_url = reverse_lazy("registrations:registration_success")
 
+    def get_initial(self):
+        initial = super().get_initial()
+        from apps.core.models import Course
+        from django.shortcuts import get_object_or_404
+        course = get_object_or_404(Course, link_hash=self.kwargs.get('link_hash'))
+        
+        initial.update({
+            "course_name": course.name,
+            "course_date": course.start_date,
+            "city": course.city,
+            "state": course.state,
+            "course_workload": course.hours,
+            "institution_name": course.institution_name,
+            "institution_street": course.institution_street,
+            "institution_number": course.institution_number,
+            "institution_neighborhood": course.institution_neighborhood,
+            "institution_complement": course.institution_complement,
+        })
+        return initial
+
     def form_valid(self, form):
         from django.shortcuts import get_object_or_404
         from django.http import HttpResponseRedirect
