@@ -62,14 +62,20 @@
                         </div>
                     </div>
 
-                    <div class="mb-3">
-                        <label for="{{ form.institution_name.id_for_label }}" class="form-label fw-bold small text-muted">
-                            {{ form.institution_name.label }}
-                        </label>
-                        {{ form.institution_name }}
-                        {% if form.institution_name.errors %}
-                            <div class="text-danger small mt-1">{{ form.institution_name.errors.0 }}</div>
-                        {% endif %}
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label for="{{ form.cep.id_for_label }}" class="form-label fw-bold small text-muted">{{ form.cep.label }}</label>
+                            {{ form.cep }}
+                            <div class="form-text small">
+                                <a href="https://buscacepinter.correios.com.br/app/endereco/index.php" target="_blank">Não sabe o CEP?</a>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                             <label for="{{ form.institution_name.id_for_label }}" class="form-label fw-bold small text-muted">
+                                {{ form.institution_name.label }}
+                            </label>
+                            {{ form.institution_name }}
+                        </div>
                     </div>
 
                     <div class="row mb-3">
@@ -206,6 +212,51 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     
+    // --- ViaCEP ---
+    const cepInput = document.getElementById('id_course_cep');
+    if (cepInput) {
+        cepInput.addEventListener('blur', function() {
+            const cep = this.value.replace(/\D/g, '');
+            if (cep.length !== 8) return;
+
+            const streetInput = document.getElementById('id_course_street');
+            const neighborhoodInput = document.getElementById('id_course_neighborhood');
+            const cityInput = document.getElementById('id_course_city');
+            const stateInput = document.getElementById('id_course_state');
+            const numberInput = document.getElementById('id_institution_number');
+
+            streetInput.value = '...';
+            neighborhoodInput.value = '...';
+            cityInput.value = '...';
+            stateInput.value = '...';
+
+            fetch(`https://viacep.com.br/ws/${cep}/json/`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.erro) {
+                        alert('CEP não encontrado.');
+                        streetInput.value = '';
+                        neighborhoodInput.value = '';
+                        cityInput.value = '';
+                        stateInput.value = '';
+                    } else {
+                        streetInput.value = data.logradouro;
+                        neighborhoodInput.value = data.bairro;
+                        cityInput.value = data.localidade;
+                        stateInput.value = data.uf;
+                        numberInput.focus();
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro ao buscar CEP:', error);
+                    streetInput.value = '';
+                    neighborhoodInput.value = '';
+                    cityInput.value = '';
+                    stateInput.value = '';
+                });
+        });
+    }
+
     // --- 1. BARREIRA DE DATAS ---
     const startDate = document.getElementById('id_start_date');
     const endDate = document.getElementById('id_end_date');

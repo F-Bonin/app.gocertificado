@@ -69,6 +69,7 @@ class Course(models.Model):
     hours = models.PositiveIntegerField("Carga horária (horas)")
     
     # Dados da Instituição
+    cep = models.CharField('CEP', max_length=9, blank=True, null=True)
     institution_name = models.CharField("Nome da Instituição", max_length=200, null=True, blank=True)
     institution_street = models.CharField("Rua/Avenida", max_length=200, null=True, blank=True)
     institution_number = models.CharField("Número", max_length=50, null=True, blank=True)

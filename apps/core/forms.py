@@ -40,7 +40,7 @@ class CourseForm(forms.ModelForm):
         model = Course
         fields = [
             "name", "start_date", "end_date", "hours",
-            "institution_name", "institution_street", "institution_number",
+            "cep", "institution_name", "institution_street", "institution_number",
             "institution_neighborhood", "institution_complement",
             "city", "state",
             "signature_1", "signature_2", "signature_3"
@@ -49,13 +49,14 @@ class CourseForm(forms.ModelForm):
             "name": forms.TextInput(attrs={"class": "form-control"}),
             "start_date": forms.DateInput(attrs={"class": "form-control", "type": "date"}),
             "end_date": forms.DateInput(attrs={"class": "form-control", "type": "date"}),
-            "city": forms.TextInput(attrs={"class": "form-control"}),
-            "state": forms.TextInput(attrs={"class": "form-control", "maxlength": "2", "placeholder": "UF"}),
+            "cep": forms.TextInput(attrs={"class": "form-control", "placeholder": "00000-000", "id": "id_course_cep"}),
+            "city": forms.TextInput(attrs={"class": "form-control", "id": "id_course_city", "readonly": True}),
+            "state": forms.TextInput(attrs={"class": "form-control", "id": "id_course_state", "readonly": True}),
             "hours": forms.NumberInput(attrs={"class": "form-control"}),
             "institution_name": forms.TextInput(attrs={"class": "form-control"}),
-            "institution_street": forms.TextInput(attrs={"class": "form-control"}),
+            "institution_street": forms.TextInput(attrs={"class": "form-control", "id": "id_course_street", "readonly": True}),
             "institution_number": forms.TextInput(attrs={"class": "form-control"}),
-            "institution_neighborhood": forms.TextInput(attrs={"class": "form-control"}),
+            "institution_neighborhood": forms.TextInput(attrs={"class": "form-control", "id": "id_course_neighborhood", "readonly": True}),
             "institution_complement": forms.TextInput(attrs={"class": "form-control"}),
             "signature_1": forms.Select(attrs={"class": "form-select"}),
             "signature_2": forms.Select(attrs={"class": "form-select"}),

@@ -44,7 +44,13 @@ class Registration(models.Model):
     cpf = models.CharField("CPF", max_length=14)
 
     # Endereço
-    address = models.CharField("Endereço completo", max_length=400)
+    cep = models.CharField("CEP", max_length=9, blank=True, null=True)
+    street = models.CharField("Rua", max_length=200, blank=True, null=True)
+    number = models.CharField("Número", max_length=50, blank=True, null=True)
+    complement = models.CharField("Complemento", max_length=100, blank=True, null=True)
+    neighborhood = models.CharField("Bairro", max_length=100, blank=True, null=True)
+    city = models.CharField("Cidade", max_length=100, blank=True, null=True)
+    state = models.CharField("UF", max_length=2, blank=True, null=True)
 
     # Dados da Instituição
     institution_name = models.CharField("Nome da Instituição", max_length=200, null=True, blank=True)
@@ -56,8 +62,6 @@ class Registration(models.Model):
     # Dados do treinamento (Campos Legados - Manter Null para não quebrar novas inscrições)
     course_name = models.CharField("Nome do curso/treinamento", max_length=300, null=True, blank=True)
     course_date = models.DateField(null=True, blank=True)
-    city = models.CharField(max_length=100, blank=True, null=True)
-    state = models.CharField(max_length=2, blank=True, null=True)
     course_workload = models.PositiveIntegerField("Carga horária (horas)", null=True, blank=True)
 
     # Vínculo com treinamento persistente

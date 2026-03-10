@@ -41,8 +41,6 @@
                     <div style="display: none;">
                         {{ form.course_name }}
                         {{ form.course_date }}
-                        {{ form.city }}
-                        {{ form.state }}
                         {{ form.course_workload }}
                         {{ form.institution_name }}
                         {{ form.institution_street }}
@@ -111,10 +109,56 @@
                         </div>
                     </div>
 
-                    <div class="mb-3">
-                        <label for="{{ form.address.id_for_label }}" class="form-label fw-bold small">{{ form.address.label }}</label>
-                        {{ form.address }}
-                        {% if form.address.errors %}<div class="text-danger small">{{ form.address.errors.0 }}</div>{% endif %}
+                    <div class="section-title mt-4">Endereço</div>
+
+                    <div class="row">
+                        <div class="col-md-5 mb-3">
+                            <label for="{{ form.cep.id_for_label }}" class="form-label fw-bold small">{{ form.cep.label }}</label>
+                            {{ form.cep }}
+                            <div class="form-text small">
+                                <a href="https://buscacepinter.correios.com.br/app/endereco/index.php" target="_blank">Não sabe seu CEP? Busque aqui</a>
+                            </div>
+                            {% if form.cep.errors %}<div class="text-danger small">{{ form.cep.errors.0 }}</div>{% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-9 mb-3">
+                            <label for="{{ form.street.id_for_label }}" class="form-label fw-bold small">{{ form.street.label }}</label>
+                            {{ form.street }}
+                            {% if form.street.errors %}<div class="text-danger small">{{ form.street.errors.0 }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="{{ form.number.id_for_label }}" class="form-label fw-bold small">{{ form.number.label }}</label>
+                            {{ form.number }}
+                            {% if form.number.errors %}<div class="text-danger small">{{ form.number.errors.0 }}</div>{% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.complement.id_for_label }}" class="form-label fw-bold small">{{ form.complement.label }}</label>
+                            {{ form.complement }}
+                            {% if form.complement.errors %}<div class="text-danger small">{{ form.complement.errors.0 }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.neighborhood.id_for_label }}" class="form-label fw-bold small">{{ form.neighborhood.label }}</label>
+                            {{ form.neighborhood }}
+                            {% if form.neighborhood.errors %}<div class="text-danger small">{{ form.neighborhood.errors.0 }}</div>{% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label for="{{ form.city.id_for_label }}" class="form-label fw-bold small">{{ form.city.label }}</label>
+                            {{ form.city }}
+                            {% if form.city.errors %}<div class="text-danger small">{{ form.city.errors.0 }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="{{ form.state.id_for_label }}" class="form-label fw-bold small">{{ form.state.label }}</label>
+                            {{ form.state }}
+                            {% if form.state.errors %}<div class="text-danger small">{{ form.state.errors.0 }}</div>{% endif %}
+                        </div>
                     </div>
 
                     <div class="d-grid mt-4">
@@ -148,6 +192,66 @@
             
             // Executa ao carregar para caso de erro de validação retornar com valor 'O'
             toggleCustomGender();
+
+            // --- ViaCEP ---
+            const cepInput = document.getElementById('id_cep');
+            const streetInput = document.getElementById('id_street');
+            const neighborhoodInput = document.getElementById('id_neighborhood');
+            const cityInput = document.getElementById('id_city');
+            const stateInput = document.getElementById('id_state');
+            const numberInput = document.getElementById('id_number');
+
+            const toggleReadOnly = (isReadOnly) => {
+                streetInput.readOnly = isReadOnly;
+                neighborhoodInput.readOnly = isReadOnly;
+                cityInput.readOnly = isReadOnly;
+                stateInput.readOnly = isReadOnly;
+            };
+
+            cepInput.addEventListener('blur', () => {
+                const cep = cepInput.value.replace(/\D/g, '');
+
+                if (cep.length !== 8) {
+                    return;
+                }
+                
+                streetInput.value = "..."
+                neighborhoodInput.value = "..."
+                cityInput.value = "..."
+                stateInput.value = "..."
+                toggleReadOnly(true);
+
+                fetch(`https://viacep.com.br/ws/${cep}/json/`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.erro) {
+                            alert("CEP não encontrado. Por favor, preencha o endereço manualmente.");
+                            streetInput.value = "";
+                            neighborhoodInput.value = "";
+                            cityInput.value = "";
+                            stateInput.value = "";
+                            toggleReadOnly(false);
+                            return;
+                        }
+                        
+                        streetInput.value = data.logradouro;
+                        neighborhoodInput.value = data.bairro;
+                        cityInput.value = data.localidade;
+                        stateInput.value = data.uf;
+
+                        // Foca no campo de número, que é o próximo passo lógico
+                        numberInput.focus();
+                    })
+                    .catch(error => {
+                        console.error('Erro ao buscar CEP:', error);
+                        alert("Ocorreu um erro ao buscar o CEP. Por favor, preencha o endereço manualmente.");
+                        streetInput.value = "";
+                        neighborhoodInput.value = "";
+                        cityInput.value = "";
+                        stateInput.value = "";
+                        toggleReadOnly(false);
+                    });
+            });
         });
     </script>
 </body>

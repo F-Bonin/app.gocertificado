@@ -27,7 +27,8 @@ class RegistrationForm(forms.ModelForm):
         fields = [
             "full_name", "gender", "custom_gender", "profession",
             "birth_date", "email", "whatsapp",
-            "rg", "cpf", "address",
+            "rg", "cpf", 
+            "cep", "street", "number", "complement", "neighborhood", "city", "state",
             "institution_name", "institution_street", "institution_number",
             "institution_neighborhood", "institution_complement",
         ]
@@ -55,9 +56,26 @@ class RegistrationForm(forms.ModelForm):
             "cpf": forms.TextInput(attrs={
                 "class": "form-control", "placeholder": "000.000.000-00"
             }),
-            "address": forms.TextInput(attrs={
-                "class": "form-control",
-                "placeholder": "Rua, número, bairro, cidade — CEP"
+            "cep": forms.TextInput(attrs={
+                "class": "form-control", "placeholder": "00000-000", "id": "id_cep"
+            }),
+            "street": forms.TextInput(attrs={
+                "class": "form-control", "id": "id_street", "readonly": True
+            }),
+            "number": forms.TextInput(attrs={
+                "class": "form-control"
+            }),
+            "complement": forms.TextInput(attrs={
+                "class": "form-control"
+            }),
+            "neighborhood": forms.TextInput(attrs={
+                "class": "form-control", "id": "id_neighborhood", "readonly": True
+            }),
+            "city": forms.TextInput(attrs={
+                "class": "form-control", "id": "id_city", "readonly": True
+            }),
+            "state": forms.TextInput(attrs={
+                "class": "form-control", "id": "id_state", "readonly": True
             }),
             "institution_name": forms.TextInput(attrs={"class": "form-control"}),
             "institution_street": forms.TextInput(attrs={"class": "form-control"}),
@@ -72,7 +90,13 @@ class RegistrationForm(forms.ModelForm):
             "whatsapp": "WhatsApp (com DDD)",
             "rg": "RG",
             "cpf": "CPF",
-            "address": "Endereço completo",
+            "cep": "CEP",
+            "street": "Rua",
+            "number": "Número",
+            "complement": "Complemento",
+            "neighborhood": "Bairro",
+            "city": "Cidade",
+            "state": "Estado",
             "institution_name": "Nome da Instituição",
             "institution_street": "Rua/Avenida",
             "institution_number": "Número",

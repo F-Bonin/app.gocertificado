@@ -6,7 +6,7 @@
 
 ---
 
-## 🗓️ Última atualização: 2026-03-04 (Fase 6.4 - Refatoração Arquitetural e Blindagem Frontend)
+## 🗓️ Última atualização: 2026-03-10 (Fase 6.5 - Refatoração de Endereços e Localizações)
 
 ---
 
@@ -132,3 +132,6 @@
 | 2026-03-09 | Ajustes de layout no PDF do certificado (coordenadas Y e tamanhos de fonte) para evitar sobreposição | Gemini CLI |
 | 2026-03-09 | Refinamento de coordenadas Y no PDF: deslocamento do bloco central (+40 pts) e da imagem da assinatura (-20 pts) para maior realismo | Gemini CLI |
 | 2026-03-09 | Sintonia fina no eixo Y do texto central do PDF (-15 pts) para criar respiro entre título e corpo | Gemini CLI |
+| 2026-03-10 | Ajuste de exibição do campo "Local" na página de verificação de certificado para incluir nome da instituição, cidade e estado. | Gemini CLI |
+| 2026-03-10 | Substituição dos campos de Cidade e Estado no formulário de Treinamento (Course) por campos de texto com preenchimento automático ViaCEP, incluindo o campo CEP. | Gemini CLI |
+| 2026-03-10 | Implementação de campos de endereço granulares (CEP, Rua, Número, Complemento, Bairro, Cidade, Estado) no formulário e modelo de Inscrição (Registration), com preenchimento automático ViaCEP. | Gemini CLI |
