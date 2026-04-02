@@ -60,7 +60,7 @@
                                 <label class="form-check-label fw-bold h6 mb-0" for="id_model_default">Usar Modelo Padrão</label>
                             </div>
                             <p class="text-muted small mb-2">O sistema gerará um certificado profissional com layout neutro e elegante, incluindo bordas e elementos gráficos padrão.</p>
-                            <a href="#" class="btn btn-outline-secondary btn-sm disabled" id="btn_preview_default">
+                            <a href="{% url 'core:certificate_preview' %}?type=default" class="btn btn-outline-secondary btn-sm" id="btn_preview_default" target="_blank">
                                 <i class="bi bi-eye me-1"></i>Visualizar Exemplo Padrão
                             </a>
                         </div>
@@ -86,7 +86,7 @@
                                 </div>
                             </div>
 
-                            <a href="#" class="btn btn-outline-secondary btn-sm disabled" id="btn_preview_custom">
+                            <a href="{% url 'core:certificate_preview' %}?type=custom" class="btn btn-outline-secondary btn-sm" id="btn_preview_custom" target="_blank">
                                 <i class="bi bi-eye me-1"></i>Visualizar com seu Fundo
                             </a>
                         </div>
@@ -98,13 +98,6 @@
                         </button>
                     </div>
                 </form>
-            </div>
-        </div>
-        
-        <div class="mt-4 alert alert-info border-0 shadow-sm d-flex align-items-center">
-            <i class="bi bi-lightbulb fs-4 me-3"></i>
-            <div>
-                <strong>Dica:</strong> Se você optar pelo <strong>Modelo Personalizado</strong>, o sistema não imprimirá a logomarca da Sessão 1 nem as bordas do sistema, pois entende que sua arte já contém esses elementos.
             </div>
         </div>
     </div>

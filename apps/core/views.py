@@ -1,10 +1,14 @@
+import io
 import uuid
+from django.http import FileResponse
+from django.views import View
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from apps.certificates.services.pdf_generator import generate_preview_pdf
 from .models import Company, Instructor, Course
 from .forms import CompanyForm, InstructorForm, CourseForm, CertificateDesignForm
 
@@ -316,3 +320,10 @@ class CertificateDesignView(LoginRequiredMixin, UpdateView):
     def form_valid(self, form):
         messages.success(self.request, "Configurações de design do certificado atualizadas!")
         return super().form_valid(form)
+
+
+class CertificatePreviewView(LoginRequiredMixin, View):
+    def get(self, request):
+        model_type = request.GET.get('type', 'default')
+        pdf_bytes = generate_preview_pdf(request.user.profile.company, model_type)
+        return FileResponse(io.BytesIO(pdf_bytes), content_type='application/pdf', filename='preview.pdf')
