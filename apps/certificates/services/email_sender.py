@@ -36,7 +36,12 @@ def send_certificate_email(certificate) -> bool:
             }
         )
 
-        company_email = reg.instructor.company.email
+        # Extrai o e-mail da empresa vinculada ao curso da inscrição.
+        # Usa DEFAULT_FROM_EMAIL como fallback de segurança.
+        company_email = settings.DEFAULT_FROM_EMAIL
+        if reg.course and hasattr(reg.course, 'company') and reg.course.company and reg.course.company.email:
+            company_email = reg.course.company.email
+
         email = EmailMessage(
             subject=subject,
             body=body,

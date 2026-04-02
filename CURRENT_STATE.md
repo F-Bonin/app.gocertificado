@@ -6,7 +6,7 @@
 
 ---
 
-## 🗓️ Última atualização: 2026-03-10 (Fase 6.5 - Refatoração de Endereços e Localizações)
+## 🗓️ Última atualização: 2026-04-02 (Correção de Bug: NoneType no Email Service)
 
 ---
 
@@ -135,3 +135,6 @@
 | 2026-03-10 | Ajuste de exibição do campo "Local" na página de verificação de certificado para incluir nome da instituição, cidade e estado. | Gemini CLI |
 | 2026-03-10 | Substituição dos campos de Cidade e Estado no formulário de Treinamento (Course) por campos de texto com preenchimento automático ViaCEP, incluindo o campo CEP. | Gemini CLI |
 | 2026-03-10 | Implementação de campos de endereço granulares (CEP, Rua, Número, Complemento, Bairro, Cidade, Estado) no formulário e modelo de Inscrição (Registration), com preenchimento automático ViaCEP. | Gemini CLI |
+| 2026-04-02 | Correção de erro NoneType em `email_sender.py` (Safe extraction de `company_email` para o `reply_to`). | Gemini CLI |
+| 2026-04-02 | Alteração da origem do Reply-To para `Company.objects.first()` em `email_sender.py`. | Gemini CLI |
+| 2026-04-02 | Implementação de arquitetura Multi-Tenant para o Reply-To: extração dinâmica do e-mail via `Registration -> Course -> Company`. | Gemini CLI |
