@@ -42,16 +42,7 @@
                             {% if form.email.errors %}<div class="text-danger small">{{ form.email.errors }}</div>{% endif %}
                         </div>
 
-                        <div class="col-md-12 mb-3">
-                            <label class="form-label fw-bold small text-uppercase">{{ form.logo.label }}</label>
-                            {% if object.logo %}
-                            <div class="mb-2">
-                                <img src="{{ object.logo.url }}" alt="Logo Atual" class="img-thumbnail" style="max-height: 80px;">
-                            </div>
-                            {% endif %}
-                            {{ form.logo }}
-                            {% if form.logo.errors %}<div class="text-danger small">{{ form.logo.errors }}</div>{% endif %}
-                        </div>
+
                     </div>
 
                     <div class="mt-4 border-top pt-4">

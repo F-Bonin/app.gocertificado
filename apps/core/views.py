@@ -6,7 +6,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .models import Company, Instructor, Course
-from .forms import CompanyForm, InstructorForm, CourseForm
+from .forms import CompanyForm, InstructorForm, CourseForm, CertificateDesignForm
 
 
 class CompanyUpdateView(LoginRequiredMixin, UpdateView):
@@ -86,7 +86,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .models import Company, Instructor, Course
-from .forms import CompanyForm, InstructorForm, CourseForm
+from .forms import CompanyForm, InstructorForm, CourseForm, CertificateDesignForm
 
 
 class CompanyUpdateView(LoginRequiredMixin, UpdateView):
@@ -300,3 +300,19 @@ class CourseLinkGeneratorView(LoginRequiredMixin, TemplateView):
             active=True
         )
         return context
+
+
+class CertificateDesignView(LoginRequiredMixin, UpdateView):
+    model = Company
+    form_class = CertificateDesignForm
+    template_name = 'core/certificate_design.html'
+
+    def get_object(self):
+        return self.request.user.profile.company
+
+    def get_success_url(self):
+        return reverse_lazy('core:certificate_design')
+
+    def form_valid(self, form):
+        messages.success(self.request, "Configurações de design do certificado atualizadas!")
+        return super().form_valid(form)

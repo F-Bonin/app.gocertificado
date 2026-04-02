@@ -35,6 +35,28 @@ class Company(models.Model):
         "E-mail", 
         help_text="Atenção: Este e-mail receberá as respostas dos alunos."
     )
+    logo_position = models.CharField(
+        "Posição da Logo", 
+        max_length=20, 
+        choices=[
+            ('none', '1. Não adicionar Logo'), 
+            ('center', '2. Logo no centro e topo'), 
+            ('left', '3. Logo à esquerda e topo'), 
+            ('right', '4. Logo à direita e topo')
+        ], 
+        default='center'
+    )
+    certificate_model = models.CharField(
+        "Modelo de Certificado Ativo", 
+        max_length=20, 
+        choices=[
+            ('default', 'Modelo Padrão (Do sistema)'), 
+            ('custom', 'Modelo Personalizado')
+        ], 
+        blank=True, 
+        null=True
+    )
+    custom_template = models.ImageField("Modelo de Certificado Personalizado (A4 Paisagem)", upload_to='company/templates/', blank=True, null=True)
     active = models.BooleanField("Ativo", default=True)
     created_at = models.DateTimeField(auto_now_add=True)
 

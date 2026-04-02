@@ -12,12 +12,14 @@ from .views import (
     clone_course,
     generate_course_link,
     CourseLinkGeneratorView,
+    CertificateDesignView,
 )
 
 app_name = "core"
 
 urlpatterns = [
     path("", CompanyUpdateView.as_view(), name="company_edit"),
+    path("empresa/modelo-certificado/", CertificateDesignView.as_view(), name="certificate_design"),
     
     # Instrutores
     path("instrutores/", InstructorListView.as_view(), name="instructor_list"),

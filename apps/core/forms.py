@@ -5,12 +5,11 @@ from .models import Company, Instructor, Course
 class CompanyForm(forms.ModelForm):
     class Meta:
         model = Company
-        fields = ["name", "cnpj", "website", "logo", "email"]
+        fields = ["name", "cnpj", "website", "email"]
         widgets = {
             "name": forms.TextInput(attrs={"class": "form-control"}),
             "cnpj": forms.TextInput(attrs={"class": "form-control", "placeholder": "00.000.000/0000-00"}),
             "website": forms.URLInput(attrs={"class": "form-control", "placeholder": "https://..."}),
-            "logo": forms.FileInput(attrs={"class": "form-control"}),
             "email": forms.EmailInput(attrs={"class": "form-control", "placeholder": "contato@empresa.com"}),
         }
 
@@ -92,4 +91,25 @@ class CourseForm(forms.ModelForm):
             if end_date < start_date:
                 self.add_error("end_date", "A data de término não pode ser anterior à data de início.")
 
+        return cleaned_data
+
+
+class CertificateDesignForm(forms.ModelForm):
+    class Meta:
+        model = Company
+        fields = ['logo', 'logo_position', 'certificate_model', 'custom_template']
+        widgets = {
+            'logo_position': forms.Select(attrs={'class': 'form-select'}),
+            'certificate_model': forms.Select(attrs={'class': 'form-select'}),
+            'logo': forms.FileInput(attrs={'class': 'form-control'}),
+        }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        model_choice = cleaned_data.get('certificate_model')
+        custom_template = cleaned_data.get('custom_template')
+
+        if model_choice == 'custom' and not custom_template:
+            raise forms.ValidationError("Para usar o Modelo Personalizado, é obrigatório fazer o upload do arquivo do certificado.")
+            
         return cleaned_data

@@ -117,6 +117,9 @@
         <a href="{% url 'core:company_edit' %}" class="list-group-item list-group-item-action {% if request.resolver_match.view_name == 'core:company_edit' %}active{% endif %}">
           <i class="bi bi-building"></i> Minha Empresa
         </a>
+        <a href="{% url 'core:certificate_design' %}" class="list-group-item list-group-item-action {% if request.resolver_match.view_name == 'core:certificate_design' %}active{% endif %}">
+          <i class="bi bi-palette"></i> Modelo de Certificado
+        </a>
         <a href="{% url 'core:instructor_list' %}" class="list-group-item list-group-item-action {% if 'instructor' in request.resolver_match.view_name %}active{% endif %}">
           <i class="bi bi-people"></i> Assinaturas Certificado
         </a>
