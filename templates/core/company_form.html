@@ -22,7 +22,10 @@
                         </div>
 
                         <div class="col-md-6 mb-3">
-                            <label class="form-label fw-bold small text-uppercase">{{ form.cnpj.label }}</label>
+                            <label class="form-label fw-bold small text-uppercase">
+                                {{ form.cnpj.label }}
+                                <i class="bi bi-question-circle-fill text-muted ms-1" data-bs-toggle="tooltip" title="{{ form.cnpj.help_text }}"></i>
+                            </label>
                             {{ form.cnpj }}
                             {% if form.cnpj.errors %}<div class="text-danger small">{{ form.cnpj.errors }}</div>{% endif %}
                         </div>
@@ -31,6 +34,12 @@
                             <label class="form-label fw-bold small text-uppercase">{{ form.website.label }}</label>
                             {{ form.website }}
                             {% if form.website.errors %}<div class="text-danger small">{{ form.website.errors }}</div>{% endif %}
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold small text-uppercase">{{ form.email.label }}</label>
+                            {{ form.email }}
+                            {% if form.email.errors %}<div class="text-danger small">{{ form.email.errors }}</div>{% endif %}
                         </div>
 
                         <div class="col-md-12 mb-3">
@@ -56,14 +65,25 @@
     </div>
     
     <div class="col-md-4">
-        <div class="card shadow-sm border-0 bg-light">
-            <div class="card-body p-4 text-muted small">
-                <h6 class="fw-bold text-dark mb-3"><i class="bi bi-info-circle me-1"></i>Informações SaaS</h6>
-                <p>Estes dados serão utilizados no cabeçalho e rodapé dos certificados emitidos pela sua empresa.</p>
-                <p>Certifique-se de preencher o CNPJ corretamente para fins de transparência legal.</p>
-                <p class="mb-0"><strong>Multitenancy:</strong> Somente usuários vinculados à sua empresa podem ver e editar estes dados.</p>
-            </div>
+        <div class="alert alert-warning border-warning shadow-sm p-4">
+            <h4 class="alert-heading" style="font-weight: bold;">INFORMAÇÕES IMPORTANTES!</h4>
+            <hr>
+            <p><strong>E-mail da Empresa:</strong> Este e-mail será usado como remetente (enviando os certificados), e caso o destinatário responda, você receberá a mensagem neste endereço também.</p>
+            <p>Todos os campos preenchidos nessa página serão registrados no certificado do seu cliente/aluno.</p>
+            <p>Certifique-se de preencher o CNPJ ou CPF corretamente para fins de transparência legal.</p>
+            <p class="mb-0"><strong>Usuários:</strong> Somente usuários vinculados à sua empresa podem ver e editar estes dados.</p>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        });
+    });
+</script>
 {% endblock %}

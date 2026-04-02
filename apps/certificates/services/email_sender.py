@@ -36,11 +36,13 @@ def send_certificate_email(certificate) -> bool:
             }
         )
 
+        company_email = reg.instructor.company.email
         email = EmailMessage(
             subject=subject,
             body=body,
             from_email=settings.DEFAULT_FROM_EMAIL,
             to=[reg.email],
+            reply_to=[company_email],
         )
         email.content_subtype = "html"
 

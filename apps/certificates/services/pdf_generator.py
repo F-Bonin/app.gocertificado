@@ -195,12 +195,19 @@ def generate_certificate_pdf(certificate) -> bytes:
             role_text = sig.role or sig.credentials
             c.drawCentredString(current_x + (sig_width / 2), footer_y - 1.0 * cm, role_text)
 
-    # ── Rodapé Integrado (QR Code + Dados da Empresa) ──────────────
+    # Rodapé Integrado (QR Code + Dados da Empresa) ──────────────
     qr_size = 2.5 * cm  # Reduzido de 3.0cm (~15%)
     qr_y = 1.1 * cm     # Posição Y comum para o bloco do rodapé
-    
+
     # Prepara os textos
-    company_text = f"{company.name} - CNPJ: {company.cnpj or 'N/A'}" if company else ""
+    if company:
+        # Lógica para definir se é CNPJ ou CPF
+        raw_cnpj = "".join(filter(str.isdigit, company.cnpj or ""))
+        doc_label = "CPF" if len(raw_cnpj) <= 11 else "CNPJ"
+        company_text = f"{company.name} - {doc_label}: {company.cnpj or 'N/A'}"
+    else:
+        company_text = ""
+
     code_text = f"Código: {certificate.numeric_code_formatted}"
     url_text = certificate.verification_url
     

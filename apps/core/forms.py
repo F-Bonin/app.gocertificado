@@ -5,12 +5,13 @@ from .models import Company, Instructor, Course
 class CompanyForm(forms.ModelForm):
     class Meta:
         model = Company
-        fields = ["name", "cnpj", "website", "logo"]
+        fields = ["name", "cnpj", "website", "logo", "email"]
         widgets = {
             "name": forms.TextInput(attrs={"class": "form-control"}),
             "cnpj": forms.TextInput(attrs={"class": "form-control", "placeholder": "00.000.000/0000-00"}),
             "website": forms.URLInput(attrs={"class": "form-control", "placeholder": "https://..."}),
             "logo": forms.FileInput(attrs={"class": "form-control"}),
+            "email": forms.EmailInput(attrs={"class": "form-control", "placeholder": "contato@empresa.com"}),
         }
 
 

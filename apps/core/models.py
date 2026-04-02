@@ -8,10 +8,33 @@ from django.db import models
 
 class Company(models.Model):
     """Empresa ou organização que emite os certificados."""
-    name = models.CharField("Nome da empresa", max_length=200)
-    logo = models.ImageField(upload_to='company_logos/', blank=True, null=True)
-    cnpj = models.CharField(max_length=20, blank=True, null=True)
-    website = models.URLField("Site", blank=True)
+    name = models.CharField(
+        "Nome da empresa", 
+        max_length=200,
+        help_text="Atenção: A informação deste campo sairá impressa no certificado do aluno."
+    )
+    logo = models.ImageField(
+        upload_to='company_logos/', 
+        blank=True, 
+        null=True,
+        help_text="Atenção: A informação deste campo sairá impressa no certificado do aluno."
+    )
+    cnpj = models.CharField(
+        "CNPJ ou CPF",
+        max_length=20, 
+        blank=True, 
+        null=True,
+        help_text="Atenção! Seu CNPJ sairá no certificado do seu aluno. Se for emitir como pessoa física, preencha com CPF."
+    )
+    website = models.URLField(
+        "Site", 
+        blank=True,
+        help_text="Atenção: A informação deste campo sairá impressa no certificado do aluno."
+    )
+    email = models.EmailField(
+        "E-mail", 
+        help_text="Atenção: Este e-mail receberá as respostas dos alunos."
+    )
     active = models.BooleanField("Ativo", default=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
