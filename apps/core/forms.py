@@ -97,11 +97,18 @@ class CourseForm(forms.ModelForm):
 class CertificateDesignForm(forms.ModelForm):
     class Meta:
         model = Company
-        fields = ['logo', 'logo_position', 'certificate_model', 'custom_template']
+        fields = ['logo', 'logo_position', 'certificate_model', 'custom_template', 'custom_title', 'custom_text_1', 'custom_text_2', 'custom_text_3', 'custom_text_4', 'custom_text_5', 'custom_text_6']
         widgets = {
             'logo_position': forms.Select(attrs={'class': 'form-select'}),
             'certificate_model': forms.Select(attrs={'class': 'form-select'}),
             'logo': forms.FileInput(attrs={'class': 'form-control'}),
+            'custom_title': forms.TextInput(attrs={'class': 'form-control fw-bold text-center'}),
+            'custom_text_1': forms.TextInput(attrs={'class': 'form-control'}),
+            'custom_text_2': forms.TextInput(attrs={'class': 'form-control'}),
+            'custom_text_3': forms.TextInput(attrs={'class': 'form-control'}),
+            'custom_text_4': forms.TextInput(attrs={'class': 'form-control'}),
+            'custom_text_5': forms.TextInput(attrs={'class': 'form-control'}),
+            'custom_text_6': forms.TextInput(attrs={'class': 'form-control'}),
         }
 
     def clean(self):

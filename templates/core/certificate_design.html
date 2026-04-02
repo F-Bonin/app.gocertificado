@@ -86,9 +86,59 @@
                                 </div>
                             </div>
 
-                            <a href="{% url 'core:certificate_preview' %}?type=custom" class="btn btn-outline-secondary btn-sm" id="btn_preview_custom" target="_blank">
-                                <i class="bi bi-eye me-1"></i>Visualizar com seu Fundo
-                            </a>
+                            <div id="custom_texts_container" class="mt-4 p-4 border rounded bg-white shadow-sm" style="{% if form.certificate_model.value != 'custom' %}display: none;{% endif %}">
+                                <h6 class="fw-bold text-primary mb-2"><i class="bi bi-cursor-text"></i> Construtor de Texto do Certificado</h6>
+                                <p class="text-muted small mb-4">Personalize a redação do seu certificado. Os blocos em <span class="badge bg-secondary">CINZA</span> são intocáveis e representam onde o sistema carimbará os dados automáticos do aluno.</p>
+                         
+                                <div class="mb-4">
+                                    <label class="form-label fw-bold">{{ form.custom_title.label }}</label>
+                                    {{ form.custom_title }}
+                                </div>
+                         
+                                <div class="p-3 bg-light border rounded">
+                                    <label class="form-label fw-bold mb-3">Corpo do Texto:</label>
+                                    
+                                    <div class="mb-2">
+                                        {{ form.custom_text_1 }}
+                                    </div>
+                                    <div class="mb-2 text-center">
+                                        <span class="badge bg-secondary w-100 py-2 fs-6 shadow-sm">(Nome do Aluno preenchido pelo sistema)</span>
+                                    </div>
+                                    
+                                    <div class="mb-3 d-flex align-items-center gap-2">
+                                        <div class="flex-grow-1">{{ form.custom_text_2 }}</div>
+                                        <span class="badge bg-secondary py-2 fs-6 shadow-sm whitespace-nowrap">(CPF do Aluno)</span>
+                                        <div class="flex-grow-1">{{ form.custom_text_3 }}</div>
+                                    </div>
+
+                                    <div class="mb-2 text-center">
+                                        <span class="badge bg-secondary w-100 py-2 fs-6 shadow-sm">(Nome do Treinamento preenchido pelo sistema)</span>
+                                    </div>
+                                    
+                                    <div class="mb-3 d-flex align-items-center gap-2">
+                                        <div class="flex-grow-1">{{ form.custom_text_4 }}</div>
+                                        <span class="badge bg-secondary py-2 fs-6 shadow-sm whitespace-nowrap">(Data de realização do sistema)</span>
+                                    </div>
+                                    
+                                    <div class="mb-2">
+                                        {{ form.custom_text_5 }}
+                                        <small class="text-muted">Acomoda textos longos (ex: leis e decretos). O sistema fará a quebra de linha automaticamente.</small>
+                                    </div>
+                                    
+                                    <div class="mb-2 mt-4">
+                                        {{ form.custom_text_6 }}
+                                    </div>
+                                    <div class="mb-2 text-center">
+                                        <span class="badge bg-secondary w-100 py-2 fs-6 shadow-sm">(Carga horária preenchida pelo sistema)</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mt-4">
+                                <a href="{% url 'core:certificate_preview' %}?type=custom" class="btn btn-outline-secondary btn-sm" id="btn_preview_custom" target="_blank">
+                                    <i class="bi bi-eye me-1"></i>Visualizar com seu Fundo
+                                </a>
+                            </div>
                         </div>
                     </div>
 
@@ -126,7 +176,24 @@ document.addEventListener("DOMContentLoaded", function() {
     }
     togglePositionField(); // Força a verificação ao carregar a página
 
-    // 2. Lógica de Trava do Submit (Modelos)
+    // 2. Lógica de visibilidade do Construtor de Textos
+    const radioDefault = document.getElementById('id_model_default');
+    const radioCustom = document.getElementById('id_model_custom');
+    const textsContainer = document.getElementById('custom_texts_container');
+
+    function toggleTextsContainer() {
+        if (radioCustom && radioCustom.checked) {
+            textsContainer.style.display = 'block';
+        } else {
+            textsContainer.style.display = 'none';
+        }
+    }
+
+    if (radioDefault) radioDefault.addEventListener('change', toggleTextsContainer);
+    if (radioCustom) radioCustom.addEventListener('change', toggleTextsContainer);
+    toggleTextsContainer(); // Executa no carregamento inicial
+
+    // 3. Lógica de Trava do Submit (Modelos)
     const form = document.getElementById('designForm');
     if (form) {
         form.onsubmit = function(e) {

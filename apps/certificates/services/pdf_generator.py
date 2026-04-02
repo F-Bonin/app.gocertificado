@@ -4,6 +4,7 @@ Gera o certificado em PDF usando ReportLab com layout profissional e identidade 
 """
 import io
 import qrcode
+import textwrap
 from PIL import Image
 from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib.units import cm
@@ -98,8 +99,8 @@ def generate_certificate_pdf(certificate) -> bytes:
                 pass
     
     if logo_reader:
-        logo_w = 4 * cm
-        logo_h = 2 * cm # Altura proporcional máxima estimada
+        logo_w = 6.5 * cm
+        logo_h = 3.5 * cm # Altura proporcional máxima estimada
         pos = empresa.logo_position
         
         if pos == 'left':
@@ -109,7 +110,7 @@ def generate_certificate_pdf(certificate) -> bytes:
         else: # center é o padrão
             logo_x = (w - logo_w) / 2
             
-        logo_y = h - 3.2 * cm
+        logo_y = h - 4.0 * cm
         
         c.drawImage(
             logo_reader,
@@ -118,68 +119,109 @@ def generate_certificate_pdf(certificate) -> bytes:
             preserveAspectRatio=True, mask="auto"
         )
 
-    # ── Título Centralizado ────────────────────────────────────────
-    c.setFillColor(black)
-    c.setFont("Helvetica-Bold", 32)
-    c.drawCentredString(w / 2, h - 7.5 * cm, "CERTIFICADO DE CONCLUSÃO")
-
-    # ── Lógica de Datas ───────────────────────────────────────────
-    if course and course.start_date:
-        start_d = course.start_date
-        end_d = course.end_date
-        if end_d and end_d != start_d:
-            date_string = f"de {start_d.strftime('%d/%m/%Y')} a {end_d.strftime('%d/%m/%Y')}"
-        else:
-            date_string = f"{start_d.strftime('%d/%m/%Y')}"
+    # ── TÍTULO ──────────────────────────────────────────────────────
+    if empresa.certificate_model == 'custom':
+        if empresa.custom_title:
+            c.setFillColor(COLOR_PRIMARY)
+            c.setFont("Helvetica-Bold", 24)
+            c.drawCentredString(w / 2, h - 5.2 * cm, empresa.custom_title)
     else:
-        # Fallback para dados da inscrição (legado ou manual)
-        date_string = reg.course_date.strftime('%d/%m/%Y') if reg.course_date else ""
+        c.setFillColor(white)
+        c.setFont("Helvetica-Bold", 22)
+        c.drawCentredString(w / 2, h - 2.2 * cm, "CERTIFICADO DE CONCLUSÃO")
+        c.setFont("Helvetica", 10)
+        c.setFillColor(COLOR_SECONDARY)
+        c.drawCentredString(w / 2, h - 2.9 * cm, (settings.COMPANY_NAME or "").upper())
 
-    # ── Corpo do Texto (Formatado em Linhas) ──────────────────────
-    full_name = reg.full_name.upper()
-    course_name_text = (course.name.upper() if course and course.name else reg.course_name.upper()) if (course and course.name or reg.course_name) else ""
-    institution_name = (course.institution_name if course and course.institution_name else reg.institution_name) or ""
-    city = (course.city.upper() if course and course.city else (reg.city.upper() if reg.city else ""))
-    state = (course.state.upper() if course and course.state else (reg.state.upper() if reg.state else ""))
-    workload = course.hours if course else reg.course_workload
-    workload_str = f"{workload}h" if workload is not None else ""
-    
-    # Linha 1: Certificamos que
-    c.setFont("Helvetica", 14)
-    c.setFillColor(COLOR_TEXT)
-    current_y = h - 8.23 * cm
-    c.drawCentredString(w / 2, current_y, "Certificamos que")
-    
-    # Linha 2: Nome do Participante (Destaque)
-    c.setFont("Helvetica-Bold", 24)
-    c.setFillColor(primary_color)
-    current_y -= 1.0 * cm
-    c.drawCentredString(w / 2, current_y, full_name)
-    
-    # Linha 3: portador do CPF...
-    c.setFont("Helvetica", 14)
-    c.setFillColor(COLOR_TEXT)
-    current_y -= 0.9 * cm
-    c.drawCentredString(w / 2, current_y, f"portador do CPF {reg.cpf} concluiu com êxito o curso/treinamento")
-    
-    # Linha 4: Nome do Curso (Destaque)
-    c.setFont("Helvetica-Bold", 20)
-    c.setFillColor(primary_color)
-    current_y -= 1.1 * cm
-    c.drawCentredString(w / 2, current_y, course_name_text)
-    
-    # Linha 5: Local...
-    c.setFont("Helvetica", 12)
-    c.setFillColor(COLOR_TEXT)
-    current_y -= 0.9 * cm
-    local_text = f"Local: {institution_name} realizado em {date_string} - {city}/{state}."
-    c.drawCentredString(w / 2, current_y, local_text)
-    
-    # Linha 6: Carga Horária...
-    c.setFont("Helvetica", 14)
-    c.setFillColor(black)
-    current_y -= 0.7 * cm
-    c.drawCentredString(w / 2, current_y, f"Carga Horária: {workload_str}.")
+    # ── CORPO ──────────────────────────────────────────────────────
+    if empresa.certificate_model == 'custom':
+        y = h - 6.5 * cm
+        c.setFillColor(COLOR_TEXT)
+        c.setFont("Helvetica", 14)
+        if empresa.custom_text_1:
+            c.drawCentredString(w / 2, y, empresa.custom_text_1)
+
+        y -= 0.9 * cm
+        c.setFont("Helvetica-Bold", 16)
+        c.setFillColor(COLOR_PRIMARY)
+        c.drawCentredString(w / 2, y, (reg.full_name or "").upper())
+
+        y -= 0.9 * cm
+        c.setFont("Helvetica", 14)
+        c.setFillColor(COLOR_TEXT)
+        t2 = empresa.custom_text_2 or ""
+        t3 = empresa.custom_text_3 or ""
+        linha_2 = f"{t2} {reg.cpf} {t3}".strip()
+        if linha_2:
+            c.drawCentredString(w / 2, y, linha_2)
+
+        y -= 0.9 * cm
+        c.setFont("Helvetica-Bold", 16)
+        c.setFillColor(COLOR_PRIMARY)
+        c.drawCentredString(w / 2, y, (reg.course_name or "").upper())
+
+        y -= 0.9 * cm
+        c.setFont("Helvetica", 14)
+        c.setFillColor(COLOR_TEXT)
+        data_str = reg.course_date.strftime('%d/%m/%Y') if reg.course_date else "N/A"
+        t4 = empresa.custom_text_4 or ""
+        linha_4 = f"{t4} {data_str}".strip()
+        if linha_4:
+            c.drawCentredString(w / 2, y, linha_4)
+
+        y -= 0.9 * cm
+        c.setFont("Helvetica", 14)
+        t5 = empresa.custom_text_5 or ""
+        if t5:
+            linhas_texto_5 = textwrap.wrap(t5, width=90)
+            for linha in linhas_texto_5:
+                c.drawCentredString(w / 2, y, linha)
+                y -= 0.6 * cm
+
+        y -= 0.2 * cm
+        c.setFont("Helvetica", 14)
+        t6 = empresa.custom_text_6 or ""
+        linha_6 = f"{t6} {reg.course_workload}h".strip()
+        if linha_6:
+            c.drawCentredString(w / 2, y, linha_6)
+
+        y -= 0.9 * cm
+    else:
+        y = h - 5.5 * cm
+        c.setFillColor(COLOR_TEXT)
+        c.setFont("Helvetica", 13)
+        c.drawCentredString(w / 2, y, "Certificamos que")
+        y -= 1.4 * cm
+        c.setFont("Helvetica-Bold", 26)
+        c.setFillColor(COLOR_PRIMARY)
+        c.drawCentredString(w / 2, y, (reg.full_name or "").upper())
+        c.setStrokeColor(COLOR_SECONDARY)
+        c.setLineWidth(1.5)
+        name_w = c.stringWidth((reg.full_name or "").upper(), "Helvetica-Bold", 26)
+        line_x = (w - name_w) / 2
+        c.line(line_x, y - 4, line_x + name_w, y - 4)
+        y -= 1.0 * cm
+        c.setFont("Helvetica", 13)
+        c.setFillColor(COLOR_TEXT)
+        c.drawCentredString(w / 2, y, "concluiu com êxito o treinamento")
+        y -= 0.9 * cm
+        c.setFont("Helvetica-Bold", 16)
+        c.setFillColor(COLOR_PRIMARY)
+        course_line = f"{reg.course_name} — Carga Horária: {reg.course_workload}h"
+        c.drawCentredString(w / 2, y, course_line)
+        y -= 0.85 * cm
+        c.setFont("Helvetica", 12)
+        c.setFillColor(COLOR_TEXT)
+        location_text = f"realizado em {reg.course_city} / {reg.course_state}"
+        if reg.course_date:
+            location_text += f" em {reg.course_date.strftime('%d/%m/%Y')}"
+        c.drawCentredString(w / 2, y, location_text)
+        y -= 0.8 * cm
+        c.setFont("Helvetica", 11)
+        c.drawCentredString(w / 2, y, f"CPF do participante: {reg.cpf}")
+        y -= 0.9 * cm
+
+    # ── Linha divisória ────────────────────────────────────────────
 
     # ── Assinaturas (Rodapé Dinâmico) ─────────────────────────────
     signatures = []
@@ -317,39 +359,114 @@ def generate_preview_pdf(company, model_type) -> bytes:
                 pass
     
     if logo_reader:
-        logo_w = 4 * cm
-        logo_h = 2 * cm
+        logo_w = 6.5 * cm
+        logo_h = 3.5 * cm
         pos = company.logo_position
         if pos == 'left': logo_x = 1.8 * cm
         elif pos == 'right': logo_x = w - logo_w - 1.8 * cm
         else: logo_x = (w - logo_w) / 2
-        logo_y = h - 3.2 * cm
+        logo_y = h - 4.0 * cm
         c.drawImage(logo_reader, logo_x, logo_y, width=logo_w, height=logo_h, preserveAspectRatio=True, mask="auto")
 
-    # Título
-    c.setFillColor(black)
-    c.setFont("Helvetica-Bold", 32)
-    c.drawCentredString(w / 2, h - 7.5 * cm, "CERTIFICADO DE CONCLUSÃO")
+    # ── TÍTULO ──────────────────────────────────────────────────────
+    if model_type == 'custom':
+        if company.custom_title:
+            c.setFillColor(COLOR_PRIMARY)
+            c.setFont("Helvetica-Bold", 24)
+            c.drawCentredString(w / 2, h - 5.2 * cm, company.custom_title)
+    else:
+        c.setFillColor(white)
+        c.setFont("Helvetica-Bold", 22)
+        c.drawCentredString(w / 2, h - 2.2 * cm, "CERTIFICADO DE CONCLUSÃO")
+        c.setFont("Helvetica", 10)
+        c.setFillColor(COLOR_SECONDARY)
+        c.drawCentredString(w / 2, h - 2.9 * cm, (settings.COMPANY_NAME or "").upper())
 
-    # Dados Fakes
-    full_name = "NOME DO PARTICIPANTE DE TESTE"
-    course_name_text = "TREINAMENTO DE DEMONSTRAÇÃO"
-    date_string = "01/01/2026"
-    local_text = f"Local: INSTITUIÇÃO DE TESTE realizado em {date_string} - SUA CIDADE / UF."
-    workload_str = "10h"
-    
-    current_y = h - 8.23 * cm
-    c.setFont("Helvetica", 14); c.setFillColor(COLOR_TEXT); c.drawCentredString(w / 2, current_y, "Certificamos que")
-    current_y -= 1.0 * cm
-    c.setFont("Helvetica-Bold", 24); c.setFillColor(primary_color); c.drawCentredString(w / 2, current_y, full_name)
-    current_y -= 0.9 * cm
-    c.setFont("Helvetica", 14); c.setFillColor(COLOR_TEXT); c.drawCentredString(w / 2, current_y, f"portador do CPF 123.456.789-00 concluiu com êxito o curso/treinamento")
-    current_y -= 1.1 * cm
-    c.setFont("Helvetica-Bold", 20); c.setFillColor(primary_color); c.drawCentredString(w / 2, current_y, course_name_text)
-    current_y -= 0.9 * cm
-    c.setFont("Helvetica", 12); c.setFillColor(COLOR_TEXT); c.drawCentredString(w / 2, current_y, local_text)
-    current_y -= 0.7 * cm
-    c.setFont("Helvetica", 14); c.setFillColor(black); c.drawCentredString(w / 2, current_y, f"Carga Horária: {workload_str}.")
+    # ── CORPO ──────────────────────────────────────────────────────
+    if model_type == 'custom':
+        y = h - 6.5 * cm
+        c.setFillColor(COLOR_TEXT)
+        c.setFont("Helvetica", 14)
+        if company.custom_text_1:
+            c.drawCentredString(w / 2, y, company.custom_text_1)
+
+        y -= 0.9 * cm
+        c.setFont("Helvetica-Bold", 16)
+        c.setFillColor(COLOR_PRIMARY)
+        c.drawCentredString(w / 2, y, "NOME DO PARTICIPANTE DE TESTE")
+
+        y -= 0.9 * cm
+        c.setFont("Helvetica", 14)
+        c.setFillColor(COLOR_TEXT)
+        t2 = company.custom_text_2 or ""
+        t3 = company.custom_text_3 or ""
+        linha_2 = f"{t2} 123.456.789-00 {t3}".strip()
+        if linha_2:
+            c.drawCentredString(w / 2, y, linha_2)
+
+        y -= 0.9 * cm
+        c.setFont("Helvetica-Bold", 16)
+        c.setFillColor(COLOR_PRIMARY)
+        c.drawCentredString(w / 2, y, "TREINAMENTO DE DEMONSTRAÇÃO")
+
+        y -= 0.9 * cm
+        c.setFont("Helvetica", 14)
+        c.setFillColor(COLOR_TEXT)
+        t4 = company.custom_text_4 or ""
+        linha_4 = f"{t4} 10/10/2026".strip()
+        if linha_4:
+            c.drawCentredString(w / 2, y, linha_4)
+
+        y -= 0.9 * cm
+        c.setFont("Helvetica", 14)
+        t5 = company.custom_text_5 or ""
+        if t5:
+            linhas_texto_5 = textwrap.wrap(t5, width=90)
+            for linha in linhas_texto_5:
+                c.drawCentredString(w / 2, y, linha)
+                y -= 0.6 * cm
+
+        y -= 0.2 * cm
+        c.setFont("Helvetica", 14)
+        t6 = company.custom_text_6 or ""
+        linha_6 = f"{t6} 10h".strip()
+        if linha_6:
+            c.drawCentredString(w / 2, y, linha_6)
+
+        y -= 0.9 * cm
+    else:
+        y = h - 5.5 * cm
+        c.setFillColor(COLOR_TEXT)
+        c.setFont("Helvetica", 13)
+        c.drawCentredString(w / 2, y, "Certificamos que")
+        y -= 1.4 * cm
+        c.setFont("Helvetica-Bold", 26)
+        c.setFillColor(COLOR_PRIMARY)
+        c.drawCentredString(w / 2, y, "NOME DO PARTICIPANTE DE TESTE")
+        c.setStrokeColor(COLOR_SECONDARY)
+        c.setLineWidth(1.5)
+        name_w = c.stringWidth("NOME DO PARTICIPANTE DE TESTE", "Helvetica-Bold", 26)
+        line_x = (w - name_w) / 2
+        c.line(line_x, y - 4, line_x + name_w, y - 4)
+        y -= 1.0 * cm
+        c.setFont("Helvetica", 13)
+        c.setFillColor(COLOR_TEXT)
+        c.drawCentredString(w / 2, y, "concluiu com êxito o treinamento")
+        y -= 0.9 * cm
+        c.setFont("Helvetica-Bold", 16)
+        c.setFillColor(COLOR_PRIMARY)
+        course_line = "TREINAMENTO DE DEMONSTRAÇÃO — Carga Horária: 10h"
+        c.drawCentredString(w / 2, y, course_line)
+        y -= 0.85 * cm
+        c.setFont("Helvetica", 12)
+        c.setFillColor(COLOR_TEXT)
+        c.drawCentredString(w / 2, y, "realizado em SUA CIDADE / UF em 10/10/2026")
+        y -= 0.8 * cm
+        c.setFont("Helvetica", 11)
+        c.drawCentredString(w / 2, y, "CPF do participante: 123.456.789-00")
+        y -= 0.9 * cm
+
+    # ── Linha divisória ────────────────────────────────────────────
 
     # Assinatura Fake
     footer_y = 5 * cm
@@ -377,4 +494,3 @@ def generate_preview_pdf(company, model_type) -> bytes:
 
     c.save()
     return buf.getvalue()
-

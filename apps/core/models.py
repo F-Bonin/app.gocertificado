@@ -57,6 +57,13 @@ class Company(models.Model):
         null=True
     )
     custom_template = models.ImageField("Modelo de Certificado Personalizado (A4 Paisagem)", upload_to='company/templates/', blank=True, null=True)
+    custom_title = models.CharField("Título do Certificado", max_length=80, default="Certificado de Conclusão", blank=True, null=True)
+    custom_text_1 = models.CharField("Texto 1", max_length=80, default="Certificamos que", blank=True, null=True)
+    custom_text_2 = models.CharField("Texto 2", max_length=80, default="portador do CPF", blank=True, null=True)
+    custom_text_3 = models.CharField("Texto 3", max_length=80, default="concluiu com êxito o curso/treinamento", blank=True, null=True)
+    custom_text_4 = models.CharField("Texto 4", max_length=80, default="realizado na empresa fictícia na data", blank=True, null=True)
+    custom_text_5 = models.CharField("Texto 5", max_length=400, default="na Cidade de São Paulo. Estado de SP.", blank=True, null=True)
+    custom_text_6 = models.CharField("Texto 6", max_length=80, default="Com carga horária de:", blank=True, null=True)
     active = models.BooleanField("Ativo", default=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
