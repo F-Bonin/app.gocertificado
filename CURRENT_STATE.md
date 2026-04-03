@@ -138,6 +138,11 @@
 | 2026-04-02 | Correção de erro NoneType em `email_sender.py` (Safe extraction de `company_email` para o `reply_to`). | Gemini CLI |
 | 2026-04-02 | Alteração da origem do Reply-To para `Company.objects.first()` em `email_sender.py`. | Gemini CLI |
 | 2026-04-02 | Implementação de arquitetura Multi-Tenant para o Reply-To: extração dinâmica do e-mail via `Registration -> Course -> Company`. | Gemini CLI |
+| 2026-04-03 | Definição de coordenadas Y absolutas (380 a 190 pts) no Modelo Padrão para garantir espaçamento fixo e evitar sobreposição com a logo. | Gemini CLI |
+| 2026-04-03 | Ajuste de layout no Modelo Padrão: Deslocamento vertical de aprox. 100 pontos no título e corpo de texto para eliminar sobreposição com a logo. | Gemini CLI |
+| 2026-04-03 | Refatoração do corpo de texto do Modelo Padrão para 5 linhas contínuas, integrando o CPF ao parágrafo central e removendo a linha isolada de CPF. | Gemini CLI |
+| 2026-04-03 | Refinamento da hierarquia visual do Modelo Padrão: Título ampliado para 32pt e deslocamento vertical de 40pt para otimizar o respiro entre elementos. | Gemini CLI |
+| 2026-04-03 | Ajuste fino no layout do Modelo Padrão: Removido fallback 'E-CERTIFICADOS', reposicionado Logo (-45pts) e Título (-65pts) para evitar sobreposição. | Gemini CLI |
 | 2026-04-03 | Adicionada obrigatoriedade aos campos 'name', 'start_date' e 'hours' no model Course para garantir integridade do certificado. | Gemini CLI |
 | 2026-04-03 | Correção da injeção de variáveis no PDF: tratamento seguro para Carga Horária, Data e Nome do Treinamento para evitar 'Noneh' ou 'N/A'. | Gemini CLI |
 | 2026-04-03 | Otimização da QuerySet em 'issue_certificate': Adicionado 'select_related("course", "instructor__company")' para garantir carregamento seguro dos dados de treinamento e empresa. | Gemini CLI |

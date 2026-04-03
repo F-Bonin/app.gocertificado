@@ -110,7 +110,8 @@ def generate_certificate_pdf(certificate) -> bytes:
         else: # center é o padrão
             logo_x = (w - logo_w) / 2
             
-        logo_y = h - 4.0 * cm
+        # Descendo a logo em aprox. 45 pontos (1.6cm) para evitar o topo extremo
+        logo_y = h - 5.6 * cm
         
         c.drawImage(
             logo_reader,
@@ -126,12 +127,10 @@ def generate_certificate_pdf(certificate) -> bytes:
             c.setFont("Helvetica-Bold", 24)
             c.drawCentredString(w / 2, h - 5.2 * cm, empresa.custom_title)
     else:
-        c.setFillColor(white)
-        c.setFont("Helvetica-Bold", 22)
-        c.drawCentredString(w / 2, h - 2.2 * cm, "CERTIFICADO DE CONCLUSÃO")
-        c.setFont("Helvetica", 10)
-        c.setFillColor(COLOR_SECONDARY)
-        c.drawCentredString(w / 2, h - 2.9 * cm, (settings.COMPANY_NAME or "").upper())
+        # Estabelecendo coordenadas Y absolutas para o Modelo Padrão
+        c.setFillColor(COLOR_PRIMARY)
+        c.setFont("Helvetica-Bold", 32)
+        c.drawCentredString(w / 2, 380, "CERTIFICADO DE CONCLUSÃO")
 
     # ── CORPO ──────────────────────────────────────────────────────
     if empresa.certificate_model == 'custom':
@@ -194,49 +193,46 @@ def generate_certificate_pdf(certificate) -> bytes:
 
         y -= 0.9 * cm
     else:
-        y = h - 5.5 * cm
+        # Bloco de texto com coordenadas Y absolutas
         c.setFillColor(COLOR_TEXT)
         c.setFont("Helvetica", 13)
-        c.drawCentredString(w / 2, y, "Certificamos que")
-        y -= 1.4 * cm
+        c.drawCentredString(w / 2, 330, "Certificamos que")
+        
         c.setFont("Helvetica-Bold", 26)
         c.setFillColor(COLOR_PRIMARY)
-        c.drawCentredString(w / 2, y, (reg.full_name or "").upper())
+        c.drawCentredString(w / 2, 290, (reg.full_name or "").upper())
+        
+        # Linha decorativa abaixo do nome (Y=290)
         c.setStrokeColor(COLOR_SECONDARY)
         c.setLineWidth(1.5)
         name_w = c.stringWidth((reg.full_name or "").upper(), "Helvetica-Bold", 26)
         line_x = (w - name_w) / 2
-        c.line(line_x, y - 4, line_x + name_w, y - 4)
-        y -= 1.0 * cm
+        c.line(line_x, 290 - 4, line_x + name_w, 290 - 4)
+        
         c.setFont("Helvetica", 13)
         c.setFillColor(COLOR_TEXT)
-        c.drawCentredString(w / 2, y, "concluiu com êxito o treinamento")
-        y -= 0.9 * cm
+        # Linha do CPF (Y=250)
+        linha_3 = f"portador do CPF: {reg.cpf}, concluiu com êxito o treinamento/Curso/Imersão"
+        c.drawCentredString(w / 2, 250, linha_3)
+        
         c.setFont("Helvetica-Bold", 16)
         c.setFillColor(COLOR_PRIMARY)
-        
-        # Prioriza dados do objeto Course
-        course_name_display = reg.course.name if (reg.course and reg.course.name) else (reg.course_name or "Treinamento não informado")
+        # Linha do Treinamento/Carga Horária (Y=220)
+        course_name_display = (reg.course.name if (reg.course and reg.course.name) else (reg.course_name or "Treinamento não informado")).upper()
         course_hrs_val = reg.course.hours if (reg.course and reg.course.hours) else reg.course_workload
         workload_display = f"{course_hrs_val}h" if course_hrs_val else "Carga horária não informada"
-        course_line = f"{course_name_display} — Carga Horária: {workload_display}"
+        linha_4 = f"{course_name_display} — Carga Horária: {workload_display}"
+        c.drawCentredString(w / 2, 220, linha_4)
         
-        c.drawCentredString(w / 2, y, course_line)
-        y -= 0.85 * cm
         c.setFont("Helvetica", 12)
         c.setFillColor(COLOR_TEXT)
-        location_text = f"realizado em {reg.course_city} / {reg.course_state}"
-        # Prioriza data do objeto Course
+        # Linha da Cidade/Data (Y=190)
+        city_display = reg.course.city if (reg.course and reg.course.city) else "Cidade não informada"
+        state_display = reg.course.state if (reg.course and reg.course.state) else "UF"
         course_dt_val = reg.course.start_date if (reg.course and reg.course.start_date) else reg.course_date
-        if course_dt_val:
-            location_text += f" em {course_dt_val.strftime('%d/%m/%Y')}"
-        else:
-            location_text += " em Data não informada"
-        c.drawCentredString(w / 2, y, location_text)
-        y -= 0.8 * cm
-        c.setFont("Helvetica", 11)
-        c.drawCentredString(w / 2, y, f"CPF do participante: {reg.cpf}")
-        y -= 0.9 * cm
+        data_str = course_dt_val.strftime('%d/%m/%Y') if course_dt_val else "Data não informada"
+        linha_5 = f"realizado em {city_display}/{state_display} em {data_str}."
+        c.drawCentredString(w / 2, 190, linha_5)
 
     # ── Linha divisória ────────────────────────────────────────────
 
