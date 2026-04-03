@@ -138,3 +138,7 @@
 | 2026-04-02 | Correção de erro NoneType em `email_sender.py` (Safe extraction de `company_email` para o `reply_to`). | Gemini CLI |
 | 2026-04-02 | Alteração da origem do Reply-To para `Company.objects.first()` em `email_sender.py`. | Gemini CLI |
 | 2026-04-02 | Implementação de arquitetura Multi-Tenant para o Reply-To: extração dinâmica do e-mail via `Registration -> Course -> Company`. | Gemini CLI |
+| 2026-04-03 | Adicionada obrigatoriedade aos campos 'name', 'start_date' e 'hours' no model Course para garantir integridade do certificado. | Gemini CLI |
+| 2026-04-03 | Correção da injeção de variáveis no PDF: tratamento seguro para Carga Horária, Data e Nome do Treinamento para evitar 'Noneh' ou 'N/A'. | Gemini CLI |
+| 2026-04-03 | Otimização da QuerySet em 'issue_certificate': Adicionado 'select_related("course", "instructor__company")' para garantir carregamento seguro dos dados de treinamento e empresa. | Gemini CLI |
+| 2026-04-03 | Correção da persistência de inscrições: Implementado padrão 'commit=False' na RegistrationCreateView para garantir vínculo da FK 'course' no salvamento. | Gemini CLI |

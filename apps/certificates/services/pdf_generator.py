@@ -158,12 +158,16 @@ def generate_certificate_pdf(certificate) -> bytes:
         y -= 0.9 * cm
         c.setFont("Helvetica-Bold", 16)
         c.setFillColor(COLOR_PRIMARY)
-        c.drawCentredString(w / 2, y, (reg.course_name or "").upper())
+        # Prioriza o nome do curso vinculado (Course object)
+        course_name_str = (reg.course.name if (reg.course and reg.course.name) else (reg.course_name or "Treinamento não informado")).upper()
+        c.drawCentredString(w / 2, y, course_name_str)
 
         y -= 0.9 * cm
         c.setFont("Helvetica", 14)
         c.setFillColor(COLOR_TEXT)
-        data_str = reg.course_date.strftime('%d/%m/%Y') if reg.course_date else "N/A"
+        # Prioriza a data do curso vinculado
+        course_dt = reg.course.start_date if (reg.course and reg.course.start_date) else reg.course_date
+        data_str = course_dt.strftime('%d/%m/%Y') if course_dt else "Data não informada"
         t4 = empresa.custom_text_4 or ""
         linha_4 = f"{t4} {data_str}".strip()
         if linha_4:
@@ -181,7 +185,10 @@ def generate_certificate_pdf(certificate) -> bytes:
         y -= 0.2 * cm
         c.setFont("Helvetica", 14)
         t6 = empresa.custom_text_6 or ""
-        linha_6 = f"{t6} {reg.course_workload}h".strip()
+        # Prioriza a carga horária do curso vinculado
+        course_hrs = reg.course.hours if (reg.course and reg.course.hours) else reg.course_workload
+        workload_str = f"{course_hrs}h" if course_hrs else "Carga horária não informada"
+        linha_6 = f"{t6} {workload_str}".strip()
         if linha_6:
             c.drawCentredString(w / 2, y, linha_6)
 
@@ -207,14 +214,24 @@ def generate_certificate_pdf(certificate) -> bytes:
         y -= 0.9 * cm
         c.setFont("Helvetica-Bold", 16)
         c.setFillColor(COLOR_PRIMARY)
-        course_line = f"{reg.course_name} — Carga Horária: {reg.course_workload}h"
+        
+        # Prioriza dados do objeto Course
+        course_name_display = reg.course.name if (reg.course and reg.course.name) else (reg.course_name or "Treinamento não informado")
+        course_hrs_val = reg.course.hours if (reg.course and reg.course.hours) else reg.course_workload
+        workload_display = f"{course_hrs_val}h" if course_hrs_val else "Carga horária não informada"
+        course_line = f"{course_name_display} — Carga Horária: {workload_display}"
+        
         c.drawCentredString(w / 2, y, course_line)
         y -= 0.85 * cm
         c.setFont("Helvetica", 12)
         c.setFillColor(COLOR_TEXT)
         location_text = f"realizado em {reg.course_city} / {reg.course_state}"
-        if reg.course_date:
-            location_text += f" em {reg.course_date.strftime('%d/%m/%Y')}"
+        # Prioriza data do objeto Course
+        course_dt_val = reg.course.start_date if (reg.course and reg.course.start_date) else reg.course_date
+        if course_dt_val:
+            location_text += f" em {course_dt_val.strftime('%d/%m/%Y')}"
+        else:
+            location_text += " em Data não informada"
         c.drawCentredString(w / 2, y, location_text)
         y -= 0.8 * cm
         c.setFont("Helvetica", 11)

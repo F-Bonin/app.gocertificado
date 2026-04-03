@@ -48,10 +48,12 @@ class RegistrationCreateView(CreateView):
             form.add_error('cpf', 'Este CPF já está inscrito nesta turma/data deste treinamento.')
             return self.form_invalid(form)
             
-        form.instance.course = course
+        # 2. Salva a inscrição no banco com commit=False para injetar a FK
+        inscricao = form.save(commit=False)
+        inscricao.course = course
+        inscricao.save()
         
-        # 2. Salva a inscrição no banco
-        self.object = form.save()
+        self.object = inscricao
         
         # 3. Configura a sessão para a tela de obrigado
         first_name = self.object.full_name.split()[0] if self.object.full_name else ""

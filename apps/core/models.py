@@ -114,7 +114,7 @@ class Instructor(models.Model):
 class Course(models.Model):
     """Modelo persistente de Treinamentos."""
     name = models.CharField("Nome do curso", max_length=300)
-    start_date = models.DateField("Data de Início", null=True, blank=True)
+    start_date = models.DateField("Data de Início")
     end_date = models.DateField("Data de Término", null=True, blank=True)
     city = models.CharField("Cidade", max_length=100)
     state = models.CharField("Estado (UF)", max_length=2)

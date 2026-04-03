@@ -37,7 +37,7 @@ def issue_certificate(registration_id: str) -> dict:
     }
 
     try:
-        reg = Registration.objects.select_related("course").get(pk=registration_id)
+        reg = Registration.objects.select_related("course", "instructor__company").get(pk=registration_id)
     except Registration.DoesNotExist:
         result["error"] = f"Inscrição {registration_id} não encontrada."
         logger.error(result["error"])
