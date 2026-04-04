@@ -147,3 +147,16 @@
 | 2026-04-03 | Correção da injeção de variáveis no PDF: tratamento seguro para Carga Horária, Data e Nome do Treinamento para evitar 'Noneh' ou 'N/A'. | Gemini CLI |
 | 2026-04-03 | Otimização da QuerySet em 'issue_certificate': Adicionado 'select_related("course", "instructor__company")' para garantir carregamento seguro dos dados de treinamento e empresa. | Gemini CLI |
 | 2026-04-03 | Correção da persistência de inscrições: Implementado padrão 'commit=False' na RegistrationCreateView para garantir vínculo da FK 'course' no salvamento. | Gemini CLI |
+| 2026-04-04 | Criação do modelo CertificateTemplate em 'apps/certificates/models.py' para suportar múltiplos modelos personalizados. | Gemini CLI |
+| 2026-04-04 | Vinculado o modelo CertificateTemplate ao model Course via ForeignKey. | Gemini CLI |
+| 2026-04-04 | Adicionado o campo 'certificate_template' ao 'CourseForm' com estilização Bootstrap 5. | Gemini CLI |
+| 2026-04-04 | Refatoração do 'pdf_generator.py' para consumir dados do 'CertificateTemplate' no Modelo Personalizado, com fallback de segurança. | Gemini CLI |
+| 2026-04-04 | Renderização manual do campo 'certificate_template' no template 'course_form.html' com suporte ao layout Bootstrap 5. | Gemini CLI |
+| 2026-04-04 | Refatoração da página de Configurações de Certificado: divisão em múltiplos formulários independentes para Logomarca, Seleção de Modelo e Configuração Personalizada. | Gemini CLI |
+| 2026-04-04 | Refatoração da 'CertificateDesignView' (core) para processar múltiplos formulários POST baseados na 'action'. Criado 'CertificateTemplateForm'. | Gemini CLI |
+| 2026-04-04 | Atualização da Seção 3 do design: inclusão do campo obrigatório 'Nome do Modelo' e vinculação das variáveis ao 'template_form'. | Gemini CLI |
+| 2026-04-04 | Refatoração da Seção 2 (Modelo Padrão) para modo Read-Only: removido formulário de envio e adicionado alerta informativo sobre disponibilidade nativa. | Gemini CLI |
+| 2026-04-04 | Configuração do 'CourseForm': definido 'empty_label' para 'Modelo Padrão do Sistema' e filtragem de templates por empresa no campo 'certificate_template'. | Gemini CLI |
+| 2026-04-04 | Refatoração completa do roteamento do PDF: agora a escolha entre Modelo Padrão e Personalizado baseia-se exclusivamente no treinamento (Course) do aluno. | Gemini CLI |
+| 2026-04-04 | Sincronização do layout de 'Preview' do Modelo Padrão: aplicado o mesmo padrão de coordenadas Y absolutas e texto contínuo do certificado real. | Gemini CLI |
+| 2026-04-04 | Ajuste de margem superior no 'Preview': descida sutil da logomarca (Y-20pts) para evitar proximidade excessiva com a borda. | Gemini CLI |

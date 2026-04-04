@@ -160,6 +160,15 @@ class Course(models.Model):
         verbose_name="Empresa"
     )
     
+    certificate_template = models.ForeignKey(
+        'certificates.CertificateTemplate',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name="Modelo de Certificado",
+        help_text='Selecione o layout personalizado para os certificados deste treinamento'
+    )
+    
     link_hash = models.UUIDField(
         "Link Único", 
         default=None, 

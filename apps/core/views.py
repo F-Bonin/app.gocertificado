@@ -1,96 +1,21 @@
 import io
 import uuid
-from django.http import FileResponse
+import csv
+from django.http import FileResponse, HttpResponse
 from django.views import View
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from apps.certificates.services.pdf_generator import generate_preview_pdf
+from apps.certificates.models import CertificateTemplate
 from .models import Company, Instructor, Course
-from .forms import CompanyForm, InstructorForm, CourseForm, CertificateDesignForm
-
-
-class CompanyUpdateView(LoginRequiredMixin, UpdateView):
-    """Edita os dados da empresa vinculada ao usuário logado."""
-    model = Company
-    form_class = CompanyForm
-    template_name = "core/company_form.html"
-    success_url = reverse_lazy("core:company_edit")
-
-    def get_object(self, queryset=None):
-        return self.request.user.profile.company
-
-    def form_valid(self, form):
-        messages.success(self.request, "Dados da empresa atualizados com sucesso!")
-        return super().form_valid(form)
-
-
-class InstructorListView(LoginRequiredMixin, ListView):
-    """Lista instrutores da empresa do usuário."""
-    model = Instructor
-    template_name = "core/instructor_list.html"
-    context_object_name = "instructors"
-
-    def get_queryset(self):
-        return Instructor.objects.filter(company=self.request.user.profile.company)
-
-
-class InstructorCreateView(LoginRequiredMixin, CreateView):
-    """Cria novo instrutor vinculado à empresa do usuário."""
-    model = Instructor
-    form_class = InstructorForm
-    template_name = "core/instructor_form.html"
-    success_url = reverse_lazy("core:instructor_list")
-
-    def form_valid(self, form):
-        form.instance.company = self.request.user.profile.company
-        messages.success(self.request, "Instrutor cadastrado com sucesso!")
-        return super().form_valid(form)
-
-
-class InstructorUpdateView(LoginRequiredMixin, UpdateView):
-    """Edita instrutor (apenas da empresa do usuário)."""
-    model = Instructor
-    form_class = InstructorForm
-    template_name = "core/instructor_form.html"
-    success_url = reverse_lazy("core:instructor_list")
-
-    def get_queryset(self):
-        return Instructor.objects.filter(company=self.request.user.profile.company)
-
-    def form_valid(self, form):
-        messages.success(self.request, "Dados do instrutor atualizados!")
-        return super().form_valid(form)
-
-
-class InstructorDeleteView(LoginRequiredMixin, DeleteView):
-    """Exclui instrutor (apenas da empresa do usuário)."""
-    model = Instructor
-    template_name = "core/instructor_confirm_delete.html"
-    success_url = reverse_lazy("core:instructor_list")
-
-    def get_queryset(self):
-        return Instructor.objects.filter(company=self.request.user.profile.company)
-
-    def delete(self, request, *args, **kwargs):
-        messages.success(self.request, "Instrutor removido com sucesso.")
-        return super().delete(request, *args, **kwargs)
-
-
-import uuid
-import csv
-from django.http import HttpResponse
-from django.shortcuts import get_object_or_404, redirect
-from django.urls import reverse_lazy
-from django.views.generic import ListView, CreateView, UpdateView, DeleteView, TemplateView
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.auth.decorators import login_required
-from django.contrib import messages
-from .models import Company, Instructor, Course
-from .forms import CompanyForm, InstructorForm, CourseForm, CertificateDesignForm
+from .forms import (
+    CompanyForm, InstructorForm, CourseForm, 
+    CertificateDesignForm, CertificateTemplateForm
+)
 
 
 class CompanyUpdateView(LoginRequiredMixin, UpdateView):
@@ -201,7 +126,7 @@ class CourseListView(LoginRequiredMixin, ListView):
         for course in queryset:
             writer.writerow([
                 course.name,
-                course.course_date.strftime("%d/%m/%Y"),
+                course.course_date.strftime("%d/%m/%Y") if course.course_date else "N/A",
                 course.city,
                 course.state,
                 course.instructor.full_name if course.instructor else "N/A",
@@ -306,20 +231,52 @@ class CourseLinkGeneratorView(LoginRequiredMixin, TemplateView):
         return context
 
 
-class CertificateDesignView(LoginRequiredMixin, UpdateView):
-    model = Company
-    form_class = CertificateDesignForm
+class CertificateDesignView(LoginRequiredMixin, View):
+    """Gerencia as configurações de design do certificado da empresa."""
     template_name = 'core/certificate_design.html'
 
-    def get_object(self):
-        return self.request.user.profile.company
+    def get(self, request):
+        company = request.user.profile.company
+        form = CertificateDesignForm(instance=company)
+        template_form = CertificateTemplateForm()
+        modelos_salvos = CertificateTemplate.objects.filter(company=company).order_by('-created_at')
+        
+        return render(request, self.template_name, {
+            'form': form,
+            'template_form': template_form,
+            'modelos_salvos': modelos_salvos
+        })
 
-    def get_success_url(self):
-        return reverse_lazy('core:certificate_design')
+    def post(self, request):
+        company = request.user.profile.company
+        acao = request.POST.get('action')
+        
+        if acao == 'save_logo':
+            form = CertificateDesignForm(request.POST, request.FILES, instance=company)
+            if form.is_valid():
+                form.save()
+                messages.success(request, "Logomarca atualizada com sucesso!")
+            else:
+                messages.error(request, "Erro ao salvar logomarca.")
+                
+        elif acao == 'save_selection':
+            form = CertificateDesignForm(request.POST, instance=company)
+            # Salvamos apenas a seleção do modelo
+            company.certificate_model = request.POST.get('certificate_model')
+            company.save(update_fields=['certificate_model'])
+            messages.success(request, "Modelo de certificado ativo atualizado!")
+            
+        elif acao == 'save_template':
+            template_form = CertificateTemplateForm(request.POST, request.FILES)
+            if template_form.is_valid():
+                novo_template = template_form.save(commit=False)
+                novo_template.company = company
+                novo_template.save()
+                messages.success(request, f"Novo modelo '{novo_template.name}' criado com sucesso!")
+            else:
+                messages.error(request, "Erro ao criar novo modelo personalizado. Verifique os campos.")
 
-    def form_valid(self, form):
-        messages.success(self.request, "Configurações de design do certificado atualizadas!")
-        return super().form_valid(form)
+        return redirect('core:certificate_design')
 
 
 class CertificatePreviewView(LoginRequiredMixin, View):

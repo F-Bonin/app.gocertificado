@@ -1,5 +1,6 @@
 from django import forms
 from .models import Company, Instructor, Course
+from apps.certificates.models import CertificateTemplate
 
 
 class CompanyForm(forms.ModelForm):
@@ -43,7 +44,8 @@ class CourseForm(forms.ModelForm):
             "cep", "institution_name", "institution_street", "institution_number",
             "institution_neighborhood", "institution_complement",
             "city", "state",
-            "signature_1", "signature_2", "signature_3"
+            "signature_1", "signature_2", "signature_3",
+            "certificate_template"
         ]
         widgets = {
             "name": forms.TextInput(attrs={"class": "form-control"}),
@@ -61,6 +63,7 @@ class CourseForm(forms.ModelForm):
             "signature_1": forms.Select(attrs={"class": "form-select"}),
             "signature_2": forms.Select(attrs={"class": "form-select"}),
             "signature_3": forms.Select(attrs={"class": "form-select"}),
+            "certificate_template": forms.Select(attrs={"class": "form-select"}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -81,6 +84,10 @@ class CourseForm(forms.ModelForm):
             self.fields["signature_1"].queryset = instructor_qs
             self.fields["signature_2"].queryset = instructor_qs
             self.fields["signature_3"].queryset = instructor_qs
+
+            self.fields["certificate_template"].queryset = CertificateTemplate.objects.filter(company=company)
+            self.fields["certificate_template"].empty_label = "Modelo Padrão do Sistema"
+            self.fields["certificate_template"].help_text = "Se não selecionar nenhum, o sistema usará o Modelo Padrão nativo."
 
     def clean(self):
         cleaned_data = super().clean()
@@ -120,3 +127,23 @@ class CertificateDesignForm(forms.ModelForm):
             raise forms.ValidationError("Para usar o Modelo Personalizado, é obrigatório fazer o upload do arquivo do certificado.")
             
         return cleaned_data
+
+
+class CertificateTemplateForm(forms.ModelForm):
+    class Meta:
+        model = CertificateTemplate
+        fields = [
+            'name', 'background_image', 'title', 
+            'text_1', 'text_2', 'text_3', 'text_4', 'text_5', 'text_6'
+        ]
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ex: Modelo Padrão, Modelo Imersão'}),
+            'background_image': forms.FileInput(attrs={'class': 'form-control'}),
+            'title': forms.TextInput(attrs={'class': 'form-control fw-bold text-center'}),
+            'text_1': forms.TextInput(attrs={'class': 'form-control'}),
+            'text_2': forms.TextInput(attrs={'class': 'form-control'}),
+            'text_3': forms.TextInput(attrs={'class': 'form-control'}),
+            'text_4': forms.TextInput(attrs={'class': 'form-control'}),
+            'text_5': forms.TextInput(attrs={'class': 'form-control'}),
+            'text_6': forms.TextInput(attrs={'class': 'form-control'}),
+        }

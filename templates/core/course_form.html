@@ -131,6 +131,20 @@
 
                     <hr class="my-4 opacity-10">
 
+                    <div class="mb-3">
+                        <label for="{{ form.certificate_template.id_for_label }}" class="form-label fw-bold small text-muted">
+                            {{ form.certificate_template.label }}
+                        </label>
+                        {{ form.certificate_template }}
+                        <div class="form-text small text-info">
+                            <i class="bi bi-info-circle me-1"></i>
+                            {{ form.certificate_template.help_text }}
+                        </div>
+                        {% if form.certificate_template.errors %}
+                            <div class="text-danger small mt-1">{{ form.certificate_template.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
                     <div class="mb-4">
                         <label for="{{ form.num_signatures.id_for_label }}" class="form-label fw-bold small text-muted">
                             {{ form.num_signatures.label }}
