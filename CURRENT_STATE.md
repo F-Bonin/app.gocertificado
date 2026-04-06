@@ -161,3 +161,4 @@
 | 2026-04-04 | Sincronização do layout de 'Preview' do Modelo Padrão: aplicado o mesmo padrão de coordenadas Y absolutas e texto contínuo do certificado real. | Gemini CLI |
 | 2026-04-05 | Atualização da 'CertificatePreviewView' e 'generate_preview_pdf' para suportar múltiplos templates via 'template_id'. | Gemini CLI |
 | 2026-04-05 | Ajuste de espaçamento vertical no PDF: Título deslocado 40 pontos para baixo para afastar da logomarca. | Gemini CLI |
+| 2026-04-06 | Implementação do método 'clean' no CertificateTemplateForm para injeção de espaços vazios em campos opcionais, contornando validações rígidas do banco sem migrações. | Gemini CLI |

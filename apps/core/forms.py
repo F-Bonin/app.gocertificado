@@ -154,3 +154,12 @@ class CertificateTemplateForm(forms.ModelForm):
         for campo in campos_opcionais:
             if campo in self.fields:
                 self.fields[campo].required = False
+
+    def clean(self):
+        cleaned_data = super().clean()
+        # Injeta espaços vazios para campos em branco para evitar erro de banco (campo obrigatório)
+        # sem a necessidade de migrações
+        for field in ['title', 'text_1', 'text_2', 'text_3', 'text_4', 'text_5', 'text_6']:
+            if not cleaned_data.get(field):
+                cleaned_data[field] = " "
+        return cleaned_data
