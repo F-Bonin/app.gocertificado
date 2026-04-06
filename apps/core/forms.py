@@ -147,3 +147,10 @@ class CertificateTemplateForm(forms.ModelForm):
             'text_5': forms.TextInput(attrs={'class': 'form-control'}),
             'text_6': forms.TextInput(attrs={'class': 'form-control'}),
         }
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Hack de Sênior: Torna os textos do certificado verdadeiramente opcionais
+        campos_opcionais = ['title', 'text_1', 'text_2', 'text_3', 'text_4', 'text_5', 'text_6']
+        for campo in campos_opcionais:
+            if campo in self.fields:
+                self.fields[campo].required = False
