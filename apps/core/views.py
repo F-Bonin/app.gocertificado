@@ -282,5 +282,28 @@ class CertificateDesignView(LoginRequiredMixin, View):
 class CertificatePreviewView(LoginRequiredMixin, View):
     def get(self, request):
         model_type = request.GET.get('type', 'default')
-        pdf_bytes = generate_preview_pdf(request.user.profile.company, model_type)
-        return FileResponse(io.BytesIO(pdf_bytes), content_type='application/pdf', filename='preview.pdf')
+        company = request.user.profile.company
+        template = None
+
+        # ==========================================
+        # LÓGICA DO MODELO PERSONALIZADO
+        # ==========================================
+        if model_type == 'custom':
+            template_id = request.GET.get('template_id')
+            
+            if template_id:
+                template = CertificateTemplate.objects.filter(id=template_id, company=company).first()
+            else:
+                template = CertificateTemplate.objects.filter(company=company).order_by('-id').first()
+                
+            if not template:
+                return HttpResponse("Nenhum modelo personalizado encontrado. Salve um modelo primeiro.", status=404)
+
+        # ==========================================
+        # CORREÇÃO SÊNIOR: EMPACOTANDO O PDF
+        # ==========================================
+        # 1. Geramos os bytes crus do arquivo PDF
+        pdf_bytes = generate_preview_pdf(company, model_type, template)
+        
+        # 2. Empacotamos numa resposta HTTP válida para o navegador ler como PDF
+        return HttpResponse(pdf_bytes, content_type='application/pdf')

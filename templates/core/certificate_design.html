@@ -3,238 +3,232 @@
 {% block title %}Configurações do Certificado — {{ block.super }}{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-9">
-        <div class="card shadow-sm border-0">
-            <div class="card-header bg-white py-3 border-bottom d-flex align-items-center">
-                <i class="bi bi-palette me-2 text-primary fs-4"></i>
-                <h5 class="mb-0 fw-bold">Configurações do Certificado</h5>
+<div class="py-2">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="mb-0 text-dark"><i class="bi bi-palette"></i> Configurações do Certificado</h3>
+    </div>
+
+    <!-- O formulário abraça tudo, como no seu código original -->
+    <form method="post" enctype="multipart/form-data" id="designForm" novalidate>
+        {% csrf_token %}
+        
+        {# Controle manual dos selects do Django #}
+        <div style="display:none;">
+            {{ form.certificate_model }}
+            {{ form.logo_position }}
+        </div>
+
+        <!-- 1. LOGOMARCA (OPCIONAL) -->
+        <div class="card shadow-sm mb-5 border-0">
+            <div class="card-header bg-white border-bottom py-3">
+                <h6 class="mb-0 text-primary fw-bold">1. LOGOMARCA (OPCIONAL)</h6>
             </div>
             <div class="card-body p-4">
-                {# Escondendo campos que seriam renderizados automaticamente para controle manual #}
-                <div style="display:none;">
+                {% if form.instance.logo %}
+                <div class="mb-4 p-3 bg-light rounded border shadow-sm">
+                    <p class="fw-bold text-success mb-2"><i class="bi bi-check-circle-fill"></i> Logo Atual Carregada:</p>
+                    <img src="{{ form.instance.logo.url }}" alt="Logo" style="max-height: 80px;" class="img-fluid rounded border bg-white p-1">
+                    <div class="mt-2 text-muted small">
+                        <i class="bi bi-file-earmark-image"></i> Arquivo: <strong>{{ form.instance.logo.name }}</strong>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Deseja substituir a logo atual?</label>
+                    {{ form.logo }}
+                </div>
+                
+                <div id="logo_position_container" class="mt-3 p-3 bg-light border rounded" style="{% if not form.instance.logo %}display: none;{% endif %}">
+                    <label class="fw-bold mb-2">Posição da Logo:</label>
                     {{ form.logo_position }}
-                    {{ form.certificate_model }}
                 </div>
 
-                <!-- SESSÃO 1: Logomarca -->
-                <form method="post" enctype="multipart/form-data" class="mb-5">
-                    {% csrf_token %}
-                    <h6 class="fw-bold text-uppercase small text-primary mb-3">1. Logomarca (Opcional)</h6>
-                    <div class="p-3 border rounded">
-                        {% if form.instance.logo %}
-                            <div class="mb-3 p-3 border rounded bg-white shadow-sm">
-                                <p class="mb-2 fw-bold text-success"><i class="bi bi-check-circle-fill"></i> Logo Atual Carregada:</p>
-                                <img src="{{ form.instance.logo.url }}" alt="Logo da Empresa" style="max-height: 80px; border-radius: 4px; border: 1px solid #dee2e6; padding: 4px;">
-                                <p class="text-muted mt-2 mb-0" style="font-size: 0.85rem;"><i class="bi bi-file-earmark-image"></i> Arquivo: <strong>{{ form.instance.logo.name }}</strong></p>
-                                
-                                <div class="mt-3">
-                                    <label class="fw-bold text-muted" style="font-size: 0.9rem;">Deseja substituir a logo atual?</label>
-                                    {{ form.logo }}
-                                </div>
-                            </div>
-                        {% else %}
-                            <div class="mb-3">
-                                {{ form.logo.label_tag }} <br>
-                                {{ form.logo }}
-                            </div>
-                        {% endif %}
+                <button type="submit" name="action" value="save_logo" class="btn btn-outline-primary mt-3 shadow-sm">
+                    <i class="bi bi-save me-1"></i> Salvar Logomarca
+                </button>
+            </div>
+        </div>
 
-                        <div id="logo_position_container" class="mt-3 p-3 bg-light border rounded" style="{% if not form.instance.logo %}display: none;{% endif %}">
-                            <label class="fw-bold">{{ form.logo_position.label_tag }}</label> <br>
-                            {{ form.logo_position }}
-                        </div>
-                        
-                        <button type="submit" name="action" value="save_logo" class="btn btn-primary mt-3 shadow-sm">
-                            <i class="bi bi-save me-1"></i> Salvar Logomarca
-                        </button>
-                    </div>
-                </form>
+        <!-- 2. MODELO PADRÃO -->
+        <div class="card shadow-sm mb-5 border-0" id="container_default">
+            <div class="card-header bg-white border-bottom py-3">
+                <h6 class="mb-0 text-primary fw-bold">2. MODELO PADRÃO (DO SISTEMA)</h6>
+            </div>
+            <div class="card-body p-4">
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input fs-5" type="radio" name="certificate_model" value="default" id="id_model_default" {% if form.certificate_model.value == 'default' %}checked{% endif %}>
+                    <label class="form-check-label fw-bold text-dark mt-1 ms-2" for="id_model_default">Usar Modelo Padrão</label>
+                </div>
+                <p class="text-muted small mb-3">O sistema gerará um certificado profissional com layout neutro e elegante, incluindo bordas e elementos gráficos padrão.</p>
+                <a href="{% url 'core:certificate_preview' %}?type=default" class="btn btn-outline-secondary btn-sm" target="_blank">
+                    <i class="bi bi-eye me-1"></i> Visualizar Exemplo Padrão
+                </a>
+            </div>
+        </div>
 
-                <hr class="my-4">
+        <!-- 3. MODELO PERSONALIZADO -->
+        <div class="card shadow-sm mb-5 border rounded" id="container_custom">
+            <div class="card-header bg-white border-bottom py-3">
+                <h6 class="mb-0 text-primary fw-bold">3. MODELO PERSONALIZADO</h6>
+            </div>
+            <div class="card-body p-4">
+                <div class="form-check form-switch mb-4">
+                    <input class="form-check-input fs-5" type="radio" name="certificate_model" value="custom" id="id_model_custom" {% if form.certificate_model.value == 'custom' %}checked{% endif %}>
+                    <label class="form-check-label fw-bold text-dark mt-1 ms-2" for="id_model_custom">Usar Modelo Personalizado</label>
+                </div>
 
-                <!-- SESSÃO 2: Modelo Padrão -->
-                <div class="mb-5">
-                    <h6 class="fw-bold text-uppercase small text-primary mb-3">2. Modelo Padrão (Do Sistema)</h6>
+                <div id="custom_texts_container" style="{% if form.certificate_model.value != 'custom' %}display: none;{% endif %}">
                     
-                    <div class="alert alert-info mt-2 shadow-sm border-0">
-                        <i class="bi bi-info-circle-fill me-2"></i>
-                        <strong>Aviso:</strong> Este é o layout nativo do sistema. Ele está sempre disponível. Você pode selecioná-lo no momento em que for criar um Novo Treinamento.
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Nome do Modelo</label>
+                        {{ template_form.name }}
+                        {% if template_form.name.errors %}<div class="text-danger small mt-1">{{ template_form.name.errors }}</div>{% endif %}
                     </div>
 
-                    <div class="p-3 border rounded bg-light">
-                        <p class="text-muted small mb-3">O sistema gerará um certificado profissional com layout neutro e elegante, incluindo bordas e elementos gráficos padrão.</p>
-                        <a href="{% url 'core:certificate_preview' %}?type=default" class="btn btn-outline-secondary btn-sm" target="_blank">
-                            <i class="bi bi-eye me-1"></i> Visualizar Exemplo Padrão
-                        </a>
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Fundo do Certificado (Template)</label>
+                        {{ template_form.background_image }}
+                        {% if template_form.background_image.errors %}<div class="text-danger small mt-1">{{ template_form.background_image.errors }}</div>{% endif %}
+                        <div class="form-text text-warning mt-1 small">
+                            <i class="bi bi-info-circle me-1"></i> Dimensão recomendada: A4 Paisagem (3508 x 2480px), formato JPG ou PNG.
+                        </div>
                     </div>
-                </div>
 
-                <hr class="my-4">
+                    <!-- CONSTRUTOR DE TEXTO COM A LÓGICA FLEXBOX RECUPERADA -->
+                    <div class="border rounded p-4 mb-4 bg-white shadow-sm" style="border-color: #e2e8f0 !important;">
+                        <h6 class="text-primary mb-3 fw-bold">
+                            <i class="bi bi-cursor-text"></i> Construtor de Texto do Certificado
+                        </h6>
+                        <p class="text-muted mb-4 small">
+                            Personalize a redação do seu certificado. Os blocos em <span class="badge bg-secondary">CINZA</span> são intocáveis e representam onde o sistema carimbará os dados automáticos do aluno.
+                        </p>
 
-                <!-- SESSÃO 3: Modelo Personalizado -->
-                <form method="post" enctype="multipart/form-data" class="mb-4">
-                    {% csrf_token %}
-                    <h6 class="fw-bold text-uppercase small text-primary mb-3">3. Configuração do Modelo Personalizado</h6>
-                    <div class="p-3 border rounded">
-                        
-                        {% if template_form.errors %}
-                            <div class="alert alert-danger small py-2">
-                                <i class="bi bi-exclamation-triangle-fill me-2"></i> Erro ao salvar modelo. Verifique os campos abaixo.
-                                {{ template_form.non_field_errors }}
-                            </div>
-                        {% endif %}
-
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Nome do Modelo</label>
-                            {{ template_form.name }}
-                            <div class="form-text small">Ex: Modelo Padrão, Modelo Imersão, Curso de Verão.</div>
-                            {% if template_form.name.errors %}<div class="text-danger small">{{ template_form.name.errors }}</div>{% endif %}
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-dark">Título do Certificado</label>
+                            {{ template_form.title }}
+                            {% if template_form.title.errors %}<div class="text-danger small mt-1">{{ template_form.title.errors }}</div>{% endif %}
                         </div>
 
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Fundo do Certificado (Template)</label>
-                            {{ template_form.background_image }}
-                            {% if template_form.background_image.errors %}<div class="text-danger small">{{ template_form.background_image.errors }}</div>{% endif %}
-                            <div class="form-text text-warning small mt-1">
-                                <i class="bi bi-info-circle me-1"></i> Dimensão recomendada: A4 Paisagem (3508 x 2480px), formato JPG ou PNG.
-                            </div>
-                        </div>
+                        <div class="card border border-secondary border-opacity-25 shadow-sm">
+                            <div class="card-body bg-light p-4">
+                                <h6 class="fw-bold mb-3 text-dark">Corpo do Texto:</h6>
 
-                        <div id="custom_texts_container" class="mt-4 p-4 border rounded bg-white shadow-sm">
-                            <h6 class="fw-bold text-primary mb-2"><i class="bi bi-cursor-text"></i> Construtor de Texto do Certificado</h6>
-                            <p class="text-muted small mb-4">Personalize a redação do seu certificado. Os blocos em <span class="badge bg-secondary">CINZA</span> são intocáveis e representam onde o sistema carimbará os dados automáticos do aluno.</p>
-                     
-                            <div class="mb-4">
-                                <label class="form-label fw-bold">Título do Certificado</label>
-                                {{ template_form.title }}
-                                {% if template_form.title.errors %}<div class="text-danger small">{{ template_form.title.errors }}</div>{% endif %}
-                            </div>
-                     
-                            <div class="p-3 bg-light border rounded">
-                                <label class="form-label fw-bold mb-3">Corpo do Texto:</label>
-                                
-                                <div class="mb-2">
+                                <div class="mb-3">
                                     {{ template_form.text_1 }}
-                                    {% if template_form.text_1.errors %}<div class="text-danger small">{{ template_form.text_1.errors }}</div>{% endif %}
+                                    {% if template_form.text_1.errors %}<div class="text-danger small mt-1">{{ template_form.text_1.errors }}</div>{% endif %}
                                 </div>
-                                <div class="mb-2 text-center">
+
+                                <div class="mb-3 text-center">
                                     <span class="badge bg-secondary w-100 py-2 fs-6 shadow-sm">(Nome do Aluno preenchido pelo sistema)</span>
                                 </div>
-                                
+
+                                <!-- Lógica Flexbox para manter CPF e Inputs na mesma linha -->
                                 <div class="mb-3 d-flex align-items-center gap-2">
                                     <div class="flex-grow-1">
                                         {{ template_form.text_2 }}
-                                        {% if template_form.text_2.errors %}<div class="text-danger small">{{ template_form.text_2.errors }}</div>{% endif %}
                                     </div>
-                                    <span class="badge bg-secondary py-2 fs-6 shadow-sm whitespace-nowrap">(CPF do Aluno)</span>
+                                    <span class="badge bg-secondary py-2 px-3 fs-6 shadow-sm text-nowrap">(CPF do Aluno)</span>
                                     <div class="flex-grow-1">
                                         {{ template_form.text_3 }}
-                                        {% if template_form.text_3.errors %}<div class="text-danger small">{{ template_form.text_3.errors }}</div>{% endif %}
                                     </div>
                                 </div>
 
-                                <div class="mb-2 text-center">
+                                <div class="mb-3 text-center">
                                     <span class="badge bg-secondary w-100 py-2 fs-6 shadow-sm">(Nome do Treinamento preenchido pelo sistema)</span>
                                 </div>
-                                
+
+                                <!-- Lógica Flexbox para Data -->
                                 <div class="mb-3 d-flex align-items-center gap-2">
                                     <div class="flex-grow-1">
                                         {{ template_form.text_4 }}
-                                        {% if template_form.text_4.errors %}<div class="text-danger small">{{ template_form.text_4.errors }}</div>{% endif %}
                                     </div>
-                                    <span class="badge bg-secondary py-2 fs-6 shadow-sm whitespace-nowrap">(Data de realização do sistema)</span>
+                                    <span class="badge bg-secondary py-2 px-3 fs-6 shadow-sm text-nowrap">(Data de realização do sistema)</span>
                                 </div>
-                                
-                                <div class="mb-2">
+
+                                <div class="mb-1">
                                     {{ template_form.text_5 }}
-                                    {% if template_form.text_5.errors %}<div class="text-danger small">{{ template_form.text_5.errors }}</div>{% endif %}
-                                    <small class="text-muted">Acomoda textos longos (ex: leis e decretos). O sistema fará a quebra de linha automaticamente.</small>
                                 </div>
-                                
-                                <div class="mb-2 mt-4">
+                                <div class="form-text text-muted mb-3 small">
+                                    Acomoda textos longos (ex: leis e decretos). O sistema fará a quebra de linha automaticamente.
+                                </div>
+
+                                <div class="mb-3 mt-4">
                                     {{ template_form.text_6 }}
-                                    {% if template_form.text_6.errors %}<div class="text-danger small">{{ template_form.text_6.errors }}</div>{% endif %}
                                 </div>
+
                                 <div class="mb-2 text-center">
                                     <span class="badge bg-secondary w-100 py-2 fs-6 shadow-sm">(Carga horária preenchida pelo sistema)</span>
                                 </div>
                             </div>
                         </div>
-
-                        <div class="mt-4 d-flex gap-2">
-                            <button type="submit" name="action" value="save_template" class="btn btn-success shadow-sm">
-                                <i class="bi bi-save me-1"></i> Criar/Salvar Modelo Personalizado
-                            </button>
-                            <a href="{% url 'core:certificate_preview' %}?type=custom" class="btn btn-outline-secondary shadow-sm" target="_blank">
+                        
+                        <div class="mt-4">
+                            <a href="{% url 'core:certificate_preview' %}?type=custom{% if template_form.instance.id %}&template_id={{ template_form.instance.id }}{% endif %}" class="btn btn-outline-secondary btn-sm" target="_blank">
                                 <i class="bi bi-eye me-1"></i> Visualizar com seu Fundo
                             </a>
                         </div>
                     </div>
-                </form>
+
+                    <button type="submit" name="action" value="save_template" class="btn btn-primary btn-lg w-100 shadow-sm fw-bold" style="background-color: #0d6efd;">
+                        <i class="bi bi-check-circle me-2"></i> Salvar Modelo de Certificado
+                    </button>
+                </div>
             </div>
         </div>
-    </div>
+    </form>
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
 document.addEventListener("DOMContentLoaded", function() {
-    // 1. Lógica de visibilidade da Posição da Logo
+    // 1. Visibilidade da Posição da Logo
     const logoInput = document.querySelector('input[name="logo"]');
     const positionContainer = document.getElementById('logo_position_container');
     const hasExistingLogo = {% if form.instance.logo %}true{% else %}false{% endif %};
 
     function togglePositionField() {
-        // Mostra a posição se o usuário acabou de selecionar um arquivo OU se já existe logo no banco
         if ((logoInput && logoInput.files && logoInput.files.length > 0) || hasExistingLogo) {
             positionContainer.style.display = 'block';
         } else {
             positionContainer.style.display = 'none';
         }
     }
+    if (logoInput) logoInput.addEventListener('change', togglePositionField);
+    togglePositionField();
 
-    if (logoInput) {
-        logoInput.addEventListener('change', togglePositionField);
-    }
-    togglePositionField(); // Força a verificação ao carregar a página
-
-    // 2. Lógica de visibilidade do Construtor de Textos
+    // 2. Lógica de visibilidade do Construtor e Botões Rádio
     const radioDefault = document.getElementById('id_model_default');
     const radioCustom = document.getElementById('id_model_custom');
     const textsContainer = document.getElementById('custom_texts_container');
+    const containerCustom = document.getElementById('container_custom');
 
     function toggleTextsContainer() {
         if (radioCustom && radioCustom.checked) {
             textsContainer.style.display = 'block';
+            containerCustom.classList.add('border-primary');
         } else {
             textsContainer.style.display = 'none';
+            containerCustom.classList.remove('border-primary');
         }
     }
-
     if (radioDefault) radioDefault.addEventListener('change', toggleTextsContainer);
     if (radioCustom) radioCustom.addEventListener('change', toggleTextsContainer);
-    toggleTextsContainer(); // Executa no carregamento inicial
+    toggleTextsContainer();
 
-    // 3. Lógica de Trava do Submit (Modelos)
+    // 3. Trava do Submit (Evita salvar sem escolher o modelo)
     const form = document.getElementById('designForm');
     if (form) {
         form.onsubmit = function(e) {
+            const actionBtn = e.submitter;
+            if (actionBtn && actionBtn.value === 'save_logo') return;
+
             const isDefault = document.querySelector('input[name="certificate_model"][value="default"]').checked;
             const isCustom = document.querySelector('input[name="certificate_model"][value="custom"]').checked;
-            
-            if (!isDefault && !isCustom) {
-                alert("ATENÇÃO! Você deve obrigatoriamente escolher entre o Modelo Padrão ou o Modelo Personalizado antes de salvar.");
-                e.preventDefault();
-                return;
-            }
 
-            const customInput = document.querySelector('input[name="custom_template"]');
-            const hasExistingCustom = {% if form.instance.custom_template %}true{% else %}false{% endif %};
-            
-            if (isCustom && (!customInput.files || customInput.files.length === 0) && !hasExistingCustom) {
-                alert("ATENÇÃO! Você escolheu o Modelo Personalizado, mas não enviou nenhum arquivo. Por favor, faça o upload do seu modelo de certificado (A4 Paisagem).");
+            if (!isDefault && !isCustom) {
+                alert("ATENÇÃO! Você deve obrigatoriamente escolher entre o Modelo Padrão ou o Modelo Personalizado.");
                 e.preventDefault();
                 return;
             }

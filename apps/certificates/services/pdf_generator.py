@@ -129,12 +129,12 @@ def generate_certificate_pdf(certificate) -> bytes:
         if custom_title:
             c.setFillColor(COLOR_PRIMARY)
             c.setFont("Helvetica-Bold", 24)
-            c.drawCentredString(w / 2, h - 5.2 * cm, custom_title)
+            c.drawCentredString(w / 2, h - 5.2 * cm - 40, custom_title)
     else:
         # Estabelecendo coordenadas Y absolutas para o Modelo Padrão
         c.setFillColor(COLOR_PRIMARY)
         c.setFont("Helvetica-Bold", 32)
-        c.drawCentredString(w / 2, 380, "CERTIFICADO DE CONCLUSÃO")
+        c.drawCentredString(w / 2, 340, "CERTIFICADO DE CONCLUSÃO")
 
     # ── CORPO ──────────────────────────────────────────────────────
     if is_custom:
@@ -338,7 +338,7 @@ def generate_certificate_pdf(certificate) -> bytes:
     return buf.getvalue()
 
 
-def generate_preview_pdf(company, model_type) -> bytes:
+def generate_preview_pdf(company, model_type, template=None) -> bytes:
     """Gera um PDF de demonstração com dados fictícios."""
     buf = io.BytesIO()
     w, h = landscape(A4)
@@ -349,10 +349,12 @@ def generate_preview_pdf(company, model_type) -> bytes:
     secondary_color = COLOR_SECONDARY
 
     # Lógica de Fundo (Simulada)
-    is_custom = model_type == 'custom' and company.custom_template
+    # Se houver template (nova arquitetura), usa ele. Caso contrário, fallback para company (antiga)
+    background = template.background_image if template else company.custom_template
+    is_custom = model_type == 'custom' and background
     
     if is_custom:
-        template_path = Path(settings.MEDIA_ROOT) / str(company.custom_template)
+        template_path = Path(settings.MEDIA_ROOT) / str(background)
         if template_path.exists():
             try:
                 c.drawImage(str(template_path), 0, 0, width=w, height=h)
@@ -391,25 +393,36 @@ def generate_preview_pdf(company, model_type) -> bytes:
 
     # ── TÍTULO ──────────────────────────────────────────────────────
     if model_type == 'custom':
-        if company.custom_title:
+        # Captura título do template ou fallback empresa
+        title_text = template.title if template else company.custom_title
+        if title_text:
             c.setFillColor(COLOR_PRIMARY)
             c.setFont("Helvetica-Bold", 24)
-            c.drawCentredString(w / 2, h - 5.2 * cm, company.custom_title)
+            c.drawCentredString(w / 2, h - 5.2 * cm - 15, title_text)
     else:
         # Sincronizado com Modelo Padrão real
         c.setFillColor(COLOR_PRIMARY)
         c.setFont("Helvetica-Bold", 32)
-        c.drawCentredString(w / 2, 380, "CERTIFICADO DE CONCLUSÃO")
+        c.drawCentredString(w / 2, 340, "CERTIFICADO DE CONCLUSÃO")
 
     # ── CORPO ──────────────────────────────────────────────────────
     if model_type == 'custom':
         y = h - 6.5 * cm
         c.setFillColor(COLOR_TEXT)
         c.setFont("Helvetica", 14)
-        if company.custom_text_1:
-            c.drawCentredString(w / 2, y, company.custom_text_1)
 
-        y -= 0.9 * cm
+        # Captura textos do template ou fallback empresa
+        t1 = template.text_1 if template else company.custom_text_1
+        t2 = template.text_2 if template else company.custom_text_2
+        t3 = template.text_3 if template else company.custom_text_3
+        t4 = template.text_4 if template else company.custom_text_4
+        t5 = template.text_5 if template else company.custom_text_5
+        t6 = template.text_6 if template else company.custom_text_6
+
+        if t1:
+            c.drawCentredString(w / 2, y, t1)
+
+        y -= 1.5 * cm
         c.setFont("Helvetica-Bold", 16)
         c.setFillColor(COLOR_PRIMARY)
         c.drawCentredString(w / 2, y, "NOME DO PARTICIPANTE DE TESTE")
@@ -417,9 +430,7 @@ def generate_preview_pdf(company, model_type) -> bytes:
         y -= 0.9 * cm
         c.setFont("Helvetica", 14)
         c.setFillColor(COLOR_TEXT)
-        t2 = company.custom_text_2 or ""
-        t3 = company.custom_text_3 or ""
-        linha_2 = f"{t2} 123.456.789-00 {t3}".strip()
+        linha_2 = f"{t2 or ''} 123.456.789-00 {t3 or ''}".strip()
         if linha_2:
             c.drawCentredString(w / 2, y, linha_2)
 
@@ -431,14 +442,12 @@ def generate_preview_pdf(company, model_type) -> bytes:
         y -= 0.9 * cm
         c.setFont("Helvetica", 14)
         c.setFillColor(COLOR_TEXT)
-        t4 = company.custom_text_4 or ""
-        linha_4 = f"{t4} 10/10/2026".strip()
+        linha_4 = f"{t4 or ''} 10/10/2026".strip()
         if linha_4:
             c.drawCentredString(w / 2, y, linha_4)
 
         y -= 0.9 * cm
         c.setFont("Helvetica", 14)
-        t5 = company.custom_text_5 or ""
         if t5:
             linhas_texto_5 = textwrap.wrap(t5, width=90)
             for linha in linhas_texto_5:
@@ -447,8 +456,7 @@ def generate_preview_pdf(company, model_type) -> bytes:
 
         y -= 0.2 * cm
         c.setFont("Helvetica", 14)
-        t6 = company.custom_text_6 or ""
-        linha_6 = f"{t6} 10h".strip()
+        linha_6 = f"{t6 or ''} 10h".strip()
         if linha_6:
             c.drawCentredString(w / 2, y, linha_6)
 
