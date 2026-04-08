@@ -3,16 +3,38 @@ apps/registrations/views.py
 """
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, TemplateView
+from django.utils import timezone
+from django.http import HttpResponseForbidden, HttpResponseRedirect
+from django.shortcuts import get_object_or_404
+from apps.core.models import Course
 from .models import Registration
 from .forms import RegistrationForm
 
 
 class RegistrationCreateView(CreateView):
-    """Exibe e processa o formulário de inscrição do participante."""
+    """Exibe e processa o formulário de solicitação de certificado do participante."""
     model = Registration
     form_class = RegistrationForm
     template_name = "registrations/form.html"
     success_url = reverse_lazy("registrations:registration_success")
+
+    def dispatch(self, request, *args, **kwargs):
+        """
+        Blindagem: Verifica se o curso já expirou antes de permitir o acesso à View.
+        """
+        # Busca o curso pelo slug da URL
+        course = get_object_or_404(Course, slug=self.kwargs['slug'])
+        
+        # Validação de expiração: Se houver data definida e já tiver passado do prazo
+        if course.expires_at and timezone.now() > course.expires_at:
+            return HttpResponseForbidden(
+                "<div style='text-align:center; margin-top:50px; font-family:sans-serif;'>"
+                "<h2>A solicitação de certificado para este treinamento foi encerrada.</h2>"
+                "<p>O prazo limite para preenchimento deste formulário expirou.</p>"
+                "</div>"
+            )
+            
+        return super().dispatch(request, *args, **kwargs)
 
     def get_initial(self):
         """
@@ -20,8 +42,6 @@ class RegistrationCreateView(CreateView):
         Removido o uso de self.request.GET para evitar manipulação via Query String.
         """
         initial = super().get_initial()
-        from apps.core.models import Course
-        from django.shortcuts import get_object_or_404
         
         # Busca direta no banco de dados utilizando o Slug amigável da URL
         course = get_object_or_404(Course, slug=self.kwargs['slug'])
@@ -40,9 +60,6 @@ class RegistrationCreateView(CreateView):
         """
         Processa o salvamento da inscrição associando o curso via busca direta pelo Slug.
         """
-        from django.shortcuts import get_object_or_404
-        from django.http import HttpResponseRedirect
-        from apps.core.models import Course
         from apps.registrations.models import Registration
         
         # 1. Busca o curso real pelo Slug da URL para garantir segurança e integridade
@@ -77,8 +94,6 @@ class RegistrationCreateView(CreateView):
         Repassa os dados do objeto course para o contexto da página de inscrição de forma segura.
         """
         context = super().get_context_data(**kwargs)
-        from apps.core.models import Course
-        from django.shortcuts import get_object_or_404
         
         # Busca o curso novamente via slug para garantir que os dados exibidos no template venham do banco
         context['course'] = get_object_or_404(Course, slug=self.kwargs['slug'])

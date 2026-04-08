@@ -2,7 +2,7 @@
 
 **Atualize este arquivo após cada sessão de desenvolvimento.** A IA deve ler este arquivo para entender o escopo completo.
 
-#### 🗓️ Última atualização: 2026-04-06 (Refatoração de Modelos Personalizados e Deploy VPS) [7]
+#### 🗓️ Última atualização: 2026-04-08 (Refatoração de Interface e Sistema de Expiração) [8]
 
 ---
 
@@ -10,10 +10,19 @@
 **Estrutura Base e SaaS:**
 * [x] Arquitetura SaaS Multitenant (Login, Registro e Perfil vinculados a Empresas) [6, 11].
 * [x] Models: `Company`, `Instructor`, `Course`, `Registration`, `Certificate`, `CertificateTemplate` [11, 17, 18].
+* [x] **Padronização de Nomenclatura:** Termos de "Inscrição" alterados para "Solicitação de Certificado" em formulários, modelos e visualização [8].
 
-**Gestão de Treinamentos e Inscrições:**
-* [x] CRUD completo de Cursos com gerador de Links Únicos (UUID) [11].
+**Gestão de Treinamentos e Solicitações:**
+* [x] CRUD completo de Cursos com suporte a URLs Amigáveis (Slugs) [8].
+* [x] **Clean URLs:** Remoção de Query Strings. Links de solicitação agora seguem o padrão profissional: `/solic-cert-nome-do-curso-uuid/` [8].
+* [x] **Sistema de Expiração Profissional:** Interface refatorada com Card dedicado no formulário de treinamento, permitindo controle visual claro sobre a validade do link [8].
+* [x] **Kill-Switch (Blindagem):** Bloqueio automático de acesso ao formulário caso a data de expiração tenha sido atingida [8].
+* [x] **Ação Rápida na Listagem:** Botão "Encerrar/Reabrir" solicitações diretamente no painel, manipulando o status de expiração em tempo real [8].
 * [x] Formulário público com captura via ViaCEP (Rua, Número, Bairro, CEP) e dados da Instituição [19, 20].
+
+**Correções e Melhorias Técnicas:**
+* [x] **Resolução de Bug (Bugfix):** Corrigido `TemplateSyntaxError` causado por tag de timezone incorreta na listagem de treinamentos [8].
+* [x] **Otimização de Lógica:** Implementada propriedade `@property is_expired` no modelo `Course` para centralizar a regra de expiração e limpar o código dos templates [8].
 
 **Central de Certificados e PDF:**
 * [x] Geração profissional com ReportLab (A4 Paisagem) [14, 21].

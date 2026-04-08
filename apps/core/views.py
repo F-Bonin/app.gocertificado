@@ -280,6 +280,29 @@ class CertificateDesignView(LoginRequiredMixin, View):
         return redirect('core:certificate_design')
 
 
+class CourseToggleStatusView(LoginRequiredMixin, View):
+    """View rápida (Kill-Switch) para encerrar ou reabrir solicitações de um treinamento."""
+    def post(self, request, pk):
+        from django.utils import timezone
+        # Recupera o curso garantindo que pertença à empresa do usuário logado (Multi-tenant)
+        course = get_object_or_404(Course, pk=pk, company=self.request.user.profile.company)
+        
+        agora = timezone.now()
+        
+        # Lógica de Inversão:
+        # 1. Se NÃO tem expiração ou ela é no FUTURO (está ativo) -> ENCERRA (define como agora)
+        if not course.expires_at or course.expires_at > agora:
+            course.expires_at = agora
+            messages.warning(request, f"Solicitações para '{course.name}' encerradas com sucesso.")
+        # 2. Se já ESTÁ EXPIRADO -> REABRE (define como None)
+        else:
+            course.expires_at = None
+            messages.success(request, f"Solicitações para '{course.name}' reabertas com sucesso.")
+            
+        course.save(update_fields=['expires_at'])
+        return redirect('core:course_list')
+
+
 class CertificatePreviewView(LoginRequiredMixin, View):
     def get(self, request):
         model_type = request.GET.get('type', 'default')

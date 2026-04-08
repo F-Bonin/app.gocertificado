@@ -19,9 +19,10 @@
 
         <div class="card shadow-sm">
             <div class="card-body p-4">
-                <form method="post" novalidate>
+                <form method="post" novalidate id="courseForm">
                     {% csrf_token %}
                     
+                    <!-- 1. Identificação do Treinamento -->
                     <div class="mb-3">
                         <label for="{{ form.name.id_for_label }}" class="form-label fw-bold small text-muted">
                             {{ form.name.label }}
@@ -62,6 +63,7 @@
                         </div>
                     </div>
 
+                    <!-- 2. Localização e Instituição -->
                     <div class="row mb-3">
                         <div class="col-md-4">
                             <label for="{{ form.cep.id_for_label }}" class="form-label fw-bold small text-muted">{{ form.cep.label }}</label>
@@ -129,8 +131,46 @@
                         </div>
                     </div>
 
+                    <!-- 3. Expiração do Link (Refatoração: Novo Card) -->
+                    <div class="card bg-light border-0 mb-4 mt-4 shadow-sm">
+                        <div class="card-header bg-white py-3 border-bottom-0 d-flex align-items-center">
+                            <i class="bi bi-clock-history me-2 text-primary fs-5"></i>
+                            <h6 class="mb-0 fw-bold">Expiração do Link de Solicitação</h6>
+                        </div>
+                        <div class="card-body pt-0">
+                            <p class="text-muted small mb-3">
+                                Defina até quando os alunos poderão preencher o formulário de solicitação deste certificado.
+                            </p>
+                            
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="check_no_expire" 
+                                       {% if not form.expires_at.value %}checked{% endif %}>
+                                <label class="form-check-label fw-bold text-dark" for="check_no_expire">
+                                    O link nunca expira (sempre disponível)
+                                </label>
+                            </div>
+
+                            <div id="expire_date_container" {% if not form.expires_at.value %}style="display:none;"{% endif %}>
+                                <div class="p-3 bg-white rounded border border-primary border-opacity-25">
+                                    <label for="{{ form.expires_at.id_for_label }}" class="form-label fw-bold small text-primary">
+                                        Data e Hora Limite para Solicitações
+                                    </label>
+                                    {{ form.expires_at }}
+                                    <div class="form-text small mt-2">
+                                        <i class="bi bi-info-circle me-1"></i>
+                                        Após esta data, o link exibirá uma mensagem de "Encerrado".
+                                    </div>
+                                    {% if form.expires_at.errors %}
+                                        <div class="text-danger small mt-1">{{ form.expires_at.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <hr class="my-4 opacity-10">
 
+                    <!-- 4. Design do Certificado -->
                     <div class="mb-3">
                         <label for="{{ form.certificate_template.id_for_label }}" class="form-label fw-bold small text-muted">
                             {{ form.certificate_template.label }}
@@ -282,6 +322,29 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    /**
+     * Lógica de Expiração de Link (Refatoração JS)
+     * Gerencia a visibilidade do campo expires_at e as regras de obrigatoriedade.
+     */
+    const checkNoExpire = document.getElementById('check_no_expire');
+    const expireContainer = document.getElementById('expire_date_container');
+    const expireInput = document.querySelector('[name="expires_at"]');
+
+    if (checkNoExpire && expireContainer && expireInput) {
+        checkNoExpire.addEventListener('change', function() {
+            if (this.checked) {
+                // Link não expira: oculta, limpa e remove obrigatoriedade
+                expireContainer.style.display = 'none';
+                expireInput.value = '';
+                expireInput.required = false;
+            } else {
+                // Link expira: exibe e torna obrigatório
+                expireContainer.style.display = 'block';
+                expireInput.required = true;
+            }
+        });
+    }
+
     // --- 2. TOGGLE DE ASSINATURAS ---
     const numSignatures = document.getElementById('id_num_signatures');
     // Buscamos pelo atributo 'name' gerado pelo Django, que é infalível
@@ -319,6 +382,13 @@ document.addEventListener('DOMContentLoaded', function() {
         btnSalvar.addEventListener('click', function() {
             const form = this.closest('form');
             const sig1 = document.querySelector('[name="signature_1"]');
+
+            // Validação de Expiração antes do submit
+            if (checkNoExpire && !checkNoExpire.checked && !expireInput.value) {
+                alert('Por favor, informe a data e hora de expiração ou marque "O link nunca expira".');
+                expireInput.focus();
+                return;
+            }
 
             // Aciona os balõezinhos vermelhos de "Campo obrigatório" nativos do navegador
             if (!form.checkValidity()) {

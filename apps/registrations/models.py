@@ -1,6 +1,6 @@
 """
 apps/registrations/models.py
-Modelo de inscrição do participante no treinamento.
+Modelo de solicitação de certificado do participante.
 """
 import uuid
 from django.db import models
@@ -8,7 +8,7 @@ from apps.core.models import Instructor, Course
 
 
 class Registration(models.Model):
-    """Inscrição de um participante em um treinamento."""
+    """Solicitação de certificado de um participante em um treinamento."""
 
     class Status(models.TextChoices):
         PENDING = "pending", "Aguardando envio"
@@ -85,8 +85,8 @@ class Registration(models.Model):
     )
 
     class Meta:
-        verbose_name = "Inscrição"
-        verbose_name_plural = "Inscrições"
+        verbose_name = "Solicitação de Certificado"
+        verbose_name_plural = "Solicitações de Certificado"
         ordering = ["-created_at"]
 
     def __str__(self):

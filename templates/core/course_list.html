@@ -1,4 +1,5 @@
 {% extends 'painel/base_painel.html' %}
+{% load tz %}
 
 {% block title %}Meus Treinamentos | e-Certificado{% endblock %}
 
@@ -56,7 +57,7 @@
                         <th>Período</th>
                         <th>Local</th>
                         <th>Instrutor</th>
-                        <th>Link de Inscrição</th>
+                        <th>Link de Solicitação</th>
                         <th class="text-end pe-4">Ações</th>
                     </tr>
                 </thead>
@@ -74,12 +75,28 @@
                         <td>{{ course.signature_1.full_name|default:"N/A" }}</td>
                         <td>
                             {% if course.slug %}
-                            <div class="input-group input-group-sm" style="max-width: 300px;">
-                                <input type="text" class="form-control bg-light" readonly id="link-{{ course.id }}"
-                                       value="{{ request.scheme }}://{{ request.get_host }}{% url 'registrations:form' course.slug %}">
-                                <button class="btn btn-outline-primary" type="button" onclick="copyLink('link-{{ course.id }}')">
-                                    <i class="bi bi-clipboard"></i> Copiar
-                                </button>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="input-group input-group-sm" style="max-width: 250px;">
+                                    <input type="text" class="form-control bg-light" readonly id="link-{{ course.id }}"
+                                           value="{{ request.scheme }}://{{ request.get_host }}{% url 'registrations:form' course.slug %}">
+                                    <button class="btn btn-outline-primary" type="button" onclick="copyLink('link-{{ course.id }}')" title="Copiar Link">
+                                        <i class="bi bi-clipboard"></i>
+                                    </button>
+                                </div>
+                                
+                                <!-- Kill-Switch: Encerrar/Reabrir Solicitações (Corrigido para usar is_expired) -->
+                                <form method="post" action="{% url 'core:course_toggle' course.id %}" class="d-inline">
+                                    {% csrf_token %}
+                                    {% if course.is_expired %}
+                                        <button type="submit" class="btn btn-sm btn-success" title="Reabrir Solicitações">
+                                            <i class="bi bi-unlock-fill"></i> Reabrir
+                                        </button>
+                                    {% else %}
+                                        <button type="submit" class="btn btn-sm btn-danger" title="Encerrar Solicitações AGORA">
+                                            <i class="bi bi-slash-circle"></i> Encerrar
+                                        </button>
+                                    {% endif %}
+                                </form>
                             </div>
                             {% else %}
                             <a href="{% url 'core:course_generate_link' course.id %}" class="btn btn-sm btn-outline-warning">

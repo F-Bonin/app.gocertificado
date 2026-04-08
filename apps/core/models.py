@@ -178,6 +178,7 @@ class Course(models.Model):
         blank=True, 
         unique=True
     )
+    expires_at = models.DateTimeField("Expira em", blank=True, null=True, help_text="Deixe nulo para não expirar")
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -194,6 +195,14 @@ class Course(models.Model):
             # Concatena o nome slugificado com os 4 primeiros dígitos de um UUID para unicidade absoluta
             self.slug = f"{slugify(self.name)}-{str(uuid.uuid4())[:4]}"
         super().save(*args, **kwargs)
+
+    @property
+    def is_expired(self):
+        """Verifica se o treinamento já expirou baseado na data atual."""
+        from django.utils import timezone
+        if not self.expires_at:
+            return False
+        return timezone.now() > self.expires_at
 
     def get_registration_url(self):
         """Retorna a URL limpa de inscrição utilizando o novo padrão de Slug."""

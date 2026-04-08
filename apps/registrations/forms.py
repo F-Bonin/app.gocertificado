@@ -1,6 +1,6 @@
 """
 apps/registrations/forms.py
-Formulário de inscrição do participante.
+Formulário de solicitação de certificado do participante.
 """
 import re
 from django import forms
