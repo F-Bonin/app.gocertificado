@@ -4,6 +4,7 @@ Modelos base: Empresa e Instrutor.
 """
 import uuid
 from django.db import models
+from django.utils.text import slugify
 
 
 class Company(models.Model):
@@ -114,6 +115,7 @@ class Instructor(models.Model):
 class Course(models.Model):
     """Modelo persistente de Treinamentos."""
     name = models.CharField("Nome do curso", max_length=300)
+    slug = models.SlugField("Slug", max_length=350, unique=True, blank=True, null=True)
     start_date = models.DateField("Data de Início")
     end_date = models.DateField("Data de Término", null=True, blank=True)
     city = models.CharField("Cidade", max_length=100)
@@ -186,27 +188,18 @@ class Course(models.Model):
     def __str__(self):
         return f"{self.name} — {self.city} ({self.start_date})"
 
+    def save(self, *args, **kwargs):
+        """Gera um slug amigável único se estiver vazio."""
+        if not self.slug:
+            # Concatena o nome slugificado com os 4 primeiros dígitos de um UUID para unicidade absoluta
+            self.slug = f"{slugify(self.name)}-{str(uuid.uuid4())[:4]}"
+        super().save(*args, **kwargs)
+
     def get_registration_url(self):
-        """Constrói a URL de inscrição com todos os dados via QueryString."""
+        """Retorna a URL limpa de inscrição utilizando o novo padrão de Slug."""
         from django.urls import reverse
-        from urllib.parse import urlencode
         
-        if not self.link_hash:
+        if not self.slug:
             return ""
             
-        base_url = reverse("registrations:form", kwargs={"link_hash": self.link_hash})
-        
-        params = {
-            "course_name": self.name,
-            "course_date": self.start_date.isoformat() if self.start_date else "",
-            "course_city": self.city,
-            "course_state": self.state,
-            "course_workload": self.hours,
-            "institution_name": self.institution_name or "",
-            "institution_street": self.institution_street or "",
-            "institution_number": self.institution_number or "",
-            "institution_neighborhood": self.institution_neighborhood or "",
-            "institution_complement": self.institution_complement or "",
-        }
-        
-        return f"{base_url}?{urlencode(params)}"
+        return reverse("registrations:form", kwargs={"slug": self.slug})

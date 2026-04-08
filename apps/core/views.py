@@ -224,10 +224,11 @@ class CourseLinkGeneratorView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["instructors"] = Instructor.objects.filter(
-            company=self.request.user.profile.company, 
-            active=True
-        )
+        # Passa os treinamentos que já possuem link_hash gerado
+        context["courses"] = Course.objects.filter(
+            company=self.request.user.profile.company,
+            link_hash__isnull=False
+        ).order_by("-start_date")
         return context
 
 
