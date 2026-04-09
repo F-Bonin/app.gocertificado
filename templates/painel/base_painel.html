@@ -118,16 +118,16 @@
           <i class="bi bi-building"></i> Minha Empresa
         </a>
         <a href="{% url 'core:certificate_design' %}" class="list-group-item list-group-item-action {% if request.resolver_match.view_name == 'core:certificate_design' %}active{% endif %}">
-          <i class="bi bi-palette"></i> Modelo de Certificado
+          <i class="bi bi-palette"></i> Configurar Certificado
         </a>
         <a href="{% url 'core:instructor_list' %}" class="list-group-item list-group-item-action {% if 'instructor' in request.resolver_match.view_name %}active{% endif %}">
           <i class="bi bi-people"></i> Assinaturas Certificado
         </a>
         <a href="{% url 'core:course_create' %}" class="list-group-item list-group-item-action {% if request.resolver_match.view_name == 'core:course_create' %}active{% endif %}">
-          <i class="bi bi-journal-plus"></i> Criar Treinamento
+          <i class="bi bi-journal-plus"></i> Criar Evento (Curso)
         </a>
         <a href="{% url 'core:course_list' %}" class="list-group-item list-group-item-action {% if request.resolver_match.view_name == 'core:course_list' %}active{% endif %}">
-          <i class="bi bi-journal-check"></i> Meus Treinamentos
+          <i class="bi bi-journal-check"></i> Meus Eventos
         </a>
         <a href="{% url 'certificates:participants' %}" class="list-group-item list-group-item-action {% if request.resolver_match.url_name == 'participants' %}active{% endif %}">
           <i class="bi bi-people-fill"></i> Alunos / Participantes

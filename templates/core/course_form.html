@@ -1,7 +1,7 @@
 {% extends 'painel/base_painel.html' %}
 
 {% block title %}
-    {% if object %}Editar Treinamento{% else %}Novo Treinamento{% endif %} | e-Certificado
+    {% if object %}Editar Evento{% else %}Novo Evento{% endif %} | e-Certificado
 {% endblock %}
 
 {% block content %}
@@ -13,7 +13,7 @@
             </a>
             <h2 class="h4 mb-0 text-primary">
                 <i class="bi bi-journal-plus me-2"></i>
-                {% if object %}Editar Treinamento{% else %}Novo Treinamento{% endif %}
+                {% if object %}Editar Evento{% else %}Novo Evento{% endif %}
             </h2>
         </div>
 
@@ -22,7 +22,7 @@
                 <form method="post" novalidate id="courseForm">
                     {% csrf_token %}
                     
-                    <!-- 1. Identificação do Treinamento -->
+                    <!-- 1. Identificação do Evento -->
                     <div class="mb-3">
                         <label for="{{ form.name.id_for_label }}" class="form-label fw-bold small text-muted">
                             {{ form.name.label }}
@@ -224,7 +224,7 @@
                     <div class="d-grid gap-2 d-md-flex justify-content-md-end">
                         <a href="{% url 'core:course_list' %}" class="btn btn-light px-4">Cancelar</a>
                         <button type="button" class="btn btn-primary px-5 shadow-sm" id="btn-salvar-treinamento">
-                            <i class="bi bi-check2-circle me-1"></i> Salvar Treinamento
+                            <i class="bi bi-check2-circle me-1"></i> Salvar Evento
                         </button>
                     </div>
                 </form>
@@ -234,7 +234,7 @@
         {% if not object %}
         <div class="alert alert-info mt-4 small border-0 shadow-sm">
             <i class="bi bi-info-circle-fill me-2"></i>
-            Ao salvar, um <strong>Link Único</strong> de inscrição será gerado automaticamente para este treinamento.
+            Ao salvar, um <strong>Link Único</strong> de inscrição será gerado automaticamente para este evento.
         </div>
         {% endif %}
     </div>

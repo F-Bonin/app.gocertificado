@@ -2,7 +2,7 @@
 
 **Atualize este arquivo após cada sessão de desenvolvimento.** A IA deve ler este arquivo para entender o escopo completo.
 
-#### 🗓️ Última atualização: 2026-04-08 (Refatoração de Interface e Sistema de Expiração) [8]
+#### 🗓️ Última atualização: 2026-04-09 (Refatoração de UX Copy: Treinamento para Evento) [9]
 
 ---
 
@@ -10,6 +10,7 @@
 **Estrutura Base e SaaS:**
 * [x] Arquitetura SaaS Multitenant (Login, Registro e Perfil vinculados a Empresas) [6, 11].
 * [x] Models: `Company`, `Instructor`, `Course`, `Registration`, `Certificate`, `CertificateTemplate` [11, 17, 18].
+* [x] **Refatoração de UX Copy:** Nomenclatura alterada de "Treinamento" para "Evento" em todo o painel administrativo e modelos de certificado [9].
 * [x] **Padronização de Nomenclatura:** Termos de "Inscrição" alterados para "Solicitação de Certificado" em formulários, modelos e visualização [8].
 
 **Gestão de Treinamentos e Solicitações:**
