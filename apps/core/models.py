@@ -178,6 +178,8 @@ class Course(models.Model):
         blank=True, 
         unique=True
     )
+    registration_start = models.DateTimeField("Início das Inscrições", blank=True, null=True)
+    registration_end = models.DateTimeField("Término das Inscrições", blank=True, null=True)
     expires_at = models.DateTimeField("Expira em", blank=True, null=True, help_text="Deixe nulo para não expirar")
     created_at = models.DateTimeField(auto_now_add=True)
 

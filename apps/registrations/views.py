@@ -100,6 +100,40 @@ class RegistrationCreateView(CreateView):
         return context
 
 
+class EventRegistrationCreateView(RegistrationCreateView):
+    """View para inscrição pré-evento (antes do treinamento ocorrer)."""
+    template_name = "registrations/event_form.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        """
+        Blindagem: Verifica se o período de inscrição pré-evento é válido.
+        Substitui a lógica de expiração do certificado pela lógica de período de inscrição.
+        """
+        course = get_object_or_404(Course, slug=self.kwargs['slug'])
+        now = timezone.now()
+
+        # 1. Validação de Início (Se definido)
+        if course.registration_start and now < course.registration_start:
+            return HttpResponseForbidden(
+                f"<div style='text-align:center; margin-top:50px; font-family:sans-serif;'>"
+                f"<h2>As inscrições para este evento ainda não começaram.</h2>"
+                f"<p>Início previsto para: {course.registration_start.strftime('%d/%m/%Y às %H:%M')}</p>"
+                "</div>"
+            )
+
+        # 2. Validação de Término (Se definido)
+        if course.registration_end and now > course.registration_end:
+            return HttpResponseForbidden(
+                "<div style='text-align:center; margin-top:50px; font-family:sans-serif;'>"
+                "<h2>As inscrições para este evento foram encerradas.</h2>"
+                "<p>O prazo limite para inscrição expirou.</p>"
+                "</div>"
+            )
+
+        # Pula o dispatch da RegistrationCreateView (que checa expires_at) e vai para a base View
+        return super(RegistrationCreateView, self).dispatch(request, *args, **kwargs)
+
+
 class RegistrationSuccessView(TemplateView):
     """Tela de agradecimento após envio do formulário."""
     template_name = "registrations/registration_success.html"

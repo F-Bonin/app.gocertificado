@@ -57,7 +57,7 @@
                         <th>Período</th>
                         <th>Local</th>
                         <th>Instrutor</th>
-                        <th>Link de Solicitação</th>
+                        <th>Links do Evento</th>
                         <th class="text-end pe-4">Ações</th>
                     </tr>
                 </thead>
@@ -75,25 +75,32 @@
                         <td>{{ course.signature_1.full_name|default:"N/A" }}</td>
                         <td>
                             {% if course.slug %}
-                            <div class="d-flex align-items-center gap-2">
-                                <div class="input-group input-group-sm" style="max-width: 250px;">
-                                    <input type="text" class="form-control bg-light" readonly id="link-{{ course.id }}"
-                                           value="{{ request.scheme }}://{{ request.get_host }}{% url 'registrations:form' course.slug %}">
-                                    <button class="btn btn-outline-primary" type="button" onclick="copyLink('link-{{ course.id }}')" title="Copiar Link">
-                                        <i class="bi bi-clipboard"></i>
-                                    </button>
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="d-flex flex-column gap-2" style="width: 250px;">
+                                    <!-- Link 1: Inscrição -->
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text bg-success text-white" title="Link de Inscrição"><i class="bi bi-person-plus"></i></span>
+                                        <input type="text" class="form-control bg-light" readonly id="link-reg-{{ course.id }}" value="{{ request.scheme }}://{{ request.get_host }}{% url 'registrations:event_form' course.slug %}">
+                                        <button class="btn btn-outline-success" type="button" onclick="copyLink('link-reg-{{ course.id }}')"><i class="bi bi-clipboard"></i></button>
+                                    </div>
+                                    <!-- Link 2: Certificado -->
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text bg-primary text-white" title="Link de Certificado"><i class="bi bi-patch-check"></i></span>
+                                        <input type="text" class="form-control bg-light" readonly id="link-cert-{{ course.id }}" value="{{ request.scheme }}://{{ request.get_host }}{% url 'registrations:form' course.slug %}">
+                                        <button class="btn btn-outline-primary" type="button" onclick="copyLink('link-cert-{{ course.id }}')"><i class="bi bi-clipboard"></i></button>
+                                    </div>
                                 </div>
                                 
-                                <!-- Kill-Switch: Encerrar/Reabrir Solicitações (Corrigido para usar is_expired) -->
+                                <!-- Kill-Switch: Encerrar/Reabrir Solicitações -->
                                 <form method="post" action="{% url 'core:course_toggle' course.id %}" class="d-inline">
                                     {% csrf_token %}
                                     {% if course.is_expired %}
                                         <button type="submit" class="btn btn-sm btn-success" title="Reabrir Solicitações">
-                                            <i class="bi bi-unlock-fill"></i> Reabrir
+                                            <i class="bi bi-unlock-fill"></i>
                                         </button>
                                     {% else %}
                                         <button type="submit" class="btn btn-sm btn-danger" title="Encerrar Solicitações AGORA">
-                                            <i class="bi bi-slash-circle"></i> Encerrar
+                                            <i class="bi bi-slash-circle"></i>
                                         </button>
                                     {% endif %}
                                 </form>

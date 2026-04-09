@@ -131,11 +131,61 @@
                         </div>
                     </div>
 
+                    <!-- 2.5 Configurações do Link de Inscrição (Pré-Evento) -->
+                    <div class="card mb-4 border-success shadow-sm">
+                        <div class="card-header bg-success text-white fw-bold d-flex align-items-center">
+                            <i class="bi bi-person-lines-fill me-2 fs-5"></i>
+                            Configurações do Link de Inscrição (Pré-Evento)
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted small mb-3">
+                                Defina o período em que o formulário de inscrição pré-evento estará disponível para os participantes.
+                            </p>
+                            
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" id="check_registration_open" 
+                                       {% if not form.registration_start.value and not form.registration_end.value %}checked{% endif %}>
+                                <label class="form-check-label fw-bold text-dark" for="check_registration_open">
+                                    O link nunca expira (sempre disponível)
+                                </label>
+                            </div>
+
+                            <div id="registration_dates_container" {% if not form.registration_start.value and not form.registration_end.value %}style="display:none;"{% endif %}>
+                                <div class="p-3 bg-light rounded border border-success border-opacity-25">
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3 mb-md-0">
+                                            <label for="{{ form.registration_start.id_for_label }}" class="form-label fw-bold small text-success">
+                                                Início das Inscrições
+                                            </label>
+                                            {{ form.registration_start }}
+                                            {% if form.registration_start.errors %}
+                                                <div class="text-danger small mt-1">{{ form.registration_start.errors.0 }}</div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="{{ form.registration_end.id_for_label }}" class="form-label fw-bold small text-success">
+                                                Término das Inscrições
+                                            </label>
+                                            {{ form.registration_end }}
+                                            {% if form.registration_end.errors %}
+                                                <div class="text-danger small mt-1">{{ form.registration_end.errors.0 }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="form-text small mt-2">
+                                        <i class="bi bi-info-circle me-1"></i>
+                                        Fora deste intervalo, o link de inscrição ficará desativado.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- 3. Expiração do Link (Refatoração: Novo Card) -->
                     <div class="card bg-light border-0 mb-4 mt-4 shadow-sm">
                         <div class="card-header bg-white py-3 border-bottom-0 d-flex align-items-center">
                             <i class="bi bi-clock-history me-2 text-primary fs-5"></i>
-                            <h6 class="mb-0 fw-bold">Expiração do Link de Solicitação</h6>
+                            <h6 class="mb-0 fw-bold">Expiração do Link de Solicitação (Certificado)</h6>
                         </div>
                         <div class="card-body pt-0">
                             <p class="text-muted small mb-3">
@@ -341,6 +391,33 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Link expira: exibe e torna obrigatório
                 expireContainer.style.display = 'block';
                 expireInput.required = true;
+            }
+        });
+    }
+
+    /**
+     * Lógica de Inscrição Pré-Evento (JS)
+     * Gerencia a visibilidade dos campos de período de inscrição.
+     */
+    const checkRegOpen = document.getElementById('check_registration_open');
+    const regContainer = document.getElementById('registration_dates_container');
+    const regStartInput = document.querySelector('[name="registration_start"]');
+    const regEndInput = document.querySelector('[name="registration_end"]');
+
+    if (checkRegOpen && regContainer && regStartInput && regEndInput) {
+        checkRegOpen.addEventListener('change', function() {
+            if (this.checked) {
+                // Link sempre aberto: oculta, limpa e remove obrigatoriedade
+                regContainer.style.display = 'none';
+                regStartInput.value = '';
+                regEndInput.value = '';
+                regStartInput.required = false;
+                regEndInput.required = false;
+            } else {
+                // Período definido: exibe e torna campos obrigatórios
+                regContainer.style.display = 'block';
+                regStartInput.required = true;
+                regEndInput.required = true;
             }
         });
     }

@@ -84,6 +84,8 @@ class Registration(models.Model):
         verbose_name="Instrutor"
     )
 
+    attended = models.BooleanField("Presença Confirmada", default=False)
+
     class Meta:
         verbose_name = "Solicitação de Certificado"
         verbose_name_plural = "Solicitações de Certificado"

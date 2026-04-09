@@ -1,0 +1,352 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inscrição no Evento | e-Certificado</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; }
+        .form-container { max-width: 800px; margin: 50px auto; }
+        .card { border: none; border-radius: 15px; box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15); }
+        .section-title { border-bottom: 2px solid #e9ecef; padding-bottom: 10px; margin-bottom: 20px; font-weight: 600; color: #495057; }
+        #countdown_timer { font-family: monospace; font-weight: bold; font-size: 1.2rem; }
+    </style>
+</head>
+<body>
+
+    <script>
+        // Injeção de variáveis nativas do Django para o JavaScript
+        var startTime = "{{ course.registration_start|date:'c' }}";
+        var endTime = "{{ course.registration_end|date:'c' }}";
+    </script>
+
+    <div class="container">
+        <div class="form-container">
+            <div class="card p-4 p-md-5">
+                <div class="text-center mb-4">
+                    <img src="{% static 'images/logo.png' %}" alt="Logo da Empresa" class="mb-3" style="max-height: 80px; object-fit: contain; width: auto;">
+                    <h2 class="fw-bold">Inscrição no Evento</h2>
+                    <p class="text-muted">Preencha os campos abaixo para garantir sua vaga.</p>
+                </div>
+
+                <!-- Card de Status e Cronômetro -->
+                <div id="status_card" class="alert shadow-sm mb-4 d-none">
+                    <div class="d-flex align-items-center">
+                        <div id="status_icon" class="me-3 fs-3"></div>
+                        <div>
+                            <h5 id="status_title" class="alert-heading mb-1 fw-bold"></h5>
+                            <p id="status_message" class="mb-0"></p>
+                            <div class="mt-2">
+                                <span id="timer_label" class="small text-uppercase fw-bold opacity-75"></span>
+                                <span id="countdown_timer" class="ms-2"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="registration_form_wrapper">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="section-title">Dados do Evento</div>
+                        <div class="mb-4 bg-light p-3 rounded border-start border-4 border-success">
+                            <p class="mb-1"><strong>Evento:</strong> <span class="text-muted">{{ course.name }}</span></p>
+                            <p class="mb-1"><strong>Data:</strong> <span class="text-muted">{{ course.start_date|date:"d/m/Y" }}{% if course.end_date %} a {{ course.end_date|date:"d/m/Y" }}{% endif %}</span></p>
+                            <p class="mb-1"><strong>Local:</strong> <span class="text-muted">{{ course.institution_name|default:"Não informado" }}</span></p>
+                            <p class="mb-0"><strong>Carga Horária:</strong> <span class="text-muted">{{ course.hours }}h</span></p>
+                        </div>
+
+                        {# Campos ocultos para persistência #}
+                        <div style="display: none;">
+                            {{ form.course_name }}
+                            {{ form.course_date }}
+                            {{ form.course_workload }}
+                            {{ form.institution_name }}
+                            {{ form.institution_street }}
+                            {{ form.institution_number }}
+                            {{ form.institution_neighborhood }}
+                            {{ form.institution_complement }}
+                        </div>
+                        
+                        <div class="section-title">Seus Dados Pessoais</div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.full_name.id_for_label }}" class="form-label fw-bold small">{{ form.full_name.label }}</label>
+                            {{ form.full_name }}
+                            {% if form.full_name.errors %}<div class="text-danger small">{{ form.full_name.errors.0 }}</div>{% endif %}
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.gender.id_for_label }}" class="form-label fw-bold small">{{ form.gender.label }}</label>
+                                {{ form.gender }}
+                                {% if form.gender.errors %}<div class="text-danger small">{{ form.gender.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3" id="div_id_custom_gender" style="display: none;">
+                                <label for="{{ form.custom_gender.id_for_label }}" class="form-label fw-bold small">{{ form.custom_gender.label }}</label>
+                                {{ form.custom_gender }}
+                                {% if form.custom_gender.errors %}<div class="text-danger small">{{ form.custom_gender.errors.0 }}</div>{% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.profession.id_for_label }}" class="form-label fw-bold small">{{ form.profession.label }}</label>
+                                {{ form.profession }}
+                                {% if form.profession.errors %}<div class="text-danger small">{{ form.profession.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.birth_date.id_for_label }}" class="form-label fw-bold small">{{ form.birth_date.label }}</label>
+                                {{ form.birth_date }}
+                                {% if form.birth_date.errors %}<div class="text-danger small">{{ form.birth_date.errors.0 }}</div>{% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.cpf.id_for_label }}" class="form-label fw-bold small">{{ form.cpf.label }}</label>
+                                {{ form.cpf }}
+                                {% if form.cpf.errors %}<div class="text-danger small">{{ form.cpf.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.rg.id_for_label }}" class="form-label fw-bold small">{{ form.rg.label }}</label>
+                                {{ form.rg }}
+                                {% if form.rg.errors %}<div class="text-danger small">{{ form.rg.errors.0 }}</div>{% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.whatsapp.id_for_label }}" class="form-label fw-bold small">{{ form.whatsapp.label }}</label>
+                                {{ form.whatsapp }}
+                                {% if form.whatsapp.errors %}<div class="text-danger small">{{ form.whatsapp.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.email.id_for_label }}" class="form-label fw-bold small">{{ form.email.label }}</label>
+                                {{ form.email }}
+                                {% if form.email.errors %}<div class="text-danger small">{{ form.email.errors.0 }}</div>{% endif %}
+                            </div>
+                        </div>
+
+                        <div class="section-title mt-4">Endereço de Correspondência</div>
+
+                        <div class="row">
+                            <div class="col-md-5 mb-3">
+                                <label for="{{ form.cep.id_for_label }}" class="form-label fw-bold small">{{ form.cep.label }}</label>
+                                {{ form.cep }}
+                                {% if form.cep.errors %}<div class="text-danger small">{{ form.cep.errors.0 }}</div>{% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-9 mb-3">
+                                <label for="{{ form.street.id_for_label }}" class="form-label fw-bold small">{{ form.street.label }}</label>
+                                {{ form.street }}
+                                {% if form.street.errors %}<div class="text-danger small">{{ form.street.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label for="{{ form.number.id_for_label }}" class="form-label fw-bold small">{{ form.number.label }}</label>
+                                {{ form.number }}
+                                {% if form.number.errors %}<div class="text-danger small">{{ form.number.errors.0 }}</div>{% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.complement.id_for_label }}" class="form-label fw-bold small">{{ form.complement.label }}</label>
+                                {{ form.complement }}
+                                {% if form.complement.errors %}<div class="text-danger small">{{ form.complement.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.neighborhood.id_for_label }}" class="form-label fw-bold small">{{ form.neighborhood.label }}</label>
+                                {{ form.neighborhood }}
+                                {% if form.neighborhood.errors %}<div class="text-danger small">{{ form.neighborhood.errors.0 }}</div>{% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-8 mb-3">
+                                <label for="{{ form.city.id_for_label }}" class="form-label fw-bold small">{{ form.city.label }}</label>
+                                {{ form.city }}
+                                {% if form.city.errors %}<div class="text-danger small">{{ form.city.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ form.state.id_for_label }}" class="form-label fw-bold small">{{ form.state.label }}</label>
+                                {{ form.state }}
+                                {% if form.state.errors %}<div class="text-danger small">{{ form.state.errors.0 }}</div>{% endif %}
+                            </div>
+                        </div>
+
+                        <div class="d-grid mt-4">
+                            <button type="submit" class="btn btn-success btn-lg shadow-sm">Realizar Inscrição</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // --- Lógica do Cronômetro e Bloqueio ---
+            const statusCard = document.getElementById('status_card');
+            const statusIcon = document.getElementById('status_icon');
+            const statusTitle = document.getElementById('status_title');
+            const statusMessage = document.getElementById('status_message');
+            const timerLabel = document.getElementById('timer_label');
+            const countdownTimer = document.getElementById('countdown_timer');
+            const formWrapper = document.getElementById('registration_form_wrapper');
+
+            const start = startTime ? new Date(startTime) : null;
+            const end = endTime ? new Date(endTime) : null;
+
+            function updateTimer() {
+                const now = new Date();
+                
+                // Caso 1: Sem restrição de data
+                if (!start && !end) {
+                    statusCard.classList.add('d-none');
+                    formWrapper.classList.remove('d-none');
+                    return;
+                }
+
+                statusCard.classList.remove('d-none');
+
+                // Caso 2: Antes do início
+                if (start && now < start) {
+                    const diff = start - now;
+                    statusCard.className = 'alert alert-warning shadow-sm mb-4';
+                    statusIcon.innerHTML = '<i class="bi bi-clock-history"></i>';
+                    statusTitle.innerText = "Inscrições em breve";
+                    statusMessage.innerText = "O formulário será liberado automaticamente.";
+                    timerLabel.innerText = "Abre em:";
+                    countdownTimer.innerText = formatTime(diff);
+                    formWrapper.classList.add('d-none');
+                    return;
+                }
+
+                // Caso 3: Inscrições abertas
+                if ((!start || now >= start) && (!end || now <= end)) {
+                    formWrapper.classList.remove('d-none');
+                    if (end) {
+                        const diff = end - now;
+                        statusCard.className = 'alert alert-success shadow-sm mb-4';
+                        statusIcon.innerHTML = '<i class="bi bi-patch-check"></i>';
+                        statusTitle.innerText = "Inscrições abertas!";
+                        statusMessage.innerText = "Aproveite para garantir sua vaga agora.";
+                        timerLabel.innerText = "Fecha em:";
+                        countdownTimer.innerText = formatTime(diff);
+                    } else {
+                        statusCard.classList.add('d-none');
+                    }
+                    return;
+                }
+
+                // Caso 4: Encerrado
+                if (end && now > end) {
+                    statusCard.className = 'alert alert-danger shadow-sm mb-4';
+                    statusIcon.innerHTML = '<i class="bi bi-exclamation-octagon"></i>';
+                    statusTitle.innerText = "Inscrições encerradas";
+                    statusMessage.innerText = "Não é mais possível realizar inscrições para este evento.";
+                    timerLabel.innerText = "Tempo restante:";
+                    countdownTimer.innerText = "00:00:00";
+                    formWrapper.classList.add('d-none');
+                    return;
+                }
+            }
+
+            function formatTime(ms) {
+                const totalSeconds = Math.floor(ms / 1000);
+                const days = Math.floor(totalSeconds / 86400);
+                const hours = Math.floor((totalSeconds % 86400) / 3600);
+                const minutes = Math.floor((totalSeconds % 3600) / 60);
+                const seconds = totalSeconds % 60;
+
+                let timeStr = "";
+                if (days > 0) timeStr += days + "d ";
+                timeStr += String(hours).padStart(2, '0') + ":" + 
+                           String(minutes).padStart(2, '0') + ":" + 
+                           String(seconds).padStart(2, '0');
+                return timeStr;
+            }
+
+            setInterval(updateTimer, 1000);
+            updateTimer(); // Chamada inicial
+
+            // --- Lógica do Gênero ---
+            const genderSelect = document.getElementById('id_gender');
+            const customGenderDiv = document.getElementById('div_id_custom_gender');
+            const customGenderInput = document.getElementById('id_custom_gender');
+
+            if (genderSelect) {
+                function toggleCustomGender() {
+                    if (genderSelect.value === 'O') {
+                        customGenderDiv.style.display = 'block';
+                        customGenderInput.setAttribute('required', 'required');
+                    } else {
+                        customGenderDiv.style.display = 'none';
+                        customGenderInput.removeAttribute('required');
+                    }
+                }
+                genderSelect.addEventListener('change', toggleCustomGender);
+                toggleCustomGender();
+            }
+
+            // --- ViaCEP ---
+            const cepInput = document.getElementById('id_cep');
+            const streetInput = document.getElementById('id_street');
+            const neighborhoodInput = document.getElementById('id_neighborhood');
+            const cityInput = document.getElementById('id_city');
+            const stateInput = document.getElementById('id_state');
+            const numberInput = document.getElementById('id_number');
+
+            if (cepInput) {
+                const toggleReadOnly = (isReadOnly) => {
+                    if (streetInput) streetInput.readOnly = isReadOnly;
+                    if (neighborhoodInput) neighborhoodInput.readOnly = isReadOnly;
+                    if (cityInput) cityInput.readOnly = isReadOnly;
+                    if (stateInput) stateInput.readOnly = isReadOnly;
+                };
+
+                cepInput.addEventListener('blur', () => {
+                    const cep = cepInput.value.replace(/\D/g, '');
+                    if (cep.length !== 8) return;
+                    
+                    if (streetInput) streetInput.value = "...";
+                    if (neighborhoodInput) neighborhoodInput.value = "...";
+                    if (cityInput) cityInput.value = "...";
+                    if (stateInput) stateInput.value = "...";
+                    toggleReadOnly(true);
+
+                    fetch(`https://viacep.com.br/ws/${cep}/json/`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.erro) {
+                                alert("CEP não encontrado.");
+                                toggleReadOnly(false);
+                                return;
+                            }
+                            if (streetInput) streetInput.value = data.logradouro;
+                            if (neighborhoodInput) neighborhoodInput.value = data.bairro;
+                            if (cityInput) cityInput.value = data.localidade;
+                            if (stateInput) stateInput.value = data.uf;
+                            if (numberInput) numberInput.focus();
+                        })
+                        .catch(error => {
+                            console.error('Erro ao buscar CEP:', error);
+                            toggleReadOnly(false);
+                        });
+                });
+            }
+        });
+    </script>
+</body>
+</html>
