@@ -28,7 +28,8 @@
                 <!-- Card de Status e Cronômetro Reativo -->
                 <div class="alert alert-info shadow-sm mb-4">
                     <p class="mb-1 fw-bold text-center">
-                        Início: {{ course.certificate_start|date:"d/m/Y às H:i" }} | Encerramento: {{ course.certificate_end|date:"d/m/Y às H:i" }}
+                        {# Separação dos filtros de data e hora para evitar bug de escape no Django #}
+                        Início: {{ course.certificate_start|date:"d/m/Y" }} às {{ course.certificate_start|date:"H:i" }}{% if course.certificate_end %} | Encerramento: {{ course.certificate_end|date:"d/m/Y" }} às {{ course.certificate_end|date:"H:i" }}{% endif %}
                     </p>
                     <div id="timer_display" class="fs-4 fw-bold text-danger text-center mt-2"></div>
                 </div>
@@ -185,25 +186,40 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // --- Lógica do Cronômetro Reativo (Vanilla JS) ---
-            const certificateStart = new Date("{{ course.certificate_start|date:'c' }}");
-            const certificateEnd = new Date("{{ course.certificate_end|date:'c' }}");
+            // Injeção de datas com fallback para string vazia via Django
+            const startStr = "{{ course.certificate_start|date:'c'|default:'' }}";
+            const endStr = "{{ course.certificate_end|date:'c'|default:'' }}";
+            
+            const certificateStart = startStr ? new Date(startStr) : null;
+            const certificateEnd = endStr ? new Date(endStr) : null;
+            
             const timerDisplay = document.getElementById('timer_display');
             const formWrapper = document.getElementById('certificate_form_wrapper');
 
             function updateCountdown() {
                 const now = new Date();
                 
-                if (now < certificateStart) {
-                    // Caso o período de solicitação ainda não tenha começado
+                // Caso o início esteja definido e ainda não tenha chegado
+                if (certificateStart && now < certificateStart) {
                     const diff = certificateStart - now;
                     timerDisplay.innerText = "Abre em: " + formatDiff(diff);
                     if (formWrapper) formWrapper.style.display = 'none';
-                } else if (now > certificateEnd) {
-                    // Caso o período de solicitação tenha expirado
+                    return;
+                }
+
+                // Se não houver data de encerramento, o link é vitalício ou indeterminado
+                if (!certificateEnd) {
+                    timerDisplay.innerText = "Disponível por tempo indeterminado";
+                    if (formWrapper) formWrapper.style.display = 'block';
+                    return;
+                }
+
+                // Se houver data de encerramento e já passou
+                if (now > certificateEnd) {
                     timerDisplay.innerText = "Encerrado";
                     if (formWrapper) formWrapper.style.display = 'none';
                 } else {
-                    // Caso as solicitações estejam abertas
+                    // Período de solicitações abertas com data de fim
                     const diff = certificateEnd - now;
                     timerDisplay.innerText = "Expira em: " + formatDiff(diff);
                     if (formWrapper) formWrapper.style.display = 'block';
@@ -211,6 +227,8 @@
             }
 
             function formatDiff(ms) {
+                if (isNaN(ms) || ms < 0) return "00:00:00";
+                
                 const totalSeconds = Math.floor(ms / 1000);
                 const days = Math.floor(totalSeconds / 86400);
                 const hours = Math.floor((totalSeconds % 86400) / 3600);

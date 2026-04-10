@@ -37,7 +37,8 @@
                 <!-- Card de Status e Cronômetro Reativo -->
                 <div class="alert alert-info shadow-sm mb-4">
                     <p class="mb-1 fw-bold text-center">
-                        Início: {{ course.registration_start|date:"d/m/Y às H:i" }} | Encerramento: {{ course.registration_end|date:"d/m/Y às H:i" }}
+                        {# Separação dos filtros de data e hora para evitar bug de escape no Django #}
+                        Início: {{ course.registration_start|date:"d/m/Y" }} às {{ course.registration_start|date:"H:i" }}{% if course.registration_end %} | Encerramento: {{ course.registration_end|date:"d/m/Y" }} às {{ course.registration_end|date:"H:i" }}{% endif %}
                     </p>
                     <div id="timer_display" class="fs-4 fw-bold text-danger text-center mt-2"></div>
                 </div>
@@ -190,25 +191,40 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // --- Lógica do Cronômetro Reativo (Vanilla JS) ---
-            const registrationStart = new Date("{{ course.registration_start|date:'c' }}");
-            const registrationEnd = new Date("{{ course.registration_end|date:'c' }}");
+            // Injeção de datas com fallback para string vazia via Django
+            const startStr = "{{ course.registration_start|date:'c'|default:'' }}";
+            const endStr = "{{ course.registration_end|date:'c'|default:'' }}";
+            
+            const registrationStart = startStr ? new Date(startStr) : null;
+            const registrationEnd = endStr ? new Date(endStr) : null;
+            
             const timerDisplay = document.getElementById('timer_display');
             const formWrapper = document.getElementById('registration_form_wrapper');
 
             function updateCountdown() {
                 const now = new Date();
                 
-                if (now < registrationStart) {
-                    // Caso o período de inscrição ainda não tenha começado
+                // Caso o início esteja definido e ainda não tenha chegado
+                if (registrationStart && now < registrationStart) {
                     const diff = registrationStart - now;
                     timerDisplay.innerText = "Abre em: " + formatDiff(diff);
                     if (formWrapper) formWrapper.style.display = 'none';
-                } else if (now > registrationEnd) {
-                    // Caso o período de inscrição tenha expirado
+                    return;
+                }
+
+                // Se não houver data de encerramento, o link é vitalício ou indeterminado
+                if (!registrationEnd) {
+                    timerDisplay.innerText = "Disponível por tempo indeterminado";
+                    if (formWrapper) formWrapper.style.display = 'block';
+                    return;
+                }
+
+                // Se houver data de encerramento e já passou
+                if (now > registrationEnd) {
                     timerDisplay.innerText = "Encerrado";
                     if (formWrapper) formWrapper.style.display = 'none';
                 } else {
-                    // Caso as inscrições estejam abertas
+                    // Período de inscrições abertas com data de fim
                     const diff = registrationEnd - now;
                     timerDisplay.innerText = "Expira em: " + formatDiff(diff);
                     if (formWrapper) formWrapper.style.display = 'block';
@@ -216,6 +232,8 @@
             }
 
             function formatDiff(ms) {
+                if (isNaN(ms) || ms < 0) return "00:00:00";
+                
                 const totalSeconds = Math.floor(ms / 1000);
                 const days = Math.floor(totalSeconds / 86400);
                 const hours = Math.floor((totalSeconds % 86400) / 3600);
