@@ -136,10 +136,12 @@ class CourseListView(LoginRequiredMixin, ListView):
         return response
 
     def get_context_data(self, **kwargs):
+        from django.utils import timezone
         context = super().get_context_data(**kwargs)
         context["instructors"] = Instructor.objects.filter(
             company=self.request.user.profile.company
         )
+        context["now"] = timezone.now()
         return context
 
 
@@ -280,26 +282,45 @@ class CertificateDesignView(LoginRequiredMixin, View):
         return redirect('core:certificate_design')
 
 
-class CourseToggleStatusView(LoginRequiredMixin, View):
-    """View rápida (Kill-Switch) para encerrar ou reabrir solicitações de um treinamento."""
+class ToggleRegistrationLinkView(LoginRequiredMixin, View):
+    """View para encerrar ou reabrir links de INSCRIÇÃO (Pré-Evento)."""
     def post(self, request, pk):
         from django.utils import timezone
-        # Recupera o curso garantindo que pertença à empresa do usuário logado (Multi-tenant)
         course = get_object_or_404(Course, pk=pk, company=self.request.user.profile.company)
-        
-        agora = timezone.now()
-        
+        now = timezone.now()
+
         # Lógica de Inversão:
-        # 1. Se NÃO tem expiração ou ela é no FUTURO (está ativo) -> ENCERRA (define como agora)
-        if not course.expires_at or course.expires_at > agora:
-            course.expires_at = agora
-            messages.warning(request, f"Solicitações para '{course.name}' encerradas com sucesso.")
-        # 2. Se já ESTÁ EXPIRADO -> REABRE (define como None)
+        # Se o término já passou (encerrado), reabre (None)
+        if course.registration_end and course.registration_end < now:
+            course.registration_end = None
+            messages.success(request, f"Inscrições para '{course.name}' reabertas com sucesso.")
+        # Se está ativo (None ou futuro), encerra (now)
         else:
-            course.expires_at = None
-            messages.success(request, f"Solicitações para '{course.name}' reabertas com sucesso.")
-            
-        course.save(update_fields=['expires_at'])
+            course.registration_end = now
+            messages.warning(request, f"Inscrições para '{course.name}' encerradas.")
+
+        course.save(update_fields=['registration_end'])
+        return redirect('core:course_list')
+
+
+class ToggleCertificateLinkView(LoginRequiredMixin, View):
+    """View para encerrar ou reabrir links de SOLICITAÇÃO (Certificado)."""
+    def post(self, request, pk):
+        from django.utils import timezone
+        course = get_object_or_404(Course, pk=pk, company=self.request.user.profile.company)
+        now = timezone.now()
+
+        # Lógica de Inversão:
+        # Se o término já passou (encerrado), reabre (None)
+        if course.certificate_end and course.certificate_end < now:
+            course.certificate_end = None
+            messages.success(request, f"Solicitações de certificado para '{course.name}' reabertas.")
+        # Se está ativo (None ou futuro), encerra (now)
+        else:
+            course.certificate_end = now
+            messages.warning(request, f"Solicitações de certificado para '{course.name}' encerradas.")
+
+        course.save(update_fields=['certificate_end'])
         return redirect('core:course_list')
 
 

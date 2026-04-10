@@ -181,38 +181,51 @@
                         </div>
                     </div>
 
-                    <!-- 3. Expiração do Link (Refatoração: Novo Card) -->
-                    <div class="card bg-light border-0 mb-4 mt-4 shadow-sm">
-                        <div class="card-header bg-white py-3 border-bottom-0 d-flex align-items-center">
-                            <i class="bi bi-clock-history me-2 text-primary fs-5"></i>
-                            <h6 class="mb-0 fw-bold">Expiração do Link de Solicitação (Certificado)</h6>
+                    <!-- 3. Período de Solicitação de Certificado -->
+                    <div class="card mb-4 border-primary shadow-sm">
+                        <div class="card-header bg-primary text-white fw-bold d-flex align-items-center">
+                            <i class="bi bi-clock-history me-2 fs-5"></i>
+                            Período de Solicitação (Certificado)
                         </div>
-                        <div class="card-body pt-0">
+                        <div class="card-body">
                             <p class="text-muted small mb-3">
-                                Defina até quando os alunos poderão preencher o formulário de solicitação deste certificado.
+                                Defina o intervalo em que os alunos poderão preencher o formulário de solicitação deste certificado.
                             </p>
                             
-                            <div class="form-check mb-3">
+                            <div class="form-check form-switch mb-3">
                                 <input class="form-check-input" type="checkbox" id="check_no_expire" 
-                                       {% if not form.expires_at.value %}checked{% endif %}>
+                                       {% if not form.certificate_start.value and not form.certificate_end.value %}checked{% endif %}>
                                 <label class="form-check-label fw-bold text-dark" for="check_no_expire">
-                                    O link nunca expira (sempre disponível)
+                                    O link está sempre disponível (sem restrição de data)
                                 </label>
                             </div>
 
-                            <div id="expire_date_container" {% if not form.expires_at.value %}style="display:none;"{% endif %}>
-                                <div class="p-3 bg-white rounded border border-primary border-opacity-25">
-                                    <label for="{{ form.expires_at.id_for_label }}" class="form-label fw-bold small text-primary">
-                                        Data e Hora Limite para Solicitações
-                                    </label>
-                                    {{ form.expires_at }}
+                            <div id="expire_date_container" {% if not form.certificate_start.value and not form.certificate_end.value %}style="display:none;"{% endif %}>
+                                <div class="p-3 bg-light rounded border border-primary border-opacity-25">
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3 mb-md-0">
+                                            <label for="{{ form.certificate_start.id_for_label }}" class="form-label fw-bold small text-primary">
+                                                Início da Disponibilidade
+                                            </label>
+                                            {{ form.certificate_start }}
+                                            {% if form.certificate_start.errors %}
+                                                <div class="text-danger small mt-1">{{ form.certificate_start.errors.0 }}</div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="{{ form.certificate_end.id_for_label }}" class="form-label fw-bold small text-primary">
+                                                Término da Disponibilidade
+                                            </label>
+                                            {{ form.certificate_end }}
+                                            {% if form.certificate_end.errors %}
+                                                <div class="text-danger small mt-1">{{ form.certificate_end.errors.0 }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
                                     <div class="form-text small mt-2">
                                         <i class="bi bi-info-circle me-1"></i>
-                                        Após esta data, o link exibirá uma mensagem de "Encerrado".
+                                        Fora deste intervalo, o link de solicitação ficará desativado.
                                     </div>
-                                    {% if form.expires_at.errors %}
-                                        <div class="text-danger small mt-1">{{ form.expires_at.errors.0 }}</div>
-                                    {% endif %}
                                 </div>
                             </div>
                         </div>
@@ -373,24 +386,28 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     /**
-     * Lógica de Expiração de Link (Refatoração JS)
-     * Gerencia a visibilidade do campo expires_at e as regras de obrigatoriedade.
+     * Lógica de Período de Solicitação (JS)
+     * Gerencia a visibilidade dos campos certificate_start/end e as regras de obrigatoriedade.
      */
     const checkNoExpire = document.getElementById('check_no_expire');
     const expireContainer = document.getElementById('expire_date_container');
-    const expireInput = document.querySelector('[name="expires_at"]');
+    const certStartInput = document.querySelector('[name="certificate_start"]');
+    const certEndInput = document.querySelector('[name="certificate_end"]');
 
-    if (checkNoExpire && expireContainer && expireInput) {
+    if (checkNoExpire && expireContainer && certStartInput && certEndInput) {
         checkNoExpire.addEventListener('change', function() {
             if (this.checked) {
-                // Link não expira: oculta, limpa e remove obrigatoriedade
+                // Link sempre aberto: oculta, limpa e remove obrigatoriedade
                 expireContainer.style.display = 'none';
-                expireInput.value = '';
-                expireInput.required = false;
+                certStartInput.value = '';
+                certEndInput.value = '';
+                certStartInput.required = false;
+                certEndInput.required = false;
             } else {
-                // Link expira: exibe e torna obrigatório
+                // Período definido: exibe e torna campos obrigatórios
                 expireContainer.style.display = 'block';
-                expireInput.required = true;
+                certStartInput.required = true;
+                certEndInput.required = true;
             }
         });
     }
@@ -460,10 +477,15 @@ document.addEventListener('DOMContentLoaded', function() {
             const form = this.closest('form');
             const sig1 = document.querySelector('[name="signature_1"]');
 
-            // Validação de Expiração antes do submit
-            if (checkNoExpire && !checkNoExpire.checked && !expireInput.value) {
-                alert('Por favor, informe a data e hora de expiração ou marque "O link nunca expira".');
-                expireInput.focus();
+            // Validação de Período de Solicitação antes do submit
+            if (checkNoExpire && !checkNoExpire.checked && (!certStartInput.value || !certEndInput.value)) {
+                alert('Por favor, informe o período completo de solicitação ou marque "O link está sempre disponível".');
+                return;
+            }
+
+            // Validação de Período de Inscrição antes do submit
+            if (checkRegOpen && !checkRegOpen.checked && (!regStartInput.value || !regEndInput.value)) {
+                alert('Por favor, informe o período completo de inscrição pré-evento ou marque "O link nunca expira".');
                 return;
             }
 

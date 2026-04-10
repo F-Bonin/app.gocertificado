@@ -2,7 +2,7 @@
 
 **Atualize este arquivo após cada sessão de desenvolvimento.** A IA deve ler este arquivo para entender o escopo completo.
 
-#### 🗓️ Última atualização: 2026-04-09 (Sistema de Inscrição Pré-Evento e Refatoração de UX) [10]
+#### 🗓️ Última atualização: 2026-04-10 (Controle de Período de Solicitação e Inscrição) [11]
 
 ---
 
@@ -13,12 +13,18 @@
 * [x] **Refatoração de UX Copy:** Nomenclatura alterada de "Treinamento" para "Evento" em todo o painel administrativo, modelos e templates [9, 10].
 * [x] **Padronização de Nomenclatura:** Termos de "Inscrição" alterados para "Solicitação de Certificado" em formulários de emissão [8].
 
-**Sistema de Inscrição Pré-Evento (Novo):**
-* [x] **Período de Inscrição:** Adicionados campos `registration_start` e `registration_end` ao modelo `Course` para controle fino de disponibilidade [10].
-* [x] **Interface Administrativa:** Novo card de configuração no formulário de Evento com Switch (Toggle) para ativação de período e lógica JS de visibilidade [10].
-* [x] **Página de Inscrição Pública:** Novo template `event_form.html` com layout moderno e otimizado para pré-evento [10].
-* [x] **Bloqueio Automático & Cronômetro:** Lógica Vanilla JS que bloqueia o formulário e exibe cronômetro regressivo em tempo real antes da abertura e após o encerramento [10].
-* [x] **Gestão de Links:** Dashboard atualizado para exibir simultaneamente o link de **Inscrição (Pré-Evento)** e o de **Solicitação (Certificado)** [10].
+**Sistema de Controle de Períodos e UX Reativa (Novo):**
+* [x] **Cronômetro Reativo:** Implementada lógica Vanilla JS com `setInterval` para contagem regressiva em tempo real nos formulários de Inscrição e Solicitação de Certificado [12].
+* [x] **Exibição Explícita de Datas:** Adicionado card `alert-info` no topo dos formulários públicos exibindo datas de início e encerramento formatadas (Django `|date`) [12].
+* [x] **Bloqueio Visual Dinâmico:** Ocultação automática do formulário (`display: none`) e exibição de status "Abre em", "Expira em" ou "Encerrado" baseada no horário do cliente sincronizado com o servidor [12].
+* [x] **Solicitação de Certificado:** Substituído o campo `expires_at` por `certificate_start` e `certificate_end` no modelo `Course` para controle bidirecional (abertura e fechamento) [11].
+* [x] **Inscrição Pré-Evento:** Utilização dos campos `registration_start` e `registration_end` para controle de acesso ao formulário de inscrição [11].
+* [x] **Travas de Segurança (Backend):** Implementada lógica robusta no método `dispatch` das views para bloquear acesso fora dos períodos definidos, retornando `HttpResponseForbidden` [11].
+* [x] **Controle Independente de Links:** Criadas as views `ToggleRegistrationLinkView` e `ToggleCertificateLinkView` para permitir encerrar ou reabrir links de inscrição e certificados de forma isolada via POST [11].
+* [x] **Novas Rotas de Controle:** Adicionados endpoints `/toggle-registration/` e `/toggle-certificate/` para gerenciamento fino do status dos eventos [11].
+* [x] **Redesign da Listagem (UX):** Coluna de links reformulada com cards individuais, input-groups de cópia e botões de toggle independentes com estados dinâmicos (Encerrar/Reabrir) [11].
+* [x] **Interface Administrativa (UX):** `CourseForm` atualizado com cards simétricos para Inscrição e Certificado, incluindo switches (toggles) e lógica JS independente para controle de períodos [11].
+* [x] **Integração de Backend (UX):** View `CourseListView` agora injeta `now` no contexto para precisão visual no status dos links [11].
 
 **Gestão de Eventos e Solicitações:**
 * [x] CRUD completo de Cursos com suporte a URLs Amigáveis (Slugs) [8].

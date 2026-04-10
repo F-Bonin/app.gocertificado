@@ -9,7 +9,8 @@ from .views import (
     CourseCreateView,
     CourseUpdateView,
     CourseDeleteView,
-    CourseToggleStatusView,
+    ToggleRegistrationLinkView,
+    ToggleCertificateLinkView,
     clone_course,
     generate_course_link,
     CourseLinkGeneratorView,
@@ -37,7 +38,8 @@ urlpatterns = [
     path("treinamentos/<int:pk>/excluir/", CourseDeleteView.as_view(), name="course_delete"),
     path("treinamentos/<int:pk>/clonar/", clone_course, name="course_clone"),
     path("treinamentos/<int:pk>/gerar-link/", generate_course_link, name="course_generate_link"),
-    path("treinamentos/<int:pk>/toggle/", CourseToggleStatusView.as_view(), name="course_toggle"),
+    path("treinamentos/<int:pk>/toggle-registration/", ToggleRegistrationLinkView.as_view(), name="toggle_registration"),
+    path("treinamentos/<int:pk>/toggle-certificate/", ToggleCertificateLinkView.as_view(), name="toggle_certificate"),
     
     # Utilitários
     path("treinamentos/gerador/", CourseLinkGeneratorView.as_view(), name="course_link_generator"),

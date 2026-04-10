@@ -34,19 +34,12 @@
                     <p class="text-muted">Preencha os campos abaixo para garantir sua vaga.</p>
                 </div>
 
-                <!-- Card de Status e Cronômetro -->
-                <div id="status_card" class="alert shadow-sm mb-4 d-none">
-                    <div class="d-flex align-items-center">
-                        <div id="status_icon" class="me-3 fs-3"></div>
-                        <div>
-                            <h5 id="status_title" class="alert-heading mb-1 fw-bold"></h5>
-                            <p id="status_message" class="mb-0"></p>
-                            <div class="mt-2">
-                                <span id="timer_label" class="small text-uppercase fw-bold opacity-75"></span>
-                                <span id="countdown_timer" class="ms-2"></span>
-                            </div>
-                        </div>
-                    </div>
+                <!-- Card de Status e Cronômetro Reativo -->
+                <div class="alert alert-info shadow-sm mb-4">
+                    <p class="mb-1 fw-bold text-center">
+                        Início: {{ course.registration_start|date:"d/m/Y às H:i" }} | Encerramento: {{ course.registration_end|date:"d/m/Y às H:i" }}
+                    </p>
+                    <div id="timer_display" class="fs-4 fw-bold text-danger text-center mt-2"></div>
                 </div>
 
                 <div id="registration_form_wrapper">
@@ -196,90 +189,50 @@
     
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // --- Lógica do Cronômetro e Bloqueio ---
-            const statusCard = document.getElementById('status_card');
-            const statusIcon = document.getElementById('status_icon');
-            const statusTitle = document.getElementById('status_title');
-            const statusMessage = document.getElementById('status_message');
-            const timerLabel = document.getElementById('timer_label');
-            const countdownTimer = document.getElementById('countdown_timer');
+            // --- Lógica do Cronômetro Reativo (Vanilla JS) ---
+            const registrationStart = new Date("{{ course.registration_start|date:'c' }}");
+            const registrationEnd = new Date("{{ course.registration_end|date:'c' }}");
+            const timerDisplay = document.getElementById('timer_display');
             const formWrapper = document.getElementById('registration_form_wrapper');
 
-            const start = startTime ? new Date(startTime) : null;
-            const end = endTime ? new Date(endTime) : null;
-
-            function updateTimer() {
+            function updateCountdown() {
                 const now = new Date();
                 
-                // Caso 1: Sem restrição de data
-                if (!start && !end) {
-                    statusCard.classList.add('d-none');
-                    formWrapper.classList.remove('d-none');
-                    return;
-                }
-
-                statusCard.classList.remove('d-none');
-
-                // Caso 2: Antes do início
-                if (start && now < start) {
-                    const diff = start - now;
-                    statusCard.className = 'alert alert-warning shadow-sm mb-4';
-                    statusIcon.innerHTML = '<i class="bi bi-clock-history"></i>';
-                    statusTitle.innerText = "Inscrições em breve";
-                    statusMessage.innerText = "O formulário será liberado automaticamente.";
-                    timerLabel.innerText = "Abre em:";
-                    countdownTimer.innerText = formatTime(diff);
-                    formWrapper.classList.add('d-none');
-                    return;
-                }
-
-                // Caso 3: Inscrições abertas
-                if ((!start || now >= start) && (!end || now <= end)) {
-                    formWrapper.classList.remove('d-none');
-                    if (end) {
-                        const diff = end - now;
-                        statusCard.className = 'alert alert-success shadow-sm mb-4';
-                        statusIcon.innerHTML = '<i class="bi bi-patch-check"></i>';
-                        statusTitle.innerText = "Inscrições abertas!";
-                        statusMessage.innerText = "Aproveite para garantir sua vaga agora.";
-                        timerLabel.innerText = "Fecha em:";
-                        countdownTimer.innerText = formatTime(diff);
-                    } else {
-                        statusCard.classList.add('d-none');
-                    }
-                    return;
-                }
-
-                // Caso 4: Encerrado
-                if (end && now > end) {
-                    statusCard.className = 'alert alert-danger shadow-sm mb-4';
-                    statusIcon.innerHTML = '<i class="bi bi-exclamation-octagon"></i>';
-                    statusTitle.innerText = "Inscrições encerradas";
-                    statusMessage.innerText = "Não é mais possível realizar inscrições para este evento.";
-                    timerLabel.innerText = "Tempo restante:";
-                    countdownTimer.innerText = "00:00:00";
-                    formWrapper.classList.add('d-none');
-                    return;
+                if (now < registrationStart) {
+                    // Caso o período de inscrição ainda não tenha começado
+                    const diff = registrationStart - now;
+                    timerDisplay.innerText = "Abre em: " + formatDiff(diff);
+                    if (formWrapper) formWrapper.style.display = 'none';
+                } else if (now > registrationEnd) {
+                    // Caso o período de inscrição tenha expirado
+                    timerDisplay.innerText = "Encerrado";
+                    if (formWrapper) formWrapper.style.display = 'none';
+                } else {
+                    // Caso as inscrições estejam abertas
+                    const diff = registrationEnd - now;
+                    timerDisplay.innerText = "Expira em: " + formatDiff(diff);
+                    if (formWrapper) formWrapper.style.display = 'block';
                 }
             }
 
-            function formatTime(ms) {
+            function formatDiff(ms) {
                 const totalSeconds = Math.floor(ms / 1000);
                 const days = Math.floor(totalSeconds / 86400);
                 const hours = Math.floor((totalSeconds % 86400) / 3600);
                 const minutes = Math.floor((totalSeconds % 3600) / 60);
                 const seconds = totalSeconds % 60;
-
-                let timeStr = "";
-                if (days > 0) timeStr += days + "d ";
-                timeStr += String(hours).padStart(2, '0') + ":" + 
-                           String(minutes).padStart(2, '0') + ":" + 
-                           String(seconds).padStart(2, '0');
-                return timeStr;
+                
+                let result = "";
+                if (days > 0) result += days + (days === 1 ? " dia " : " dias ");
+                result += String(hours).padStart(2, '0') + ":" + 
+                          String(minutes).padStart(2, '0') + ":" + 
+                          String(seconds).padStart(2, '0');
+                return result;
             }
 
-            setInterval(updateTimer, 1000);
-            updateTimer(); // Chamada inicial
+            // Atualiza o cronômetro a cada 1 segundo
+            setInterval(updateCountdown, 1000);
+            updateCountdown(); // Execução imediata ao carregar
 
             // --- Lógica do Gênero ---
             const genderSelect = document.getElementById('id_gender');

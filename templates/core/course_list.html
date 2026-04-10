@@ -57,14 +57,26 @@
                         <th>Período</th>
                         <th>Local</th>
                         <th>Instrutor</th>
-                        <th>Links do Evento</th>
-                        <th class="text-end pe-4">Ações</th>
+                        <th class="text-center">Links e Controles do Evento</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for course in courses %}
                     <tr>
-                        <td class="ps-4 fw-bold">{{ course.name }}</td>
+                        <td class="ps-4 fw-bold">
+                            {{ course.name }}
+                            <div class="mt-2 btn-group btn-group-sm">
+                                <a href="{% url 'core:course_update' course.id %}" class="text-muted me-2" title="Editar">
+                                    <i class="bi bi-pencil"></i> Editar
+                                </a>
+                                <a href="{% url 'core:course_clone' course.id %}" class="text-muted me-2" title="Clonar">
+                                    <i class="bi bi-copy"></i> Clonar
+                                </a>
+                                <a href="{% url 'core:course_delete' course.id %}" class="text-danger" title="Excluir">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </div>
+                        </td>
                         <td>
                             {{ course.start_date|date:"d/m/Y" }} 
                             {% if course.end_date and course.end_date != course.start_date %}
@@ -73,61 +85,63 @@
                         </td>
                         <td>{{ course.institution_name|default:"-" }}</td>
                         <td>{{ course.signature_1.full_name|default:"N/A" }}</td>
-                        <td>
+                        <td style="min-width: 320px;">
                             {% if course.slug %}
-                            <div class="d-flex align-items-center gap-3">
-                                <div class="d-flex flex-column gap-2" style="width: 250px;">
-                                    <!-- Link 1: Inscrição -->
-                                    <div class="input-group input-group-sm">
-                                        <span class="input-group-text bg-success text-white" title="Link de Inscrição"><i class="bi bi-person-plus"></i></span>
-                                        <input type="text" class="form-control bg-light" readonly id="link-reg-{{ course.id }}" value="{{ request.scheme }}://{{ request.get_host }}{% url 'registrations:event_form' course.slug %}">
+                            <div class="d-flex flex-column gap-2 p-2">
+                                <!-- Card 1: Link de Inscrição -->
+                                <div class="bg-light border p-2 rounded shadow-sm">
+                                    <label class="small fw-bold text-success mb-1"><i class="bi bi-person-plus me-1"></i>Inscrição (Pré-Evento)</label>
+                                    <div class="input-group input-group-sm mb-2">
+                                        <input type="text" class="form-control bg-white" readonly id="link-reg-{{ course.id }}" value="{{ request.scheme }}://{{ request.get_host }}{% url 'registrations:event_form' course.slug %}">
                                         <button class="btn btn-outline-success" type="button" onclick="copyLink('link-reg-{{ course.id }}')"><i class="bi bi-clipboard"></i></button>
                                     </div>
-                                    <!-- Link 2: Certificado -->
-                                    <div class="input-group input-group-sm">
-                                        <span class="input-group-text bg-primary text-white" title="Link de Certificado"><i class="bi bi-patch-check"></i></span>
-                                        <input type="text" class="form-control bg-light" readonly id="link-cert-{{ course.id }}" value="{{ request.scheme }}://{{ request.get_host }}{% url 'registrations:form' course.slug %}">
+                                    <form method="post" action="{% url 'core:toggle_registration' course.id %}">
+                                        {% csrf_token %}
+                                        {% if course.registration_end and course.registration_end < now %}
+                                            <button type="submit" class="btn btn-sm btn-outline-success w-100 fw-bold">
+                                                <i class="bi bi-unlock-fill me-1"></i> Reabrir Inscrição
+                                            </button>
+                                        {% else %}
+                                            <button type="submit" class="btn btn-sm btn-success w-100 fw-bold">
+                                                <i class="bi bi-slash-circle me-1"></i> Encerrar inscrição agora
+                                            </button>
+                                        {% endif %}
+                                    </form>
+                                </div>
+
+                                <!-- Card 2: Link de Certificado -->
+                                <div class="bg-light border p-2 rounded shadow-sm">
+                                    <label class="small fw-bold text-primary mb-1"><i class="bi bi-patch-check me-1"></i>Solicitação (Certificado)</label>
+                                    <div class="input-group input-group-sm mb-2">
+                                        <input type="text" class="form-control bg-white" readonly id="link-cert-{{ course.id }}" value="{{ request.scheme }}://{{ request.get_host }}{% url 'registrations:form' course.slug %}">
                                         <button class="btn btn-outline-primary" type="button" onclick="copyLink('link-cert-{{ course.id }}')"><i class="bi bi-clipboard"></i></button>
                                     </div>
+                                    <form method="post" action="{% url 'core:toggle_certificate' course.id %}">
+                                        {% csrf_token %}
+                                        {% if course.certificate_end and course.certificate_end < now %}
+                                            <button type="submit" class="btn btn-sm btn-outline-primary w-100 fw-bold">
+                                                <i class="bi bi-unlock-fill me-1"></i> Reabrir Solicitação
+                                            </button>
+                                        {% else %}
+                                            <button type="submit" class="btn btn-sm btn-primary w-100 fw-bold">
+                                                <i class="bi bi-slash-circle me-1"></i> Encerrar solicitação agora
+                                            </button>
+                                        {% endif %}
+                                    </form>
                                 </div>
-                                
-                                <!-- Kill-Switch: Encerrar/Reabrir Solicitações -->
-                                <form method="post" action="{% url 'core:course_toggle' course.id %}" class="d-inline">
-                                    {% csrf_token %}
-                                    {% if course.is_expired %}
-                                        <button type="submit" class="btn btn-sm btn-success" title="Reabrir Solicitações">
-                                            <i class="bi bi-unlock-fill"></i>
-                                        </button>
-                                    {% else %}
-                                        <button type="submit" class="btn btn-sm btn-danger" title="Encerrar Solicitações AGORA">
-                                            <i class="bi bi-slash-circle"></i>
-                                        </button>
-                                    {% endif %}
-                                </form>
                             </div>
                             {% else %}
-                            <a href="{% url 'core:course_generate_link' course.id %}" class="btn btn-sm btn-outline-warning">
-                                <i class="bi bi-link-45deg"></i> Gerar Link
-                            </a>
-                            {% endif %}
-                        </td>
-                        <td class="text-end pe-4">
-                            <div class="btn-group btn-group-sm">
-                                <a href="{% url 'core:course_update' course.id %}" class="btn btn-outline-secondary" title="Editar">
-                                    <i class="bi bi-pencil"></i>
-                                </a>
-                                <a href="{% url 'core:course_clone' course.id %}" class="btn btn-outline-info" title="Clonar">
-                                    <i class="bi bi-copy"></i>
-                                </a>
-                                <a href="{% url 'core:course_delete' course.id %}" class="btn btn-outline-danger" title="Excluir">
-                                    <i class="bi bi-trash"></i>
+                            <div class="text-center p-3">
+                                <a href="{% url 'core:course_generate_link' course.id %}" class="btn btn-sm btn-warning shadow-sm">
+                                    <i class="bi bi-link-45deg me-1"></i> Gerar Links Únicos
                                 </a>
                             </div>
+                            {% endif %}
                         </td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="6" class="text-center py-5 text-muted">
+                        <td colspan="5" class="text-center py-5 text-muted">
                             <i class="bi bi-journal-x h1 d-block mb-3"></i>
                             Nenhum treinamento encontrado.
                         </td>

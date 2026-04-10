@@ -42,11 +42,12 @@ class CourseForm(forms.ModelForm):
         fields = [
             "name", "start_date", "end_date", "hours",
             "registration_start", "registration_end",
+            "certificate_start", "certificate_end",
             "cep", "institution_name", "institution_street", "institution_number",
             "institution_neighborhood", "institution_complement",
             "city", "state",
             "signature_1", "signature_2", "signature_3",
-            "certificate_template", "expires_at"
+            "certificate_template"
         ]
         widgets = {
             "name": forms.TextInput(attrs={"class": "form-control"}),
@@ -54,6 +55,8 @@ class CourseForm(forms.ModelForm):
             "end_date": forms.DateInput(attrs={"class": "form-control", "type": "date"}),
             "registration_start": forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
             "registration_end": forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
+            "certificate_start": forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
+            "certificate_end": forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
             "cep": forms.TextInput(attrs={"class": "form-control", "placeholder": "00000-000", "id": "id_course_cep"}),
             "city": forms.TextInput(attrs={"class": "form-control", "id": "id_course_city", "readonly": True}),
             "state": forms.TextInput(attrs={"class": "form-control", "id": "id_course_state", "readonly": True}),
@@ -67,7 +70,6 @@ class CourseForm(forms.ModelForm):
             "signature_2": forms.Select(attrs={"class": "form-select"}),
             "signature_3": forms.Select(attrs={"class": "form-select"}),
             "certificate_template": forms.Select(attrs={"class": "form-select"}),
-            "expires_at": forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
         }
 
     def __init__(self, *args, **kwargs):

@@ -20,19 +20,18 @@ class RegistrationCreateView(CreateView):
 
     def dispatch(self, request, *args, **kwargs):
         """
-        Blindagem: Verifica se o curso já expirou antes de permitir o acesso à View.
+        Blindagem: Verifica se a solicitação de certificado está dentro do período permitido.
         """
-        # Busca o curso pelo slug da URL
         course = get_object_or_404(Course, slug=self.kwargs['slug'])
+        now = timezone.now()
         
-        # Validação de expiração: Se houver data definida e já tiver passado do prazo
-        if course.expires_at and timezone.now() > course.expires_at:
-            return HttpResponseForbidden(
-                "<div style='text-align:center; margin-top:50px; font-family:sans-serif;'>"
-                "<h2>A solicitação de certificado para este treinamento foi encerrada.</h2>"
-                "<p>O prazo limite para preenchimento deste formulário expirou.</p>"
-                "</div>"
-            )
+        # Trava: Início da Solicitação (se definido)
+        if course.certificate_start and now < course.certificate_start:
+            return HttpResponseForbidden("Fora do período de solicitação.")
+            
+        # Trava: Término da Solicitação (se definido)
+        if course.certificate_end and now > course.certificate_end:
+            return HttpResponseForbidden("Fora do período de solicitação.")
             
         return super().dispatch(request, *args, **kwargs)
 
@@ -107,30 +106,19 @@ class EventRegistrationCreateView(RegistrationCreateView):
     def dispatch(self, request, *args, **kwargs):
         """
         Blindagem: Verifica se o período de inscrição pré-evento é válido.
-        Substitui a lógica de expiração do certificado pela lógica de período de inscrição.
         """
         course = get_object_or_404(Course, slug=self.kwargs['slug'])
         now = timezone.now()
 
-        # 1. Validação de Início (Se definido)
+        # Trava: Início das Inscrições (se definido)
         if course.registration_start and now < course.registration_start:
-            return HttpResponseForbidden(
-                f"<div style='text-align:center; margin-top:50px; font-family:sans-serif;'>"
-                f"<h2>As inscrições para este evento ainda não começaram.</h2>"
-                f"<p>Início previsto para: {course.registration_start.strftime('%d/%m/%Y às %H:%M')}</p>"
-                "</div>"
-            )
+            return HttpResponseForbidden("Fora do período de inscrição.")
 
-        # 2. Validação de Término (Se definido)
+        # Trava: Término das Inscrições (se definido)
         if course.registration_end and now > course.registration_end:
-            return HttpResponseForbidden(
-                "<div style='text-align:center; margin-top:50px; font-family:sans-serif;'>"
-                "<h2>As inscrições para este evento foram encerradas.</h2>"
-                "<p>O prazo limite para inscrição expirou.</p>"
-                "</div>"
-            )
+            return HttpResponseForbidden("Fora do período de inscrição.")
 
-        # Pula o dispatch da RegistrationCreateView (que checa expires_at) e vai para a base View
+        # Pula o dispatch da RegistrationCreateView (que checa certificate_start/end)
         return super(RegistrationCreateView, self).dispatch(request, *args, **kwargs)
 
 

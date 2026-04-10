@@ -180,7 +180,8 @@ class Course(models.Model):
     )
     registration_start = models.DateTimeField("Início das Inscrições", blank=True, null=True)
     registration_end = models.DateTimeField("Término das Inscrições", blank=True, null=True)
-    expires_at = models.DateTimeField("Expira em", blank=True, null=True, help_text="Deixe nulo para não expirar")
+    certificate_start = models.DateTimeField("Início da Solicitação", blank=True, null=True)
+    certificate_end = models.DateTimeField("Término da Solicitação", blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -200,11 +201,11 @@ class Course(models.Model):
 
     @property
     def is_expired(self):
-        """Verifica se o treinamento já expirou baseado na data atual."""
+        """Verifica se a solicitação de certificado já expirou baseado na data atual."""
         from django.utils import timezone
-        if not self.expires_at:
+        if not self.certificate_end:
             return False
-        return timezone.now() > self.expires_at
+        return timezone.now() > self.certificate_end
 
     def get_registration_url(self):
         """Retorna a URL limpa de inscrição utilizando o novo padrão de Slug."""

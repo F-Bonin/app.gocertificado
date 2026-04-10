@@ -25,7 +25,16 @@
                     <p class="text-muted">Preencha os campos do formulário para solicitar seu certificado.</p>
                 </div>
 
-                <form method="post" novalidate>
+                <!-- Card de Status e Cronômetro Reativo -->
+                <div class="alert alert-info shadow-sm mb-4">
+                    <p class="mb-1 fw-bold text-center">
+                        Início: {{ course.certificate_start|date:"d/m/Y às H:i" }} | Encerramento: {{ course.certificate_end|date:"d/m/Y às H:i" }}
+                    </p>
+                    <div id="timer_display" class="fs-4 fw-bold text-danger text-center mt-2"></div>
+                </div>
+
+                <div id="certificate_form_wrapper">
+                    <form method="post" novalidate>
                     {% csrf_token %}
                     
                     <div class="section-title">Dados do Treinamento</div>
@@ -165,6 +174,7 @@
                         <button type="submit" class="btn btn-primary btn-lg shadow-sm">Enviar</button>
                     </div>
                 </form>
+                </div>
             </div>
         </div>
     </div>
@@ -174,6 +184,52 @@
     
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // --- Lógica do Cronômetro Reativo (Vanilla JS) ---
+            const certificateStart = new Date("{{ course.certificate_start|date:'c' }}");
+            const certificateEnd = new Date("{{ course.certificate_end|date:'c' }}");
+            const timerDisplay = document.getElementById('timer_display');
+            const formWrapper = document.getElementById('certificate_form_wrapper');
+
+            function updateCountdown() {
+                const now = new Date();
+                
+                if (now < certificateStart) {
+                    // Caso o período de solicitação ainda não tenha começado
+                    const diff = certificateStart - now;
+                    timerDisplay.innerText = "Abre em: " + formatDiff(diff);
+                    if (formWrapper) formWrapper.style.display = 'none';
+                } else if (now > certificateEnd) {
+                    // Caso o período de solicitação tenha expirado
+                    timerDisplay.innerText = "Encerrado";
+                    if (formWrapper) formWrapper.style.display = 'none';
+                } else {
+                    // Caso as solicitações estejam abertas
+                    const diff = certificateEnd - now;
+                    timerDisplay.innerText = "Expira em: " + formatDiff(diff);
+                    if (formWrapper) formWrapper.style.display = 'block';
+                }
+            }
+
+            function formatDiff(ms) {
+                const totalSeconds = Math.floor(ms / 1000);
+                const days = Math.floor(totalSeconds / 86400);
+                const hours = Math.floor((totalSeconds % 86400) / 3600);
+                const minutes = Math.floor((totalSeconds % 3600) / 60);
+                const seconds = totalSeconds % 60;
+                
+                let result = "";
+                if (days > 0) result += days + (days === 1 ? " dia " : " dias ");
+                result += String(hours).padStart(2, '0') + ":" + 
+                          String(minutes).padStart(2, '0') + ":" + 
+                          String(seconds).padStart(2, '0');
+                return result;
+            }
+
+            // Atualiza o cronômetro a cada 1 segundo
+            setInterval(updateCountdown, 1000);
+            updateCountdown(); // Execução imediata ao carregar
+
+            // --- Lógica do Gênero ---
             const genderSelect = document.getElementById('id_gender');
             const customGenderDiv = document.getElementById('div_id_custom_gender');
             const customGenderInput = document.getElementById('id_custom_gender');
