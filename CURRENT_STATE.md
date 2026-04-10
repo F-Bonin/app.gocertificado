@@ -19,6 +19,8 @@
 * [x] **Exibição Explícita de Datas:** Adicionado card `alert-info` no topo dos formulários públicos exibindo datas de início e encerramento formatadas (Django `|date`) [12].
 * [x] **Correção de Formatação:** Implementada separação de filtros de data e hora no Django (`|date:"d/m/Y"` e `|date:"H:i"`) para garantir a exibição correta da palavra "às" e evitar o erro "à00" [14].
 * [x] **Bloqueio Visual Dinâmico:** Ocultação automática do formulário (`display: none`) e exibição de status "Abre em", "Expira em" ou "Encerrado" baseada no horário do cliente sincronizado com o servidor [12].
+* [x] **UX de Erro Temporal:** Refatoração do backend (`dispatch`) para renderizar template elegante (`time_locked.html`) em vez de erro de texto puro quando o acesso ocorre fora do período permitido [16].
+* [x] **Páginas de Bloqueio Visual:** Criado o template `time_locked.html` com Card Bootstrap e cronômetro regressivo inteligente para acessos antecipados [17].
 * [x] **Solicitação de Certificado:** Substituído o campo `expires_at` por `certificate_start` e `certificate_end` no modelo `Course` para controle bidirecional (abertura e fechamento) [11].
 * [x] **Inscrição Pré-Evento:** Utilização dos campos `registration_start` e `registration_end` para controle de acesso ao formulário de inscrição [11].
 * [x] **Travas de Segurança (Backend):** Implementada lógica robusta no método `dispatch` das views para bloquear acesso fora dos períodos definidos, retornando `HttpResponseForbidden` [11].
@@ -37,6 +39,7 @@
 
 **Correções e Melhorias Técnicas:**
 * [x] **Otimização de Lógica:** Implementada propriedade `@property is_expired` no modelo `Course` para centralizar a regra de expiração [8].
+* [x] **Formatação ISO em Forms:** Forçada a formatação ISO nos campos de data e hora do `CourseForm` para garantir exibição correta em inputs HTML5 no modo de edição [15].
 * [x] **Validação via ViaCEP:** Captura automática de endereço (Rua, Bairro, Cidade, UF) em formulários públicos e administrativos [19, 20].
 
 **Central de Certificados e PDF:**

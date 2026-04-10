@@ -51,12 +51,12 @@ class CourseForm(forms.ModelForm):
         ]
         widgets = {
             "name": forms.TextInput(attrs={"class": "form-control"}),
-            "start_date": forms.DateInput(attrs={"class": "form-control", "type": "date"}),
-            "end_date": forms.DateInput(attrs={"class": "form-control", "type": "date"}),
-            "registration_start": forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
-            "registration_end": forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
-            "certificate_start": forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
-            "certificate_end": forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
+            "start_date": forms.DateInput(format='%Y-%m-%d', attrs={"class": "form-control", "type": "date"}),
+            "end_date": forms.DateInput(format='%Y-%m-%d', attrs={"class": "form-control", "type": "date"}),
+            "registration_start": forms.DateTimeInput(format='%Y-%m-%dT%H:%M', attrs={'type': 'datetime-local', 'class': 'form-control'}),
+            "registration_end": forms.DateTimeInput(format='%Y-%m-%dT%H:%M', attrs={'type': 'datetime-local', 'class': 'form-control'}),
+            "certificate_start": forms.DateTimeInput(format='%Y-%m-%dT%H:%M', attrs={'type': 'datetime-local', 'class': 'form-control'}),
+            "certificate_end": forms.DateTimeInput(format='%Y-%m-%dT%H:%M', attrs={'type': 'datetime-local', 'class': 'form-control'}),
             "cep": forms.TextInput(attrs={"class": "form-control", "placeholder": "00000-000", "id": "id_course_cep"}),
             "city": forms.TextInput(attrs={"class": "form-control", "id": "id_course_city", "readonly": True}),
             "state": forms.TextInput(attrs={"class": "form-control", "id": "id_course_state", "readonly": True}),

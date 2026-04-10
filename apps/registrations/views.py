@@ -5,7 +5,7 @@ from django.urls import reverse_lazy
 from django.views.generic import CreateView, TemplateView
 from django.utils import timezone
 from django.http import HttpResponseForbidden, HttpResponseRedirect
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, render
 from apps.core.models import Course
 from .models import Registration
 from .forms import RegistrationForm
@@ -27,11 +27,21 @@ class RegistrationCreateView(CreateView):
         
         # Trava: Início da Solicitação (se definido)
         if course.certificate_start and now < course.certificate_start:
-            return HttpResponseForbidden("Fora do período de solicitação.")
+            return render(request, "registrations/time_locked.html", {
+                "course": course, 
+                "action_type": "solicitação de certificado", 
+                "lock_state": "early", 
+                "target_date": course.certificate_start
+            }, status=403)
             
         # Trava: Término da Solicitação (se definido)
         if course.certificate_end and now > course.certificate_end:
-            return HttpResponseForbidden("Fora do período de solicitação.")
+            return render(request, "registrations/time_locked.html", {
+                "course": course, 
+                "action_type": "solicitação de certificado", 
+                "lock_state": "late", 
+                "target_date": course.certificate_end
+            }, status=403)
             
         return super().dispatch(request, *args, **kwargs)
 
@@ -112,11 +122,21 @@ class EventRegistrationCreateView(RegistrationCreateView):
 
         # Trava: Início das Inscrições (se definido)
         if course.registration_start and now < course.registration_start:
-            return HttpResponseForbidden("Fora do período de inscrição.")
+            return render(request, "registrations/time_locked.html", {
+                "course": course, 
+                "action_type": "inscrição", 
+                "lock_state": "early", 
+                "target_date": course.registration_start
+            }, status=403)
 
         # Trava: Término das Inscrições (se definido)
         if course.registration_end and now > course.registration_end:
-            return HttpResponseForbidden("Fora do período de inscrição.")
+            return render(request, "registrations/time_locked.html", {
+                "course": course, 
+                "action_type": "inscrição", 
+                "lock_state": "late", 
+                "target_date": course.registration_end
+            }, status=403)
 
         # Pula o dispatch da RegistrationCreateView (que checa certificate_start/end)
         return super(RegistrationCreateView, self).dispatch(request, *args, **kwargs)
