@@ -68,84 +68,66 @@ class RegistrationCreateView(CreateView):
 
     def form_valid(self, form):
         """
-        Lógica Sênior: Match de CPF para atualização de dados ou criação, 
-        seguido de disparo automático de certificado via Celery se houver presença confirmada.
-        Inclui trava de segurança para impedir re-emissão de certificados já enviados e
-        lógica para permitir automação em inscrições pendentes com check-in realizado.
+        Lógica Sênior: Máquina de estados para gerenciamento de emissão e duplicidade.
+        Diferencia a primeira solicitação (Condição 3) de atualizações duplicadas (Condição 4).
         """
-        # a) Recuperação de dados base
+        # 1. Recuperação de dados base e busca de match
         course = get_object_or_404(Course, slug=self.kwargs['slug'])
         cpf = form.cleaned_data.get('cpf')
-        
-        # b) Busca por inscrição existente (Match de CPF e Curso)
         inscricao = Registration.objects.filter(cpf=cpf, course=course).first()
         
-        # Extração do primeiro nome para feedback personalizado (Sprint 4)
+        # 2. Extração do primeiro nome para feedback personalizado (Sprint 4)
         full_name = form.cleaned_data.get('full_name') if not inscricao else inscricao.full_name
         first_name = full_name.split()[0] if full_name else "Participante"
 
+        # 3. Injeção de metadados obrigatórios para todas as telas de sucesso
+        self.request.session['registered_first_name'] = first_name
+        self.request.session['course_name'] = course.name
+        self.request.session['course_date'] = course.start_date.strftime('%d/%m/%Y')
+
         if inscricao:
-            # Caso 1: Certificado já foi enviado (SENT)
+            # Caso 1: Certificado já foi enviado (SENT) -> Exibe Condição 2
             if inscricao.status == Registration.Status.SENT:
                 self.request.session['already_requested'] = True
-                self.request.session['course_name'] = course.name
-                self.request.session['course_date'] = course.start_date.strftime('%d/%m/%Y')
-                self.request.session['registered_first_name'] = first_name
-                
-                # OBRIGATÓRIO: Injeta o objeto na view para que self.get_success_url() não falhe
                 self.object = inscricao
                 return HttpResponseRedirect(self.get_success_url())
             
-            # Caso 2: Inscrição PENDENTE - Permite atualização e tentativa de automação
-            # Atualiza: Absorve correções feitas pelo aluno no formulário
+            # Caso 2: Inscrição PENDENTE (Atualização Duplicada)
+            # Absorve possíveis correções cadastrais enviadas pelo aluno
             for field, value in form.cleaned_data.items():
                 setattr(inscricao, field, value)
             inscricao.save()
-
             self.object = inscricao
-            auto_emitted = False
 
-            # Condição de Automação: Se não for pré-evento E tiver presença confirmada agora
+            # Verifica se houve confirmação de check-in (attended=True)
             if not self.is_pre_event and inscricao.attended:
+                # Aciona automação de emissão imediata -> Exibe Condição 1
                 from apps.certificates.tasks import issue_certificate_task
                 issue_certificate_task.delay(str(inscricao.pk))
-                auto_emitted = True
                 self.request.session['auto_emitted'] = True
             else:
-                # Se ainda não tem check-in, marca como duplicidade pendente visual
+                # Marca como duplicidade pendente -> Exibe Condição 4
                 self.request.session['already_pending'] = True
-
-            # Injeção de dados do evento e participante para feedback na tela de sucesso
-            self.request.session['course_name'] = course.name
-            self.request.session['course_date'] = course.start_date.strftime('%d/%m/%Y')
-            self.request.session['registered_first_name'] = first_name
             
             return HttpResponseRedirect(self.get_success_url())
 
-        # d) Nova Inscrição: Caso não exista match prévio
+        # Caso 3: Nova Inscrição (Match não encontrado) -> Exibe Condição 3 (ou 1 se check-in detectado)
         inscricao = form.save(commit=False)
         inscricao.course = course
-        # Sincroniza dados históricos para o modelo de inscrição
+        # Sincroniza dados históricos
         inscricao.course_name = course.name
         inscricao.course_date = course.start_date
         inscricao.course_workload = course.hours
         inscricao.save()
-
         self.object = inscricao
-        auto_emitted = False
 
-        # e) Condição de Automação para novas inscrições
+        # Verifica automação imediata para novos registros (ex: presença confirmada via admin antes do preenchimento)
         if not self.is_pre_event and inscricao.attended:
             from apps.certificates.tasks import issue_certificate_task
             issue_certificate_task.delay(str(inscricao.pk))
-            auto_emitted = True
-
-        # f) Persistência de estado na sessão para a view de sucesso
-        self.request.session['auto_emitted'] = auto_emitted
-        self.request.session['registered_first_name'] = first_name
-        self.request.session['course_name'] = course.name
-        self.request.session['course_date'] = course.start_date.strftime('%d/%m/%Y')
+            self.request.session['auto_emitted'] = True
         
+        # Se auto_emitted não for True, o template cairá no 'else' -> Exibe Condição 3
         return HttpResponseRedirect(self.get_success_url())
 
     def get_context_data(self, **kwargs):

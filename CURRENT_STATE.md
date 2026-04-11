@@ -77,6 +77,7 @@
 **Correções e Melhorias Técnicas:**
 * [x] **Otimização de Lógica:** Implementada propriedade `@property is_expired` no modelo `Course` para centralizar a regra de expiração [8].
 * [x] **Ajuste de Fluxo (Duplicidade):** O fluxo de duplicidade no backend foi refatorado para respeitar reversões de check-in e disparar o Celery corretamente, e o copy visual da tela de pendência foi ajustado para maior clareza [31].
+* [x] **Máquina de Estados (Session Tracking):** Refinada a lógica de backend com rastreamento de sessão para diferenciar com precisão a primeira solicitação de certificado das atualizações duplicadas, garantindo a exibição correta das condições de sucesso 3 e 4 [34].
 * [x] **Formatação ISO em Forms:** Forçada a formatação ISO nos campos de data e hora do `CourseForm` para garantir exibição correta em inputs HTML5 no modo de edição [15].
 * [x] **Validação via ViaCEP:** Captura automática de endereço (Rua, Bairro, Cidade, UF) em formulários públicos e administrativos [19, 20].
 
