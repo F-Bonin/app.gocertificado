@@ -2,7 +2,7 @@
 
 **Atualize este arquivo após cada sessão de desenvolvimento.** A IA deve ler este arquivo para entender o escopo completo.
 
-#### 🗓️ Última atualização: 2026-04-11 (Conclusão da Lista de Presença e Check-in) [13]
+#### 🗓️ Última atualização: 2026-04-11 (Correções de UX e Print Layout) [15]
 
 ---
 
@@ -13,7 +13,13 @@
 * [x] **Refatoração de UX Copy:** Nomenclatura alterada de "Treinamento" para "Evento" em todo o painel administrativo, modelos e templates [9, 10].
 * [x] **Padronização de Nomenclatura:** Termos de "Inscrição" alterados para "Solicitação de Certificado" em formulários de emissão [8].
 
-**Sistema de Controle de Presença e Check-in (Concluído):**
+**Correções e Refinamentos (Recente):**
+* [x] **Mensagem de Sucesso de Inscrição:** Corrigida a lógica de exibição condicional no template para diferenciar Inscrição de Evento e Solicitação de Certificado [14].
+* [x] **Tabela de Impressão (Bugfix):** Refatoração agressiva do CSS `@media print` para garantir o alinhamento perfeito de bordas e linhas na Lista de Presença em formato A4 [15].
+
+**Sistema de Inscrição e Solicitação (UX):**
+* [x] **Diferenciação Visual de Sucesso:** Implementada lógica de sessão nas views e condicional no template `registration_success.html` para identificar se o usuário concluiu uma "Inscrição em Evento" ou uma "Solicitação de Certificado", exibindo mensagens personalizadas [14].
+* [x] **Inscrição Pré-Evento:** Utilização dos campos `registration_start` e `registration_end` para controle de acesso ao formulário de inscrição [11].
 * [x] **Lista de Presença Online (Check-in):** Implementada com sucesso a funcionalidade completa de check-in digital via AJAX e suporte a layout de impressão físico A4 [13].
 * [x] **Lista de Presença Multitenant:** Implementada `EventPresenceListView` com filtragem rigorosa por empresa [12].
 * [x] **Check-in Online (AJAX):** Implementada `TogglePresenceView` para alternância de status em tempo real sem reload [12].

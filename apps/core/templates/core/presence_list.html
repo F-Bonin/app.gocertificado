@@ -57,8 +57,26 @@
             border: none !important;
         }
 
+        /* Regras agressivas para a tabela na impressão */
         .table {
-            border-color: #000 !important;
+            width: 100% !important;
+            border-collapse: collapse !important;
+            border: 1px solid #000 !important;
+        }
+
+        .table th, 
+        .table td {
+            border: 1px solid #000 !important;
+            padding: 8px !important;
+            vertical-align: middle !important;
+        }
+
+        .table thead {
+            display: table-header-group !important;
+        }
+
+        .table tr {
+            page-break-inside: avoid !important;
         }
 
         body {

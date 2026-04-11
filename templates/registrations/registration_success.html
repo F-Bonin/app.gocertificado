@@ -26,7 +26,15 @@
     <div class="container d-flex justify-content-center">
         <div class="success-container">
             <h1 class='fw-bold' style='color: #28a745;'>OBRIGADO! {% if first_name %}{{ first_name|upper }}{% endif %}</h1>
-            <p class='fs-5 mt-3'>Seus dados foram enviados ao responsável pelo Treinamento. Em breve você receberá seu certificado PDF em seu e-mail.</p>
+            
+            {# Condicional para diferenciar Inscrição de Evento vs Solicitação de Certificado #}
+            {% if is_event %}
+                <p class="text-muted fs-5 mt-2">
+                    Sua inscrição no evento: <br><strong>"{{ course_name }} — {{ course_date }}"</strong><br> foi confirmada. Obrigado!
+                </p>
+            {% else %}
+                <p class='text-muted fs-5 mt-2'>Seus dados foram enviados ao responsável pelo Treinamento. Em breve você receberá seu certificado PDF em seu e-mail.</p>
+            {% endif %}
         </div>
     </div>
 

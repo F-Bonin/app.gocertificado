@@ -141,6 +141,19 @@ class EventRegistrationCreateView(RegistrationCreateView):
         # Pula o dispatch da RegistrationCreateView (que checa certificate_start/end)
         return super(RegistrationCreateView, self).dispatch(request, *args, **kwargs)
 
+    def form_valid(self, form):
+        """
+        Sobrescreve o salvamento para marcar a sessão como origem de Inscrição de Evento.
+        """
+        response = super().form_valid(form)
+        
+        # Adiciona flags à sessão para diferenciar o contexto na página de sucesso
+        self.request.session['is_event'] = True
+        self.request.session['course_name'] = self.object.course.name
+        self.request.session['course_date'] = self.object.course.start_date.strftime('%d/%m/%Y')
+        
+        return response
+
 
 class RegistrationSuccessView(TemplateView):
     """Tela de agradecimento após envio do formulário."""
@@ -148,6 +161,11 @@ class RegistrationSuccessView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # Recupera e remove o nome da sessão simultaneamente
+        
+        # Recupera e remove os dados da sessão para exibição única e limpa
         context["first_name"] = self.request.session.pop("registered_first_name", "")
+        context["is_event"] = self.request.session.pop("is_event", False)
+        context["course_name"] = self.request.session.pop("course_name", "")
+        context["course_date"] = self.request.session.pop("course_date", "")
+        
         return context
