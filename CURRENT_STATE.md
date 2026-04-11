@@ -35,6 +35,8 @@
 * [x] **Barreira de Reenvio (Pendentes):** Implementada a flag `already_pending` na sessão para identificar e barrar visualmente o reenvio de formulários de alunos que já solicitaram o certificado e aguardam o check-in [28].
 * [x] **Refinamento de UX de Sucesso (Copy Final):** O copy da tela de pendência foi ajustado para maior clareza e uma nova tela de bloqueio visual para Duplicidades Pendentes (`already_pending`) foi implementada para evitar confusão do usuário [29].
 * [x] **Automação de Reenvio (Pendentes):** Refatorada a lógica do `form_valid` para permitir que alunos com status `PENDING` acionem a `issue_certificate_task` via Celery caso o check-in seja detectado durante uma nova submissão do formulário [30].
+* [x] **Refatoração de Sessão e UX:** Refatorado o método `form_valid` para garantir a extração e persistência do primeiro nome do aluno na sessão em todos os fluxos, e padronizado o resgate centralizado de flags na `RegistrationSuccessView` para um feedback visual mais preciso e personalizado [32].
+* [x] **Condições de Sucesso (Copy Final):** Aplicadas as 4 condições de sucesso exatas estipuladas pelo cliente no template `registration_success.html`, garantindo a ordem lógica e o copy integral para automação, duplicidades e solicitações pendentes [33].
 
 **Sistema de Inscrição e Solicitação (UX):**
 * [x] **Diferenciação Visual de Sucesso:** Implementada lógica de sessão nas views e condicional no template `registration_success.html` para identificar se o usuário concluiu uma "Inscrição em Evento" ou uma "Solicitação de Certificado", exibindo mensagens personalizadas [14].

@@ -80,12 +80,17 @@ class RegistrationCreateView(CreateView):
         # b) Busca por inscrição existente (Match de CPF e Curso)
         inscricao = Registration.objects.filter(cpf=cpf, course=course).first()
         
+        # Extração do primeiro nome para feedback personalizado (Sprint 4)
+        full_name = form.cleaned_data.get('full_name') if not inscricao else inscricao.full_name
+        first_name = full_name.split()[0] if full_name else "Participante"
+
         if inscricao:
             # Caso 1: Certificado já foi enviado (SENT)
             if inscricao.status == Registration.Status.SENT:
                 self.request.session['already_requested'] = True
                 self.request.session['course_name'] = course.name
                 self.request.session['course_date'] = course.start_date.strftime('%d/%m/%Y')
+                self.request.session['registered_first_name'] = first_name
                 
                 # OBRIGATÓRIO: Injeta o objeto na view para que self.get_success_url() não falhe
                 self.object = inscricao
@@ -110,9 +115,10 @@ class RegistrationCreateView(CreateView):
                 # Se ainda não tem check-in, marca como duplicidade pendente visual
                 self.request.session['already_pending'] = True
 
-            # Injeção de dados do evento para feedback na tela de sucesso
+            # Injeção de dados do evento e participante para feedback na tela de sucesso
             self.request.session['course_name'] = course.name
             self.request.session['course_date'] = course.start_date.strftime('%d/%m/%Y')
+            self.request.session['registered_first_name'] = first_name
             
             return HttpResponseRedirect(self.get_success_url())
 
@@ -136,9 +142,7 @@ class RegistrationCreateView(CreateView):
 
         # f) Persistência de estado na sessão para a view de sucesso
         self.request.session['auto_emitted'] = auto_emitted
-        self.request.session['registered_first_name'] = self.object.full_name.split()[0] if self.object.full_name else ""
-        
-        # Injeção de dados do evento na sessão para feedback na tela de sucesso
+        self.request.session['registered_first_name'] = first_name
         self.request.session['course_name'] = course.name
         self.request.session['course_date'] = course.start_date.strftime('%d/%m/%Y')
         
@@ -217,13 +221,13 @@ class RegistrationSuccessView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         
-        # Recupera e remove os dados da sessão para exibição única e limpa
+        # Resgate centralizado e limpo de todas as flags de sessão (Sprints 3 e 4)
         context["first_name"] = self.request.session.pop("registered_first_name", "")
-        context["is_event"] = self.request.session.pop("is_event", False)
         context["course_name"] = self.request.session.pop("course_name", "")
         context["course_date"] = self.request.session.pop("course_date", "")
-        context["auto_emitted"] = self.request.session.pop("auto_emitted", False)
         context["already_requested"] = self.request.session.pop("already_requested", False)
         context["already_pending"] = self.request.session.pop("already_pending", False)
+        context["auto_emitted"] = self.request.session.pop("auto_emitted", False)
+        context["is_event"] = self.request.session.pop("is_event", False)
         
         return context
