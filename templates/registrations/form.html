@@ -183,8 +183,64 @@
     <!-- Bootstrap 5 JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     
+    <!-- Modal de Confirmação de Dados -->
+    <div class="modal fade" id="confirmDataModal" tabindex="-1" aria-labelledby="confirmDataModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-light">
+                    <h5 class="modal-title fw-bold" id="confirmDataModalLabel">Atenção! Confirme seus dados:</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-2 fs-5">Antes de concluirmos o envio dos seus dados, confirme:</p>
+                    <div class="p-3 bg-light rounded border-start border-4 border-warning mb-3">
+                        <p class="mb-1">Seu nome: <strong id="modal-nome-display"></strong></p>
+                        <p class="mb-0">CPF: <strong id="modal-cpf-display"></strong></p>
+                    </div>
+                    <p class="fw-bold fs-5 text-center mb-0">Estão corretos?</p>
+                </div>
+                <div class="modal-footer justify-content-center border-top-0 pb-4">
+                    <button type="button" class="btn btn-outline-danger px-4" data-bs-dismiss="modal">Não! Quero alterar.</button>
+                    <button type="button" id="btn-confirm-yes" class="btn btn-success px-4 shadow-sm">Sim! Estão corretos!</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // --- Lógica de Interceptação do Formulário e Modal de Confirmação ---
+            const form = document.querySelector('form');
+            const confirmModalElement = document.getElementById('confirmDataModal');
+            const confirmModal = new bootstrap.Modal(confirmModalElement);
+            const btnConfirmYes = document.getElementById('btn-confirm-yes');
+            
+            const inputFullName = document.getElementById('id_full_name');
+            const inputCpf = document.getElementById('id_cpf');
+            
+            const displayNome = document.getElementById('modal-nome-display');
+            const displayCpf = document.getElementById('modal-cpf-display');
+
+            form.addEventListener('submit', function(e) {
+                // Só intercepta se o formulário passar na validação nativa (HTML5)
+                if (form.checkValidity()) {
+                    e.preventDefault(); // Impede o envio imediato
+                    
+                    // Preenche os dados no modal para conferência
+                    displayNome.innerText = inputFullName.value;
+                    displayCpf.innerText = inputCpf.value;
+                    
+                    // Abre o modal de confirmação
+                    confirmModal.show();
+                }
+            });
+
+            // Ao clicar em 'Sim' no modal, o formulário é enviado de fato
+            btnConfirmYes.addEventListener('click', function() {
+                confirmModal.hide();
+                form.submit();
+            });
+
             // --- Lógica do Cronômetro Reativo (Vanilla JS) ---
             // Injeção de datas com fallback para string vazia via Django
             const startStr = "{{ course.certificate_start|date:'c'|default:'' }}";

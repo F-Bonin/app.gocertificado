@@ -22,7 +22,19 @@
 * [x] **Match de CPF e Automação (UX/Backend):** Implementada lógica de "Match de CPF" que permite ao aluno atualizar seus dados durante a solicitação de certificado. Adicionado disparo automático da `issue_certificate_task` via Celery para alunos com presença confirmada (`attended=True`) [19].
 * [x] **Proteção de Duplicidade (Inscrição):** Reforçada a validação em `EventRegistrationCreateView` para impedir inscrições duplicadas de um mesmo CPF no mesmo evento [19].
 * [x] **Sprint 3 Concluída:** Finalizada a implementação da Automação Celery baseada em Match de CPF e Check-in, incluindo atualização de UX na tela de sucesso para feedback em tempo real [20].
+* [x] **Refinamento de UX de Sucesso (Sprint 3):** Injetados dados do evento (`course_name`, `course_date`) na sessão e refatorada a tela de sucesso para exibir mensagens dinâmicas e personalizadas, confirmando a geração automática de certificados para alunos com check-in [21].
 * [x] **Bugfix de Falso Positivo (Celery):** O bug de falso positivo de sucesso no envio de certificado foi corrigido, atrelando a mudança de status da inscrição apenas ao sucesso real do SMTP ou WhatsApp (WAHA) [21].
+* [x] **Trava de Re-emissão (UX/Backend):** Implementada trava de segurança que impede a re-emissão de certificados já enviados (`status=SENT`), redirecionando o aluno para a tela de sucesso com uma flag específica (`already_requested`) [22].
+* [x] **Refinamento de UX de Sucesso (Copy Final):** Refatoração completa da tela de sucesso com o copy exato solicitado pelo cliente, incluindo o tratamento visual para duplicidade e automação de envio [23].
+* [x] **Padronização Visual (Páginas de Sucesso):** Padronizado o design de todos os fluxos de sucesso (Inscrição, Solicitação, Automação e Duplicidade) com ícones grandes, títulos semânticos e estrutura visual consistente [26].
+* [x] **Refinamento de Copy (Solicitação Pendente):** O texto da mensagem de sucesso para solicitações que aguardam check-in foi refinado, adicionando orientações explícitas sobre a verificação de SPAM e lixo eletrônico [27].
+* [x] **Polimento de UI (Páginas de Sucesso):** O layout das páginas de sucesso foi polido com a remoção de títulos duplicados herdados da versão antiga, garantindo uma interface mais limpa e focada nas mensagens específicas [24].
+* [x] **Segurança e UX Preventiva:** Implementado Modal Bootstrap de confirmação de dados (Nome/CPF) antes do envio dos formulários de Inscrição e Solicitação, reduzindo erros de preenchimento e chamados de suporte [24].
+* [x] **Trava de Duplicidade:** Reforçada a lógica de backend para impedir re-emissão de certificados já enviados, economizando recursos de processamento [24].
+* [x] **Bugfix de Redirecionamento (Trava de Duplicidade):** Corrigido o erro `'NoneType' object has no attribute 'dict'` ao interceptar solicitações duplicadas, garantindo a injeção do `self.object` antes da chamada de `get_success_url()` [25].
+* [x] **Barreira de Reenvio (Pendentes):** Implementada a flag `already_pending` na sessão para identificar e barrar visualmente o reenvio de formulários de alunos que já solicitaram o certificado e aguardam o check-in [28].
+* [x] **Refinamento de UX de Sucesso (Copy Final):** O copy da tela de pendência foi ajustado para maior clareza e uma nova tela de bloqueio visual para Duplicidades Pendentes (`already_pending`) foi implementada para evitar confusão do usuário [29].
+* [x] **Automação de Reenvio (Pendentes):** Refatorada a lógica do `form_valid` para permitir que alunos com status `PENDING` acionem a `issue_certificate_task` via Celery caso o check-in seja detectado durante uma nova submissão do formulário [30].
 
 **Sistema de Inscrição e Solicitação (UX):**
 * [x] **Diferenciação Visual de Sucesso:** Implementada lógica de sessão nas views e condicional no template `registration_success.html` para identificar se o usuário concluiu uma "Inscrição em Evento" ou uma "Solicitação de Certificado", exibindo mensagens personalizadas [14].
@@ -62,6 +74,7 @@
 
 **Correções e Melhorias Técnicas:**
 * [x] **Otimização de Lógica:** Implementada propriedade `@property is_expired` no modelo `Course` para centralizar a regra de expiração [8].
+* [x] **Ajuste de Fluxo (Duplicidade):** O fluxo de duplicidade no backend foi refatorado para respeitar reversões de check-in e disparar o Celery corretamente, e o copy visual da tela de pendência foi ajustado para maior clareza [31].
 * [x] **Formatação ISO em Forms:** Forçada a formatação ISO nos campos de data e hora do `CourseForm` para garantir exibição correta em inputs HTML5 no modo de edição [15].
 * [x] **Validação via ViaCEP:** Captura automática de endereço (Rua, Bairro, Cidade, UF) em formulários públicos e administrativos [19, 20].
 
