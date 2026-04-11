@@ -21,7 +21,27 @@
     @media print {
         @page {
             margin: 1cm;
-            size: A4 portrait;
+            size: A4 landscape;
+        }
+
+        /* Correção para evitar bordas duplicadas e quebra de layout em células ocultas/exibidas */
+        th.print-only, td.print-only {
+            display: table-cell !important;
+            vertical-align: middle !important;
+        }
+
+        .signature-line {
+            border: none !important;
+            border-bottom: 1px solid #000 !important;
+            width: 90% !important;
+            margin: 1.5rem auto 0.5rem auto !important;
+            display: block !important;
+            height: auto !important;
+        }
+
+        /* Classe utilitária para impedir quebra de linha na impressão */
+        .nowrap-print {
+            white-space: nowrap !important;
         }
 
         /* Esconder elementos desnecessários na impressão */
@@ -132,21 +152,21 @@
                 <thead class="table-light">
                     <tr>
                         <th width="50">#</th>
-                        <th>Nome / CPF</th>
-                        <th>E-mail / WhatsApp</th>
+                        <th class="nowrap-print">Nome / CPF</th>
+                        <th class="nowrap-print">E-mail / WhatsApp</th>
                         <th width="150" class="no-print text-center">Status (Check-in)</th>
-                        <th width="250" class="print-only">Assinatura</th>
+                        <th width="35%" class="print-only text-center align-middle" style="white-space: nowrap !important;">Assinatura</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for reg in registrations %}
                     <tr>
                         <td class="text-muted">{{ forloop.counter }}</td>
-                        <td>
+                        <td class="nowrap-print">
                             <div class="fw-bold text-dark">{{ reg.full_name }}</div>
-                            <small class="text-muted">{{ reg.cpf }}</small>
+                            <small class="text-muted">{{ reg.cpf }}{% if reg.profession %} | {{ reg.profession }}{% endif %}</small>
                         </td>
-                        <td>
+                        <td class="nowrap-print">
                             <div>{{ reg.email }}</div>
                             <small class="text-muted">{{ reg.whatsapp }}</small>
                         </td>
@@ -161,7 +181,7 @@
                             </div>
                         </td>
                         <!-- Campo de Assinatura (Apenas Impressão) -->
-                        <td class="print-only">
+                        <td class="print-only align-bottom pb-2">
                             <span class="signature-line"></span>
                         </td>
                     </tr>

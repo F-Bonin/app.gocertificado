@@ -16,6 +16,9 @@
 **Correções e Refinamentos (Recente):**
 * [x] **Mensagem de Sucesso de Inscrição:** Corrigida a lógica de exibição condicional no template para diferenciar Inscrição de Evento e Solicitação de Certificado [14].
 * [x] **Tabela de Impressão (Bugfix):** Refatoração agressiva do CSS `@media print` para garantir o alinhamento perfeito de bordas e linhas na Lista de Presença em formato A4 [15].
+* [x] **Layout de Impressão (UX):** O layout de impressão da Lista de Presença foi otimizado para formato Paisagem (Landscape) e implementada a classe `nowrap-print` para evitar quebras de linha nas colunas de identificação [16].
+* [x] **Refinamento de Impressão (UX):** Layout de impressão da Lista de Presença refinado com a inclusão do campo Profissão ao lado do CPF e ajustes estruturais no campo de Assinatura (alinhamento e estilo de linha) [17].
+* [x] **Bugfix de Layout de Impressão:** Corrigido o erro de bordas duplicadas e títulos cortados na tabela de impressão através do ajuste de `display: table-cell` para elementos exclusivos de impressão [18].
 
 **Sistema de Inscrição e Solicitação (UX):**
 * [x] **Diferenciação Visual de Sucesso:** Implementada lógica de sessão nas views e condicional no template `registration_success.html` para identificar se o usuário concluiu uma "Inscrição em Evento" ou uma "Solicitação de Certificado", exibindo mensagens personalizadas [14].
