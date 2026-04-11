@@ -19,6 +19,10 @@
 * [x] **Layout de Impressão (UX):** O layout de impressão da Lista de Presença foi otimizado para formato Paisagem (Landscape) e implementada a classe `nowrap-print` para evitar quebras de linha nas colunas de identificação [16].
 * [x] **Refinamento de Impressão (UX):** Layout de impressão da Lista de Presença refinado com a inclusão do campo Profissão ao lado do CPF e ajustes estruturais no campo de Assinatura (alinhamento e estilo de linha) [17].
 * [x] **Bugfix de Layout de Impressão:** Corrigido o erro de bordas duplicadas e títulos cortados na tabela de impressão através do ajuste de `display: table-cell` para elementos exclusivos de impressão [18].
+* [x] **Match de CPF e Automação (UX/Backend):** Implementada lógica de "Match de CPF" que permite ao aluno atualizar seus dados durante a solicitação de certificado. Adicionado disparo automático da `issue_certificate_task` via Celery para alunos com presença confirmada (`attended=True`) [19].
+* [x] **Proteção de Duplicidade (Inscrição):** Reforçada a validação em `EventRegistrationCreateView` para impedir inscrições duplicadas de um mesmo CPF no mesmo evento [19].
+* [x] **Sprint 3 Concluída:** Finalizada a implementação da Automação Celery baseada em Match de CPF e Check-in, incluindo atualização de UX na tela de sucesso para feedback em tempo real [20].
+* [x] **Bugfix de Falso Positivo (Celery):** O bug de falso positivo de sucesso no envio de certificado foi corrigido, atrelando a mudança de status da inscrição apenas ao sucesso real do SMTP ou WhatsApp (WAHA) [21].
 
 **Sistema de Inscrição e Solicitação (UX):**
 * [x] **Diferenciação Visual de Sucesso:** Implementada lógica de sessão nas views e condicional no template `registration_success.html` para identificar se o usuário concluiu uma "Inscrição em Evento" ou uma "Solicitação de Certificado", exibindo mensagens personalizadas [14].

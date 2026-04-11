@@ -17,6 +17,7 @@ class RegistrationCreateView(CreateView):
     form_class = RegistrationForm
     template_name = "registrations/form.html"
     success_url = reverse_lazy("registrations:registration_success")
+    is_pre_event = False  # Define se a view é de pré-evento
 
     def dispatch(self, request, *args, **kwargs):
         """
@@ -67,34 +68,44 @@ class RegistrationCreateView(CreateView):
 
     def form_valid(self, form):
         """
-        Processa o salvamento da inscrição associando o curso via busca direta pelo Slug.
+        Lógica Sênior: Match de CPF para atualização de dados ou criação, 
+        seguido de disparo automático de certificado via Celery se houver presença confirmada.
         """
-        from apps.registrations.models import Registration
-        
-        # 1. Busca o curso real pelo Slug da URL para garantir segurança e integridade
+        # a) Recuperação de dados base
         course = get_object_or_404(Course, slug=self.kwargs['slug'])
+        cpf = form.cleaned_data.get('cpf')
         
-        # Trava: Impede o mesmo CPF no MESMO treinamento/data (mesmo objeto Course)
-        if Registration.objects.filter(cpf=form.instance.cpf, course=course).exists():
-            form.add_error('cpf', 'Este CPF já está inscrito nesta turma/data deste treinamento.')
-            return self.form_invalid(form)
-            
-        # 2. Salva a inscrição no banco com commit=False para injetar a FK do curso
-        inscricao = form.save(commit=False)
-        inscricao.course = course
+        # b) Busca por inscrição existente (Match de CPF e Curso)
+        inscricao = Registration.objects.filter(cpf=cpf, course=course).first()
         
-        # Sincroniza dados legados para garantir persistência histórica
-        inscricao.course_name = course.name
-        inscricao.course_date = course.start_date
-        inscricao.course_workload = course.hours
-        
-        inscricao.save()
-        
+        if inscricao:
+            # c) Atualização: Absorve correções feitas pelo aluno no formulário
+            for field, value in form.cleaned_data.items():
+                setattr(inscricao, field, value)
+            inscricao.save()
+        else:
+            # d) Nova Inscrição: Caso não exista match prévio
+            inscricao = form.save(commit=False)
+            inscricao.course = course
+            # Sincroniza dados históricos para o modelo de inscrição
+            inscricao.course_name = course.name
+            inscricao.course_date = course.start_date
+            inscricao.course_workload = course.hours
+            inscricao.save()
+
         self.object = inscricao
-        
-        # 3. Configura a sessão para a tela de obrigado
-        first_name = self.object.full_name.split()[0] if self.object.full_name else ""
-        self.request.session['registered_first_name'] = first_name
+        auto_emitted = False
+
+        # e) Condição de Automação: Se não for pré-evento E tiver presença confirmada
+        if not self.is_pre_event and inscricao.attended:
+            from apps.certificates.tasks import issue_certificate_task
+            # Disparo assíncrono via Celery para geração e envio do PDF
+            issue_certificate_task.delay(str(inscricao.pk))
+            auto_emitted = True
+
+        # f) Persistência de estado na sessão para a view de sucesso
+        self.request.session['auto_emitted'] = auto_emitted
+        self.request.session['registered_first_name'] = self.object.full_name.split()[0] if self.object.full_name else ""
         
         return HttpResponseRedirect(self.get_success_url())
 
@@ -112,6 +123,7 @@ class RegistrationCreateView(CreateView):
 class EventRegistrationCreateView(RegistrationCreateView):
     """View para inscrição pré-evento (antes do treinamento ocorrer)."""
     template_name = "registrations/event_form.html"
+    is_pre_event = True  # Marca como pré-evento para evitar automação de certificado
 
     def dispatch(self, request, *args, **kwargs):
         """
@@ -143,11 +155,19 @@ class EventRegistrationCreateView(RegistrationCreateView):
 
     def form_valid(self, form):
         """
-        Sobrescreve o salvamento para marcar a sessão como origem de Inscrição de Evento.
+        Proteção contra duplicidade no pré-evento e injeção de dados na sessão.
         """
+        course = get_object_or_404(Course, slug=self.kwargs['slug'])
+        cpf = form.cleaned_data.get('cpf')
+        
+        # Bloqueio de duplicidade: Garante que o CPF não se inscreva duas vezes no mesmo curso
+        if Registration.objects.filter(cpf=cpf, course=course).exists():
+            form.add_error('cpf', 'Você já está inscrito neste evento.')
+            return self.form_invalid(form)
+            
+        # Prossegue com o salvamento base e injeção de flags de sessão
         response = super().form_valid(form)
         
-        # Adiciona flags à sessão para diferenciar o contexto na página de sucesso
         self.request.session['is_event'] = True
         self.request.session['course_name'] = self.object.course.name
         self.request.session['course_date'] = self.object.course.start_date.strftime('%d/%m/%Y')
@@ -167,5 +187,6 @@ class RegistrationSuccessView(TemplateView):
         context["is_event"] = self.request.session.pop("is_event", False)
         context["course_name"] = self.request.session.pop("course_name", "")
         context["course_date"] = self.request.session.pop("course_date", "")
+        context["auto_emitted"] = self.request.session.pop("auto_emitted", False)
         
         return context

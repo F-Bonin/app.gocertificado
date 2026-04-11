@@ -67,9 +67,17 @@ def issue_certificate(registration_id: str) -> dict:
     # ── 3. Envia WhatsApp ─────────────────────────────────────────
     result["whatsapp_sent"] = send_certificate_whatsapp(certificate)
 
-    # ── 4. Atualiza status da inscrição ───────────────────────────
-    reg.status = Registration.Status.SENT
-    reg.save(update_fields=["status", "updated_at"])
+    # ── 4. Atualiza status da inscrição (Trava de Sucesso Real) ───────────
+    # Apenas marcamos como SENT se ao menos uma das vias de envio (E-mail ou WhatsApp) obteve sucesso.
+    if result["email_sent"] or result["whatsapp_sent"]:
+        reg.status = Registration.Status.SENT
+        reg.save(update_fields=["status", "updated_at"])
+        result["success"] = True
+        logger.info(f"Certificado {registration_id} enviado com sucesso (Email: {result['email_sent']}, WA: {result['whatsapp_sent']})")
+    else:
+        # Se o PDF foi gerado mas nenhum envio funcionou, não atualizamos o status para SENT
+        result["success"] = False
+        result["error"] = "PDF gerado, mas ocorreu uma falha ao enviar por E-mail/WhatsApp."
+        logger.warning(f"Falha no envio do certificado {registration_id}: {result['error']}")
 
-    result["success"] = result["pdf_generated"]
     return result
