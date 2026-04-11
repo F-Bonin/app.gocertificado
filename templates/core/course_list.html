@@ -66,13 +66,16 @@
                         <td class="ps-4 fw-bold">
                             {{ course.name }}
                             <div class="mt-2 btn-group btn-group-sm">
-                                <a href="{% url 'core:course_update' course.id %}" class="text-muted me-2" title="Editar">
+                                <a href="{% url 'core:course_presence' course.id %}" class="btn btn-sm btn-info me-2 shadow-sm fw-bold" title="Lista de Presença / Check-in">
+                                    <i class="bi bi-clipboard2-check me-1"></i> Lista de Presença
+                                </a>
+                                <a href="{% url 'core:course_update' course.id %}" class="text-muted me-2 pt-1" title="Editar">
                                     <i class="bi bi-pencil"></i> Editar
                                 </a>
-                                <a href="{% url 'core:course_clone' course.id %}" class="text-muted me-2" title="Clonar">
+                                <a href="{% url 'core:course_clone' course.id %}" class="text-muted me-2 pt-1" title="Clonar">
                                     <i class="bi bi-copy"></i> Clonar
                                 </a>
-                                <a href="{% url 'core:course_delete' course.id %}" class="text-danger" title="Excluir">
+                                <a href="{% url 'core:course_delete' course.id %}" class="text-danger pt-1" title="Excluir">
                                     <i class="bi bi-trash"></i>
                                 </a>
                             </div>

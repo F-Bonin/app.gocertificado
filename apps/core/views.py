@@ -1,7 +1,7 @@
 import io
 import uuid
 import csv
-from django.http import FileResponse, HttpResponse
+from django.http import FileResponse, HttpResponse, JsonResponse
 from django.views import View
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
@@ -11,6 +11,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from apps.certificates.services.pdf_generator import generate_preview_pdf
 from apps.certificates.models import CertificateTemplate
+from apps.registrations.models import Registration
 from .models import Company, Instructor, Course
 from .forms import (
     CompanyForm, InstructorForm, CourseForm, 
@@ -352,3 +353,56 @@ class CertificatePreviewView(LoginRequiredMixin, View):
         
         # 2. Empacotamos numa resposta HTTP válida para o navegador ler como PDF
         return HttpResponse(pdf_bytes, content_type='application/pdf')
+
+
+class EventPresenceListView(LoginRequiredMixin, ListView):
+    """
+    Lista de presença de um evento específico.
+    Exibe todos os participantes inscritos e permite realizar o check-in.
+    """
+    model = Registration
+    template_name = "core/presence_list.html"
+    context_object_name = "registrations"
+
+    def get_queryset(self):
+        # Validação Multi-tenant: Busca o curso garantindo que pertence à empresa do usuário
+        self.course = get_object_or_404(
+            Course, 
+            pk=self.kwargs.get('pk'), 
+            company=self.request.user.profile.company
+        )
+        # Retorna as inscrições vinculadas a este curso, ordenadas por nome
+        return self.course.registrations.all().order_by('full_name')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Injeta o objeto course no contexto para exibição de cabeçalhos no template
+        context['course'] = self.course
+        return context
+
+
+class TogglePresenceView(LoginRequiredMixin, View):
+    """
+    Lógica de Check-in via AJAX (Online).
+    Inverte o status de 'attended' (presença) de um participante.
+    Segurança Multi-tenant: Garante que a inscrição pertença a um curso da empresa do usuário.
+    """
+    def post(self, request, reg_id):
+        # Recupera a inscrição validando o vínculo com a empresa do usuário logado
+        registration = get_object_or_404(
+            Registration, 
+            id=reg_id, 
+            course__company=request.user.profile.company
+        )
+        
+        # Inverte o valor de attended (True vira False, e vice-versa)
+        registration.attended = not registration.attended
+        
+        # Otimização: Salva apenas o campo alterado
+        registration.save(update_fields=['attended'])
+        
+        # Retorna resposta JSON para atualização reativa na interface (JS)
+        return JsonResponse({
+            "ok": True, 
+            "attended": registration.attended
+        })

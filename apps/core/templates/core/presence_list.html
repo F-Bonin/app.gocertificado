@@ -1,0 +1,235 @@
+{% extends "painel/base_painel.html" %}
+{% load static %}
+
+{% block title %}Lista de Presença - {{ course.name }}{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* Estilos para tela (Screen) */
+    .print-only {
+        display: none !important;
+    }
+
+    .signature-line {
+        border-bottom: 1px solid #000;
+        width: 100%;
+        height: 25px;
+        display: block;
+    }
+
+    /* Configuração de Impressão */
+    @media print {
+        @page {
+            margin: 1cm;
+            size: A4 portrait;
+        }
+
+        /* Esconder elementos desnecessários na impressão */
+        .no-print, 
+        #sidebar-wrapper, 
+        .navbar, 
+        .footer, 
+        .btn,
+        .alert,
+        .breadcrumb {
+            display: none !important;
+        }
+
+        /* Ajustar o conteúdo principal para ocupar a tela toda */
+        #page-content-wrapper {
+            margin-left: 0 !important;
+            width: 100% !important;
+            padding: 0 !important;
+        }
+
+        .main-content {
+            padding: 0 !important;
+        }
+
+        /* Mostrar elementos exclusivos de impressão */
+        .print-only {
+            display: block !important;
+        }
+
+        /* Remover sombras e bordas cinzas para economizar tinta */
+        .card {
+            box-shadow: none !important;
+            border: none !important;
+        }
+
+        .table {
+            border-color: #000 !important;
+        }
+
+        body {
+            background-color: #fff !important;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Cabeçalho de Navegação (No Print) -->
+    <nav aria-label="breadcrumb" class="no-print mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'core:course_list' %}">Meus Eventos</a></li>
+            <li class="breadcrumb-item active">Lista de Presença</li>
+        </ol>
+    </nav>
+
+    <div id="print-area" class="card p-4">
+        <!-- Cabeçalho da Lista (Print & Screen) -->
+        <div class="d-flex justify-content-between align-items-start mb-4">
+            <div>
+                <h2 class="fw-bold text-primary">{{ course.name }}</h2>
+                <p class="text-muted mb-1">
+                    <i class="bi bi-calendar-event me-2"></i><strong>Data:</strong> {{ course.start_date|date:"d/m/Y" }}
+                    {% if course.end_date %} até {{ course.end_date|date:"d/m/Y" }}{% endif %}
+                </p>
+                <p class="text-muted mb-0">
+                    <i class="bi bi-geo-alt me-2"></i><strong>Local:</strong> {{ course.institution_name|default:course.city }} - {{ course.city }}/{{ course.state }}
+                </p>
+            </div>
+            <div class="no-print">
+                <button onclick="window.print()" class="btn btn-secondary shadow-sm">
+                    <i class="bi bi-printer me-2"></i>Imprimir Lista Física
+                </button>
+            </div>
+            <!-- Logo apenas na impressão -->
+            <div class="print-only">
+                {% if request.user.profile.company.logo %}
+                    <img src="{{ request.user.profile.company.logo.url }}" alt="Logo" style="max-height: 80px;">
+                {% else %}
+                    <h4 class="fw-bold">{{ request.user.profile.company.name }}</h4>
+                {% endif %}
+            </div>
+        </div>
+
+        <hr class="mb-4">
+
+        <!-- Tabela de Participantes -->
+        <div class="table-responsive">
+            <table class="table table-hover align-middle border">
+                <thead class="table-light">
+                    <tr>
+                        <th width="50">#</th>
+                        <th>Nome / CPF</th>
+                        <th>E-mail / WhatsApp</th>
+                        <th width="150" class="no-print text-center">Status (Check-in)</th>
+                        <th width="250" class="print-only">Assinatura</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for reg in registrations %}
+                    <tr>
+                        <td class="text-muted">{{ forloop.counter }}</td>
+                        <td>
+                            <div class="fw-bold text-dark">{{ reg.full_name }}</div>
+                            <small class="text-muted">{{ reg.cpf }}</small>
+                        </td>
+                        <td>
+                            <div>{{ reg.email }}</div>
+                            <small class="text-muted">{{ reg.whatsapp }}</small>
+                        </td>
+                        <!-- Check-in Digital (Apenas Tela) -->
+                        <td class="no-print text-center">
+                            <div class="form-check form-switch d-inline-block">
+                                <input class="form-check-input presence-toggle" type="checkbox" role="switch" 
+                                       id="switch-{{ reg.id }}" 
+                                       data-url="{% url 'core:toggle_presence' reg.id %}"
+                                       {% if reg.attended %}checked{% endif %}>
+                                <label class="form-check-label visually-hidden" for="switch-{{ reg.id }}">Marcar Presença</label>
+                            </div>
+                        </td>
+                        <!-- Campo de Assinatura (Apenas Impressão) -->
+                        <td class="print-only">
+                            <span class="signature-line"></span>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center py-4 text-muted">
+                            <i class="bi bi-info-circle me-2"></i>Nenhuma inscrição confirmada para este evento.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Rodapé da Impressão -->
+        <div class="print-only mt-5 text-center pt-4 border-top">
+            <p class="small text-muted">
+                Documento gerado em {{ now|date:"d/m/Y H:i" }} por {{ request.user.username }} - Plataforma e-Certificado
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    /**
+     * Lógica de Check-in via AJAX (Nativo Fetch API)
+     * Gerencia a inversão do status de presença sem recarregar a página.
+     */
+    document.addEventListener("DOMContentLoaded", function() {
+        const presenceSwitches = document.querySelectorAll(".presence-toggle");
+        
+        // Elementos do Toast (definidos no base_painel.html)
+        const toastElement = document.getElementById('liveToast');
+        const toastTitle = document.getElementById('toastTitle');
+        const toastMessage = document.getElementById('toastMessage');
+        const bsToast = new bootstrap.Toast(toastElement);
+
+        presenceSwitches.forEach(sw => {
+            sw.addEventListener("change", function() {
+                const url = this.getAttribute("data-url");
+                const isChecked = this.checked;
+                const regId = this.id.replace('switch-', '');
+
+                // Bloqueia o switch durante a requisição para evitar cliques duplos
+                this.disabled = true;
+
+                fetch(url, {
+                    method: "POST",
+                    headers: {
+                        "X-CSRFToken": "{{ csrf_token }}",
+                        "Content-Type": "application/json",
+                        "X-Requested-With": "XMLHttpRequest"
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) throw new Error("Erro na rede.");
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.ok) {
+                        // Atualização visual e feedback
+                        toastTitle.innerText = "Check-in Atualizado";
+                        toastTitle.className = "me-auto text-success";
+                        toastMessage.innerText = data.attended 
+                            ? "Presença confirmada com sucesso!" 
+                            : "Presença removida.";
+                        bsToast.show();
+                    }
+                })
+                .catch(error => {
+                    console.error("Erro:", error);
+                    // Reverte o switch em caso de falha
+                    this.checked = !isChecked;
+                    toastTitle.innerText = "Erro no Servidor";
+                    toastTitle.className = "me-auto text-danger";
+                    toastMessage.innerText = "Não foi possível atualizar a presença. Tente novamente.";
+                    bsToast.show();
+                })
+                .finally(() => {
+                    // Reabilita o switch
+                    this.disabled = false;
+                });
+            });
+        });
+    });
+</script>
+{% endblock %}

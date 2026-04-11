@@ -2,7 +2,7 @@
 
 **Atualize este arquivo após cada sessão de desenvolvimento.** A IA deve ler este arquivo para entender o escopo completo.
 
-#### 🗓️ Última atualização: 2026-04-10 (Controle de Período de Solicitação e Inscrição) [11]
+#### 🗓️ Última atualização: 2026-04-11 (Conclusão da Lista de Presença e Check-in) [13]
 
 ---
 
@@ -13,7 +13,17 @@
 * [x] **Refatoração de UX Copy:** Nomenclatura alterada de "Treinamento" para "Evento" em todo o painel administrativo, modelos e templates [9, 10].
 * [x] **Padronização de Nomenclatura:** Termos de "Inscrição" alterados para "Solicitação de Certificado" em formulários de emissão [8].
 
-**Sistema de Controle de Períodos e UX Reativa (Novo):**
+**Sistema de Controle de Presença e Check-in (Concluído):**
+* [x] **Lista de Presença Online (Check-in):** Implementada com sucesso a funcionalidade completa de check-in digital via AJAX e suporte a layout de impressão físico A4 [13].
+* [x] **Lista de Presença Multitenant:** Implementada `EventPresenceListView` com filtragem rigorosa por empresa [12].
+* [x] **Check-in Online (AJAX):** Implementada `TogglePresenceView` para alternância de status em tempo real sem reload [12].
+* [x] **Interface Profissional (Frontend):** Template `presence_list.html` com suporte nativo a impressão (CSS `@media print`) [13].
+* [x] **Atalho no Painel:** Adicionado botão de acesso rápido à Lista de Presença diretamente na listagem de eventos para facilitar o fluxo do usuário [13].
+* [x] **Check-in Reativo:** JS nativo (Fetch API) com feedback visual via Toasts [13].
+* [x] **Suporte a Lista Física:** Coluna de assinatura dedicada exclusiva para a versão impressa [13].
+* [x] **Segurança:** Validação multi-tenant em todas as camadas (View e AJAX) [12].
+
+**Sistema de Controle de Períodos e UX Reativa:**
 * [x] **Cronômetro Reativo:** Implementada lógica Vanilla JS com `setInterval` para contagem regressiva em tempo real nos formulários de Inscrição e Solicitação de Certificado [12].
 * [x] **Robustez do Cronômetro:** Refatoração do JS para lidar com datas de encerramento vazias (link vitalício), evitando erros `NaN` [13].
 * [x] **Exibição Explícita de Datas:** Adicionado card `alert-info` no topo dos formulários públicos exibindo datas de início e encerramento formatadas (Django `|date`) [12].
