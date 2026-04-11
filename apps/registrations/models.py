@@ -85,6 +85,7 @@ class Registration(models.Model):
     )
 
     attended = models.BooleanField("Presença Confirmada", default=False)
+    certificate_requested = models.BooleanField("Certificado Solicitado", default=False)
 
     class Meta:
         verbose_name = "Solicitação de Certificado"

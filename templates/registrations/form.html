@@ -237,6 +237,10 @@
 
             // Ao clicar em 'Sim' no modal, o formulário é enviado de fato
             btnConfirmYes.addEventListener('click', function() {
+                // BLOQUEIO DE DUPLO CLIQUE: Desativa o botão e mostra feedback visual
+                this.disabled = true;
+                this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Enviando...';
+                
                 confirmModal.hide();
                 form.submit();
             });

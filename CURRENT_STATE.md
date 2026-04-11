@@ -29,7 +29,7 @@
 * [x] **Padronização Visual (Páginas de Sucesso):** Padronizado o design de todos os fluxos de sucesso (Inscrição, Solicitação, Automação e Duplicidade) com ícones grandes, títulos semânticos e estrutura visual consistente [26].
 * [x] **Refinamento de Copy (Solicitação Pendente):** O texto da mensagem de sucesso para solicitações que aguardam check-in foi refinado, adicionando orientações explícitas sobre a verificação de SPAM e lixo eletrônico [27].
 * [x] **Polimento de UI (Páginas de Sucesso):** O layout das páginas de sucesso foi polido com a remoção de títulos duplicados herdados da versão antiga, garantindo uma interface mais limpa e focada nas mensagens específicas [24].
-* [x] **Segurança e UX Preventiva:** Implementado Modal Bootstrap de confirmação de dados (Nome/CPF) antes do envio dos formulários de Inscrição e Solicitação, reduzindo erros de preenchimento e chamados de suporte [24].
+* [x] **Segurança e UX Preventiva:** Implementado Modal Bootstrap de confirmação de dados (Nome/CPF) com bloqueio de duplo-clique no botão de envio para evitar disparos simultâneos (*Race Condition*) e fornecer feedback visual de processamento [37].
 * [x] **Trava de Duplicidade:** Reforçada a lógica de backend para impedir re-emissão de certificados já enviados, economizando recursos de processamento [24].
 * [x] **Bugfix de Redirecionamento (Trava de Duplicidade):** Corrigido o erro `'NoneType' object has no attribute 'dict'` ao interceptar solicitações duplicadas, garantindo a injeção do `self.object` antes da chamada de `get_success_url()` [25].
 * [x] **Barreira de Reenvio (Pendentes):** Implementada a flag `already_pending` na sessão para identificar e barrar visualmente o reenvio de formulários de alunos que já solicitaram o certificado e aguardam o check-in [28].
@@ -77,7 +77,8 @@
 **Correções e Melhorias Técnicas:**
 * [x] **Otimização de Lógica:** Implementada propriedade `@property is_expired` no modelo `Course` para centralizar a regra de expiração [8].
 * [x] **Ajuste de Fluxo (Duplicidade):** O fluxo de duplicidade no backend foi refatorado para respeitar reversões de check-in e disparar o Celery corretamente, e o copy visual da tela de pendência foi ajustado para maior clareza [31].
-* [x] **Máquina de Estados (Session Tracking):** Refinada a lógica de backend com rastreamento de sessão para diferenciar com precisão a primeira solicitação de certificado das atualizações duplicadas, garantindo a exibição correta das condições de sucesso 3 e 4 [34].
+* [x] **Máquina de Estados (Database Tracking):** Refatorada a lógica do `form_valid` para integrar o campo persistente `certificate_requested`. O sistema agora diferencia com precisão milimétrica as 4 condições de sucesso (Inédita, Duplicidade Pendente, Já Enviado e Automação) utilizando uma combinação de estado de banco e flags de sessão [36].
+* [x] **Persistência de Solicitação (Database):** Adicionado o campo booleano `certificate_requested` ao modelo `Registration` para rastrear de forma persistente se o aluno já realizou a solicitação do certificado através do formulário público [35].
 * [x] **Formatação ISO em Forms:** Forçada a formatação ISO nos campos de data e hora do `CourseForm` para garantir exibição correta em inputs HTML5 no modo de edição [15].
 * [x] **Validação via ViaCEP:** Captura automática de endereço (Rua, Bairro, Cidade, UF) em formulários públicos e administrativos [19, 20].
 

@@ -68,66 +68,71 @@ class RegistrationCreateView(CreateView):
 
     def form_valid(self, form):
         """
-        Lógica Sênior: Máquina de estados para gerenciamento de emissão e duplicidade.
-        Diferencia a primeira solicitação (Condição 3) de atualizações duplicadas (Condição 4).
+        Lógica Sênior: Máquina de estados baseada em persistência no banco de dados.
+        Utiliza 'certificate_requested' para diferenciar solicitações inéditas de duplicidades.
         """
-        # 1. Recuperação de dados base e busca de match
+        # 1. Recuperação de dados base
         course = get_object_or_404(Course, slug=self.kwargs['slug'])
         cpf = form.cleaned_data.get('cpf')
         inscricao = Registration.objects.filter(cpf=cpf, course=course).first()
         
-        # 2. Extração do primeiro nome para feedback personalizado (Sprint 4)
+        # 2. Extração do nome para feedback personalizado
         full_name = form.cleaned_data.get('full_name') if not inscricao else inscricao.full_name
         first_name = full_name.split()[0] if full_name else "Participante"
 
-        # 3. Injeção de metadados obrigatórios para todas as telas de sucesso
+        # 3. Injeção de metadados na sessão (Obrigatórios para o template)
         self.request.session['registered_first_name'] = first_name
         self.request.session['course_name'] = course.name
         self.request.session['course_date'] = course.start_date.strftime('%d/%m/%Y')
 
         if inscricao:
-            # Caso 1: Certificado já foi enviado (SENT) -> Exibe Condição 2
+            # Caso 1: Certificado já enviado anteriormente -> Exibe Condição 2
             if inscricao.status == Registration.Status.SENT:
                 self.request.session['already_requested'] = True
                 self.object = inscricao
                 return HttpResponseRedirect(self.get_success_url())
             
-            # Caso 2: Inscrição PENDENTE (Atualização Duplicada)
-            # Absorve possíveis correções cadastrais enviadas pelo aluno
+            # Caso 2: Atualização de Registro Existente (Match de CPF)
+            # Verifica se já houve uma solicitação prévia para diferenciar Condição 3 de 4
+            ja_solicitou_antes = inscricao.certificate_requested
+
+            # Absorve correções cadastrais
             for field, value in form.cleaned_data.items():
                 setattr(inscricao, field, value)
+            
+            inscricao.certificate_requested = True  # Persiste a solicitação no banco
             inscricao.save()
             self.object = inscricao
 
-            # Verifica se houve confirmação de check-in (attended=True)
+            # Verifica automação via Celery (Check-in confirmado)
             if not self.is_pre_event and inscricao.attended:
-                # Aciona automação de emissão imediata -> Exibe Condição 1
                 from apps.certificates.tasks import issue_certificate_task
                 issue_certificate_task.delay(str(inscricao.pk))
-                self.request.session['auto_emitted'] = True
-            else:
-                # Marca como duplicidade pendente -> Exibe Condição 4
+                self.request.session['auto_emitted'] = True  # Exibe Condição 1
+            elif ja_solicitou_antes:
+                # Se não tem check-in e já tinha solicitado antes -> Exibe Condição 4
                 self.request.session['already_pending'] = True
             
+            # Se ja_solicitou_antes era False, cai no else do template -> Exibe Condição 3
             return HttpResponseRedirect(self.get_success_url())
 
-        # Caso 3: Nova Inscrição (Match não encontrado) -> Exibe Condição 3 (ou 1 se check-in detectado)
+        # Caso 3: Nova Inscrição (Criação de Registro)
         inscricao = form.save(commit=False)
         inscricao.course = course
-        # Sincroniza dados históricos
         inscricao.course_name = course.name
         inscricao.course_date = course.start_date
         inscricao.course_workload = course.hours
+        inscricao.certificate_requested = True  # Marca como solicitado no banco
         inscricao.save()
         self.object = inscricao
 
-        # Verifica automação imediata para novos registros (ex: presença confirmada via admin antes do preenchimento)
+        # Verifica automação imediata para novos registros
         if not self.is_pre_event and inscricao.attended:
             from apps.certificates.tasks import issue_certificate_task
             issue_certificate_task.delay(str(inscricao.pk))
-            self.request.session['auto_emitted'] = True
+            self.request.session['auto_emitted'] = True # Exibe Condição 1
         
-        # Se auto_emitted não for True, o template cairá no 'else' -> Exibe Condição 3
+        # Sem flags adicionais, o template exibirá a Condição 3 (Solicitação Pendente Inédita)
         return HttpResponseRedirect(self.get_success_url())
 
     def get_context_data(self, **kwargs):
@@ -197,13 +202,13 @@ class EventRegistrationCreateView(RegistrationCreateView):
 
 
 class RegistrationSuccessView(TemplateView):
-    """Tela de agradecimento após envio do formulário."""
+    """Tela de agradecimento personalizada conforme o estado da solicitação."""
     template_name = "registrations/registration_success.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         
-        # Resgate centralizado e limpo de todas as flags de sessão (Sprints 3 e 4)
+        # Resgate centralizado das flags de controle para renderização das 4 condições
         context["first_name"] = self.request.session.pop("registered_first_name", "")
         context["course_name"] = self.request.session.pop("course_name", "")
         context["course_date"] = self.request.session.pop("course_date", "")
