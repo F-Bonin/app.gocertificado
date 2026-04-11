@@ -75,6 +75,7 @@
 * [x] **Controle de Presença:** Novo campo `attended` no modelo `Registration` para validação futura de emissão [10].
 
 **Correções e Melhorias Técnicas:**
+* [x] **Emissão Automática via Check-in:** A emissão de certificados agora é disparada automaticamente (via Celery) ao habilitar a chave de Check-in na Lista de Presença, caso o aluno já possua uma solicitação com status Pendente [38].
 * [x] **Otimização de Lógica:** Implementada propriedade `@property is_expired` no modelo `Course` para centralizar a regra de expiração [8].
 * [x] **Ajuste de Fluxo (Duplicidade):** O fluxo de duplicidade no backend foi refatorado para respeitar reversões de check-in e disparar o Celery corretamente, e o copy visual da tela de pendência foi ajustado para maior clareza [31].
 * [x] **Máquina de Estados (Database Tracking):** Refatorada a lógica do `form_valid` para integrar o campo persistente `certificate_requested`. O sistema agora diferencia com precisão milimétrica as 4 condições de sucesso (Inédita, Duplicidade Pendente, Já Enviado e Automação) utilizando uma combinação de estado de banco e flags de sessão [36].

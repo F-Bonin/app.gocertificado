@@ -11,6 +11,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from apps.certificates.services.pdf_generator import generate_preview_pdf
 from apps.certificates.models import CertificateTemplate
+from apps.certificates.tasks import issue_certificate_task
 from apps.registrations.models import Registration
 from .models import Company, Instructor, Course
 from .forms import (
@@ -400,6 +401,11 @@ class TogglePresenceView(LoginRequiredMixin, View):
         
         # Otimização: Salva apenas o campo alterado
         registration.save(update_fields=['attended'])
+        
+        # DISPARO AUTOMÁTICO (CELERY): Se o check-in foi habilitado e o aluno já possui 
+        # uma solicitação de certificado pendente, dispara a emissão assíncrona imediatamente.
+        if registration.attended and registration.status == Registration.Status.PENDING:
+            issue_certificate_task.delay(str(registration.id))
         
         # Retorna resposta JSON para atualização reativa na interface (JS)
         return JsonResponse({
