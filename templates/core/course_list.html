@@ -57,18 +57,15 @@
                         <th>Período</th>
                         <th>Local</th>
                         <th>Instrutor</th>
-                        <th class="text-center">Links e Controles do Evento</th>
+                        <th class="text-center">Links e Controles</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for course in courses %}
-                    <tr>
+                    <tr style="--bs-table-bg: {% if forloop.counter|divisibleby:2 %}#dce4ec{% else %}transparent{% endif %};">
                         <td class="ps-4 fw-bold">
                             {{ course.name }}
                             <div class="mt-2 btn-group btn-group-sm">
-                                <a href="{% url 'core:course_presence' course.id %}" class="btn btn-sm btn-info me-2 shadow-sm fw-bold" title="Lista de Presença / Check-in">
-                                    <i class="bi bi-clipboard2-check me-1"></i> Lista de Presença
-                                </a>
                                 <a href="{% url 'core:course_update' course.id %}" class="text-muted me-2 pt-1" title="Editar">
                                     <i class="bi bi-pencil"></i> Editar
                                 </a>
@@ -88,60 +85,108 @@
                         </td>
                         <td>{{ course.institution_name|default:"-" }}</td>
                         <td>{{ course.signature_1.full_name|default:"N/A" }}</td>
-                        <td style="min-width: 320px;">
+                        <td class="text-center">
                             {% if course.slug %}
-                            <div class="d-flex flex-column gap-2 p-2">
-                                <!-- Card 1: Link de Inscrição -->
-                                <div class="bg-light border p-2 rounded shadow-sm">
-                                    <label class="small fw-bold text-success mb-1"><i class="bi bi-person-plus me-1"></i>Inscrição (Pré-Evento)</label>
-                                    <div class="input-group input-group-sm mb-2">
-                                        <input type="text" class="form-control bg-white" readonly id="link-reg-{{ course.id }}" value="{{ request.scheme }}://{{ request.get_host }}{% url 'registrations:event_form' course.slug %}">
-                                        <button class="btn btn-outline-success" type="button" onclick="copyLink('link-reg-{{ course.id }}')"><i class="bi bi-clipboard"></i></button>
-                                    </div>
-                                    <form method="post" action="{% url 'core:toggle_registration' course.id %}">
-                                        {% csrf_token %}
-                                        {% if course.registration_end and course.registration_end < now %}
-                                            <button type="submit" class="btn btn-sm btn-outline-success w-100 fw-bold">
-                                                <i class="bi bi-unlock-fill me-1"></i> Reabrir Inscrição
-                                            </button>
-                                        {% else %}
-                                            <button type="submit" class="btn btn-sm btn-success w-100 fw-bold">
-                                                <i class="bi bi-slash-circle me-1"></i> Encerrar inscrição agora
-                                            </button>
-                                        {% endif %}
-                                    </form>
-                                </div>
-
-                                <!-- Card 2: Link de Certificado -->
-                                <div class="bg-light border p-2 rounded shadow-sm">
-                                    <label class="small fw-bold text-primary mb-1"><i class="bi bi-patch-check me-1"></i>Solicitação (Certificado)</label>
-                                    <div class="input-group input-group-sm mb-2">
-                                        <input type="text" class="form-control bg-white" readonly id="link-cert-{{ course.id }}" value="{{ request.scheme }}://{{ request.get_host }}{% url 'registrations:form' course.slug %}">
-                                        <button class="btn btn-outline-primary" type="button" onclick="copyLink('link-cert-{{ course.id }}')"><i class="bi bi-clipboard"></i></button>
-                                    </div>
-                                    <form method="post" action="{% url 'core:toggle_certificate' course.id %}">
-                                        {% csrf_token %}
-                                        {% if course.certificate_end and course.certificate_end < now %}
-                                            <button type="submit" class="btn btn-sm btn-outline-primary w-100 fw-bold">
-                                                <i class="bi bi-unlock-fill me-1"></i> Reabrir Solicitação
-                                            </button>
-                                        {% else %}
-                                            <button type="submit" class="btn btn-sm btn-primary w-100 fw-bold">
-                                                <i class="bi bi-slash-circle me-1"></i> Encerrar solicitação agora
-                                            </button>
-                                        {% endif %}
-                                    </form>
-                                </div>
-                            </div>
+                            <button class="btn btn-sm btn-outline-primary fw-bold shadow-sm" type="button" data-bs-toggle="collapse" data-bs-target="#links-{{ course.id }}" aria-expanded="false" aria-controls="links-{{ course.id }}">
+                                <i class="bi bi-link-45deg me-1"></i> Ver Links e Controles
+                            </button>
                             {% else %}
-                            <div class="text-center p-3">
-                                <a href="{% url 'core:course_generate_link' course.id %}" class="btn btn-sm btn-warning shadow-sm">
-                                    <i class="bi bi-link-45deg me-1"></i> Gerar Links Únicos
-                                </a>
-                            </div>
+                            <a href="{% url 'core:course_generate_link' course.id %}" class="btn btn-sm btn-warning shadow-sm">
+                                <i class="bi bi-link-45deg"></i> Gerar Links
+                            </a>
                             {% endif %}
                         </td>
                     </tr>
+
+                    {% if course.slug %}
+                    <!-- Linha Detalhe: Card/Gaveta de Controles Isolado -->
+                    <tr class="collapse" id="links-{{ course.id }}">
+                        <td colspan="5" class="p-0 border-0">
+                            <div class="px-4 py-4 bg-light border-start border-4 shadow-sm my-2 mx-3 rounded-end" style="border-color: #1a3a5c !important;">
+                                <!-- Header Interno da Gaveta -->
+                                <div class="d-flex align-items-center mb-4 pb-2 border-bottom">
+                                    <i class="bi bi-gear-fill text-muted me-2"></i>
+                                    <h6 class="mb-0 fw-bold text-secondary text-uppercase" style="letter-spacing: 1px;">
+                                        Controles do Evento: <span class="text-dark">{{ course.name }}</span>
+                                    </h6>
+                                </div>
+
+                                <div class="row g-4 align-items-stretch">
+                                    <!-- Coluna 1: Link de Inscrição -->
+                                    <div class="col-md-5">
+                                        <div class="card h-100 border-0 shadow-sm">
+                                            <div class="card-body p-3">
+                                                <label class="small fw-bold text-success mb-2 d-block">
+                                                    <i class="bi bi-person-plus me-1"></i> Link de Inscrição (Pré-Evento)
+                                                </label>
+                                                <div class="input-group input-group-sm mb-3">
+                                                    <input type="text" class="form-control bg-white" readonly id="link-reg-{{ course.id }}" value="{{ request.scheme }}://{{ request.get_host }}{% url 'registrations:event_form' course.slug %}">
+                                                    <button class="btn btn-success" type="button" onclick="copyLink('link-reg-{{ course.id }}')"><i class="bi bi-clipboard me-1"></i>Copiar</button>
+                                                </div>
+                                                <form method="post" action="{% url 'core:toggle_registration' course.id %}">
+                                                    {% csrf_token %}
+                                                    {% if course.registration_end and course.registration_end < now %}
+                                                        <button type="submit" class="btn btn-sm btn-outline-success w-100 fw-bold py-2">
+                                                            <i class="bi bi-unlock-fill me-1"></i> Reabrir Inscrição
+                                                        </button>
+                                                    {% else %}
+                                                        <button type="submit" class="btn btn-sm btn-success w-100 fw-bold py-2">
+                                                            <i class="bi bi-slash-circle me-1"></i> Encerrar Inscrição
+                                                        </button>
+                                                    {% endif %}
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Coluna 2: Link de Certificado -->
+                                    <div class="col-md-5">
+                                        <div class="card h-100 border-0 shadow-sm">
+                                            <div class="card-body p-3">
+                                                <label class="small fw-bold text-primary mb-2 d-block">
+                                                    <i class="bi bi-patch-check me-1"></i> Link de Solicitação (Certificado)
+                                                </label>
+                                                <div class="input-group input-group-sm mb-3">
+                                                    <input type="text" class="form-control bg-white" readonly id="link-cert-{{ course.id }}" value="{{ request.scheme }}://{{ request.get_host }}{% url 'registrations:form' course.slug %}">
+                                                    <button class="btn btn-primary" type="button" onclick="copyLink('link-cert-{{ course.id }}')"><i class="bi bi-clipboard me-1"></i>Copiar</button>
+                                                </div>
+                                                <form method="post" action="{% url 'core:toggle_certificate' course.id %}">
+                                                    {% csrf_token %}
+                                                    {% if course.certificate_end and course.certificate_end < now %}
+                                                        <button type="submit" class="btn btn-sm btn-outline-primary w-100 fw-bold py-2">
+                                                            <i class="bi bi-unlock-fill me-1"></i> Reabrir Solicitação
+                                                        </button>
+                                                    {% else %}
+                                                        <button type="submit" class="btn btn-sm btn-primary w-100 fw-bold py-2">
+                                                            <i class="bi bi-slash-circle me-1"></i> Encerrar Solicitação
+                                                        </button>
+                                                    {% endif %}
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Coluna 3: Ações de Presença -->
+                                    <div class="col-md-2">
+                                        <div class="card h-100 border-0 shadow-sm" style="background-color: #f8f9fa;">
+                                            <div class="card-body d-flex flex-column justify-content-center align-items-center py-3">
+                                                <a href="{% url 'core:course_presence' course.id %}" 
+                                                   class="btn shadow-sm mb-2 d-flex align-items-center justify-content-center"
+                                                   style="background-color: #1a3a5c; color: #fff; width: 50px; height: 50px; border-radius: 12px; transition: all 0.3s ease;"
+                                                   onmouseover="this.style.backgroundColor='#122a46'; this.style.transform='scale(1.05)';"
+                                                   onmouseout="this.style.backgroundColor='#1a3a5c'; this.style.transform='scale(1)';"
+                                                   title="Acessar Lista de Presença">
+                                                    <i class="bi bi-list-check fs-3"></i>
+                                                </a>
+                                                <span class="small fw-bold text-uppercase" style="color: #1a3a5c; font-size: 0.65rem; letter-spacing: 0.5px; text-align: center;">Lista de Presença</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endif %}
                     {% empty %}
                     <tr>
                         <td colspan="5" class="text-center py-5 text-muted">

@@ -28,6 +28,8 @@
 * [x] **Refinamento de UX de Sucesso (Copy Final):** Refatoração completa da tela de sucesso com o copy exato solicitado pelo cliente, incluindo o tratamento visual para duplicidade e automação de envio [23].
 * [x] **Padronização Visual (Páginas de Sucesso):** Padronizado o design de todos os fluxos de sucesso (Inscrição, Solicitação, Automação e Duplicidade) com ícones grandes, títulos semânticos e estrutura visual consistente [26].
 * [x] **Refinamento de Copy (Solicitação Pendente):** O texto da mensagem de sucesso para solicitações que aguardam check-in foi refinado, adicionando orientações explícitas sobre a verificação de SPAM e lixo eletrônico [27].
+* [x] **Design de Gaveta (Listagem):** O Accordion da listagem de eventos foi encapsulado em um design de "Card/Gaveta" com header interno e borda âncora azul marinho, resolvendo a poluição visual em aberturas simultâneas e melhorando a identificação do evento nos controles [43].
+* [x] **Refinamento de UI (Listagem):** O botão de "Lista de Presença" (Check-in) na listagem de cursos foi atualizado para um layout robusto de ícone sólido marinho com legenda inferior, integrando-se harmonicamente à nova linha expansível de controles [42].
 * [x] **Polimento de UI (Páginas de Sucesso):** O layout das páginas de sucesso foi polido com a remoção de títulos duplicados herdados da versão antiga, garantindo uma interface mais limpa e focada nas mensagens específicas [24].
 * [x] **Segurança e UX Preventiva:** Implementado Modal Bootstrap de confirmação de dados (Nome/CPF) com bloqueio de duplo-clique no botão de envio para evitar disparos simultâneos (*Race Condition*) e fornecer feedback visual de processamento [37].
 * [x] **Trava de Duplicidade:** Reforçada a lógica de backend para impedir re-emissão de certificados já enviados, economizando recursos de processamento [24].
@@ -75,6 +77,9 @@
 * [x] **Controle de Presença:** Novo campo `attended` no modelo `Registration` para validação futura de emissão [10].
 
 **Correções e Melhorias Técnicas:**
+* [x] **Acessibilidade (Zebra Striping):** O contraste da cor do Zebra Striping foi ajustado (de `#f9f9f9` para `#dce4ec`) para tornar a alternância de linhas mais evidente e melhorar a acessibilidade visual na listagem de eventos [45].
+* [x] **Zebra Striping (Listagem):** O Zebra Striping na listagem de eventos foi resolvido de forma definitiva manipulando a variável `--bs-table-bg` inline via `forloop` do Django, garantindo compatibilidade total com o Bootstrap 5 e legibilidade superior [44].
+* [x] **Interface Mestre-Detalhe:** A interface de listagem de cursos foi refatorada com o padrão Mestre-Detalhe (Accordion Rows) para ocultar e organizar os links e controles de forma limpa [39].
 * [x] **Emissão Automática via Check-in:** A emissão de certificados agora é disparada automaticamente (via Celery) ao habilitar a chave de Check-in na Lista de Presença, caso o aluno já possua uma solicitação com status Pendente [38].
 * [x] **Otimização de Lógica:** Implementada propriedade `@property is_expired` no modelo `Course` para centralizar a regra de expiração [8].
 * [x] **Ajuste de Fluxo (Duplicidade):** O fluxo de duplicidade no backend foi refatorado para respeitar reversões de check-in e disparar o Celery corretamente, e o copy visual da tela de pendência foi ajustado para maior clareza [31].
