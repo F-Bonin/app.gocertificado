@@ -464,28 +464,35 @@ class ResetCheckinHashView(LoginRequiredMixin, View):
 
 @method_decorator(csrf_exempt, name='dispatch')
 class ToggleMassPresenceView(View):
-    """Lógica de Check-in em Massa via AJAX para credenciamento público."""
+    """
+    Check-in em Massa via AJAX para o Painel Público.
+    """
     def post(self, request, checkin_hash):
+        from django.http import JsonResponse
+        from django.shortcuts import get_object_or_404
+        from apps.core.models import Course
+        from apps.certificates.tasks import issue_certificate_task
+        from django.utils import timezone
+        from django.utils.timezone import localtime
+        import json
+
         course = get_object_or_404(Course, checkin_hash=checkin_hash)
         try:
             data = json.loads(request.body)
-            reg_ids = data.get('ids', [])
-            action = data.get('action')  # 'checkin' ou 'checkout'
-            attended = True if action == 'checkin' else False
+            action = data.get('action')
+            new_status = True if action == 'check_all' else False
+            now = timezone.now() if new_status else None
             
-            registrations = Registration.objects.filter(id__in=reg_ids, course=course)
-            updated_count = 0
-            
-            for reg in registrations:
-                reg.attended = attended
-                reg.save(update_fields=['attended'])
-                updated_count += 1
-                
-                # Automação: Se for check-in e tiver solicitação pendente, emite certificado
-                if attended and reg.status == Registration.Status.PENDING:
+            registrations = course.registrations.all()
+            registrations.update(attended=new_status, checkin_at=now)
+
+            if new_status:
+                for reg in registrations.filter(status='pending'):
                     issue_certificate_task.delay(str(reg.id))
-                    
-            return JsonResponse({"ok": True, "count": updated_count})
+
+            # Sênior Fix: Converte UTC para a hora local (America/Sao_Paulo) antes de formatar a string
+            checkin_str = localtime(now).strftime('%d/%m/%y %H:%Mh') if now else ""
+            return JsonResponse({"ok": True, "status": new_status, "checkin_time": checkin_str})
         except Exception as e:
             return JsonResponse({"ok": False, "error": str(e)}, status=400)
 
@@ -501,22 +508,21 @@ class PublicTogglePresenceView(View):
         from django.shortcuts import get_object_or_404
         from django.http import JsonResponse
         from apps.certificates.tasks import issue_certificate_task
+        from django.utils import timezone
+        from django.utils.timezone import localtime
         
-        # Busca a inscrição diretamente pelo seu UUID único
         registration = get_object_or_404(Registration, id=reg_id)
         
-        # Inverte o status de presença (Check-in / Check-out)
         registration.attended = not registration.attended
-        registration.save(update_fields=['attended'])
+        registration.checkin_at = timezone.now() if registration.attended else None
+        registration.save(update_fields=['attended', 'checkin_at'])
         
-        # Auto-Emissão: Se o aluno acabou de receber presença e o certificado está pendente, envia para a fila do Celery
         if registration.attended and registration.status == Registration.Status.PENDING:
             issue_certificate_task.delay(str(registration.id))
             
-        return JsonResponse({
-            "ok": True, 
-            "attended": registration.attended
-        })
+        # Sênior Fix: Converte UTC para a hora local (America/Sao_Paulo) antes de formatar a string
+        checkin_str = localtime(registration.checkin_at).strftime('%d/%m/%y %H:%Mh') if registration.checkin_at else ""
+        return JsonResponse({"ok": True, "attended": registration.attended, "checkin_time": checkin_str})
 
 
 @method_decorator(csrf_exempt, name='dispatch')

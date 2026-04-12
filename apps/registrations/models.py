@@ -85,6 +85,7 @@ class Registration(models.Model):
     )
 
     attended = models.BooleanField("Presença Confirmada", default=False)
+    checkin_at = models.DateTimeField("Data/Hora do Check-in", null=True, blank=True)
     certificate_requested = models.BooleanField("Certificado Solicitado", default=False)
 
     class Meta:

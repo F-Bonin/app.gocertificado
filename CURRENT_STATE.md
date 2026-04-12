@@ -92,11 +92,16 @@
 * [x] **Kill-Switch (Blindagem):** Bloqueio automático de acesso ao formulário caso a data de expiração tenha sido atingida [8].
 * [x] **Controle de Presença:** Novo campo `attended` no modelo `Registration` para validação futura de emissão [10].
 
-**Módulo de Credenciamento Público (Portaria):**
+* [x] **Módulo de Credenciamento Público (Portaria):**
 * [x] Criação de tela pública isolada para credenciamento protegida por Hash UUID.
 * [x] Ações em massa para check-in/check-out e disparo rápido de e-mail (SMTP) na porta do evento.
+* [x] **Fuso Horário (Accreditation):** O fuso horário (timezone) foi fixado nas respostas AJAX das Views de credenciamento (individual e em massa) utilizando `localtime()`, garantindo que o horário exibido no frontend respeite a configuração local.
+* [x] **Refinamento de UI (Dashboard Público):** Refinada a interface dos botões de impressão (correção de hover), implementada a exibição dinâmica da data/hora do check-in na tabela e atualizado o motor Javascript para sincronização em tempo real desses dados.
+* [x] **Persistência de Check-in:** As Views de credenciamento (individual e em massa) agora gravam a data/hora exata do check-in no banco de dados e retornam essa informação formatada para o frontend.
+* [x] **UI Limpa:** Removida a coluna redundante "Sel" (checkbox individual inativo) da tabela de credenciamento público para eliminar conflitos visuais com a chave de Status.
+* [x] **Master Checkbox:** Implementada UI de Master Checkbox com suporte a status `indeterminate`, contador dinâmico sincronizado e disparo de requisição AJAX para processamento em massa. A UI foi refinada com foco em UX (Microcopy: Check-in em Massa) e design destacado.
 * [x] Feedback visual dinâmico (Badge e Switch) com persistência imediata via AJAX (1-Click Check-in).
-* [x] **Auto-Emissão Assíncrona:** Disparo automático da fila Celery vinculada à confirmação de presença do participante.
+* [x] **Auto-Emissão Assíncrona:** Disparo automático da fila Celery vinculada à confirmação de presença do participante (individual e em massa).
 * [x] Impressão Multimodal com regras CSS Print: Lista física (com linha de assinatura) e digital (status em texto limpo).
 
 **Correções e Melhorias Técnicas:**
@@ -107,7 +112,7 @@
 * [x] **Otimização de Lógica:** Implementada propriedade `@property is_expired` no modelo `Course` para centralizar a regra de expiração [8].
 * [x] **Ajuste de Fluxo (Duplicidade):** O fluxo de duplicidade no backend foi refatorado para respeitar reversões de check-in e disparar o Celery corretamente, e o copy visual da tela de pendência foi ajustado para maior clareza [31].
 * [x] **Máquina de Estados (Database Tracking):** Refatorada a lógica do `form_valid` para integrar o campo persistente `certificate_requested`. O sistema agora diferencia com precisão milimétrica as 4 condições de sucesso (Inédita, Duplicidade Pendente, Já Enviado e Automação) utilizando uma combinação de estado de banco e flags de sessão [36].
-* [x] **Persistência de Solicitação (Database):** Adicionado o campo booleano `certificate_requested` ao modelo `Registration` para rastrear de forma persistente se o aluno já realizou a solicitação do certificado através do formulário público [35].
+* [x] **Persistência de Solicitação (Database):** Adicionado o campo booleano `certificate_requested` e o campo de data/hora `checkin_at` ao modelo `Registration` para rastrear de forma persistente se o aluno já realizou a solicitação do certificado e o momento exato do check-in.
 * [x] **Formatação ISO em Forms:** Forçada a formatação ISO nos campos de data e hora do `CourseForm` para garantir exibição correta em inputs HTML5 no modo de edição [15].
 * [x] **Validação via ViaCEP:** Captura automática de endereço (Rua, Bairro, Cidade, UF) em formulários públicos e administrativos [19, 20].
 
