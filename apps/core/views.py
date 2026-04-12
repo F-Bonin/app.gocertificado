@@ -1,7 +1,10 @@
 import io
 import uuid
 import csv
+import json
 from django.http import FileResponse, HttpResponse, JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
 from django.views import View
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
@@ -434,3 +437,132 @@ class TogglePresenceView(LoginRequiredMixin, View):
             "ok": True, 
             "attended": registration.attended
         })
+
+
+class PublicCheckinView(View):
+    """View pública para credenciamento via Magic Link (Hash)."""
+    template_name = "core/public_checkin.html"
+
+    def get(self, request, checkin_hash):
+        course = get_object_or_404(Course, checkin_hash=checkin_hash)
+        registrations = course.registrations.all().order_by('full_name')
+        return render(request, self.template_name, {
+            'course': course,
+            'registrations': registrations
+        })
+
+
+class ResetCheckinHashView(LoginRequiredMixin, View):
+    """Gera um novo Hash de Credenciamento para o curso, invalidando o anterior."""
+    def post(self, request, pk):
+        course = get_object_or_404(Course, pk=pk, company=request.user.profile.company)
+        course.checkin_hash = uuid.uuid4()
+        course.save(update_fields=['checkin_hash'])
+        messages.success(request, f"O link de credenciamento de '{course.name}' foi resetado!")
+        return redirect('core:course_list')
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class ToggleMassPresenceView(View):
+    """Lógica de Check-in em Massa via AJAX para credenciamento público."""
+    def post(self, request, checkin_hash):
+        course = get_object_or_404(Course, checkin_hash=checkin_hash)
+        try:
+            data = json.loads(request.body)
+            reg_ids = data.get('ids', [])
+            action = data.get('action')  # 'checkin' ou 'checkout'
+            attended = True if action == 'checkin' else False
+            
+            registrations = Registration.objects.filter(id__in=reg_ids, course=course)
+            updated_count = 0
+            
+            for reg in registrations:
+                reg.attended = attended
+                reg.save(update_fields=['attended'])
+                updated_count += 1
+                
+                # Automação: Se for check-in e tiver solicitação pendente, emite certificado
+                if attended and reg.status == Registration.Status.PENDING:
+                    issue_certificate_task.delay(str(reg.id))
+                    
+            return JsonResponse({"ok": True, "count": updated_count})
+        except Exception as e:
+            return JsonResponse({"ok": False, "error": str(e)}, status=400)
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class PublicTogglePresenceView(View):
+    """
+    Check-in Individual via AJAX para o Painel Público.
+    Protegido pelo ID da inscrição (UUID único).
+    """
+    def post(self, request, reg_id):
+        from apps.registrations.models import Registration
+        from django.shortcuts import get_object_or_404
+        from django.http import JsonResponse
+        from apps.certificates.tasks import issue_certificate_task
+        
+        # Busca a inscrição diretamente pelo seu UUID único
+        registration = get_object_or_404(Registration, id=reg_id)
+        
+        # Inverte o status de presença (Check-in / Check-out)
+        registration.attended = not registration.attended
+        registration.save(update_fields=['attended'])
+        
+        # Auto-Emissão: Se o aluno acabou de receber presença e o certificado está pendente, envia para a fila do Celery
+        if registration.attended and registration.status == Registration.Status.PENDING:
+            issue_certificate_task.delay(str(registration.id))
+            
+        return JsonResponse({
+            "ok": True, 
+            "attended": registration.attended
+        })
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class PublicSendLinkEmailView(View):
+    """
+    Endpoint para envio rápido de links (Inscrição ou Certificado) via e-mail.
+    Chamado pelo painel de credenciamento público.
+    """
+    def post(self, request, checkin_hash):
+        from django.core.mail import send_mail
+        from django.conf import settings
+        
+        course = get_object_or_404(Course, checkin_hash=checkin_hash)
+        
+        try:
+            data = json.loads(request.body)
+            email_destinatario = data.get('email')
+            tipo_link = data.get('type') # 'inscricao' ou 'certificado'
+            
+            if not email_destinatario:
+                return JsonResponse({"ok": False, "error": "E-mail não informado."}, status=400)
+
+            link_inscricao = f"{request.scheme}://{request.get_host()}{course.get_registration_url()}"
+            link_certificado = f"{request.scheme}://{request.get_host()}/solic-cert-{course.slug}/"
+            
+            subject = f"Links do Evento: {course.name}"
+            message = f"Olá,\n\nConforme solicitado no credenciamento do evento '{course.name}', seguem os links de acesso:\n\n"
+            
+            if tipo_link == 'inscricao':
+                message += f"Link para Inscrição: {link_inscricao}\n"
+            elif tipo_link == 'certificado':
+                message += f"Link para Solicitar Certificado: {link_certificado}\n"
+            else:
+                message += f"Link para Inscrição: {link_inscricao}\n"
+                message += f"Link para Solicitar Certificado: {link_certificado}\n"
+
+            message += f"\nAtenciosamente,\nEquipe {course.company.name}"
+
+            send_mail(
+                subject,
+                message,
+                settings.DEFAULT_FROM_EMAIL,
+                [email_destinatario],
+                fail_silently=False,
+            )
+            
+            return JsonResponse({"ok": True})
+        except Exception as e:
+            return JsonResponse({"ok": False, "error": str(e)}, status=400)

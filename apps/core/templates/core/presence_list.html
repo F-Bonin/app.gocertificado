@@ -129,7 +129,19 @@
                     <i class="bi bi-geo-alt me-2"></i><strong>Local:</strong> {{ course.institution_name|default:course.city }} - {{ course.city }}/{{ course.state }}
                 </p>
             </div>
-            <div class="no-print">
+            <div class="no-print d-flex gap-2">
+                <input type="text" id="link-recepcao" style="position: absolute; left: -9999px;" 
+                       value="{{ request.scheme }}://{{ request.get_host }}{% url 'registrations:public_checkin' course.checkin_hash %}">
+                
+                <button onclick="copyCheckinLink()" class="btn btn-primary shadow-sm" id="btnCopyLink">
+                    <i class="bi bi-link-45deg me-1"></i> Copiar Link Credenciamento
+                </button>
+                <form action="{% url 'core:reset_checkin_hash' course.id %}" method="post" onsubmit="return confirm('Revogar acesso atual? Isso invalidará o link enviado para a recepção e gerará um novo.');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline-danger shadow-sm" title="Revogar/Resetar Link">
+                        <i class="bi bi-shield-lock"></i>
+                    </button>
+                </form>
                 <button onclick="window.print()" class="btn btn-secondary shadow-sm">
                     <i class="bi bi-printer me-2"></i>Imprimir Lista Física
                 </button>
@@ -208,6 +220,28 @@
 
 {% block extra_js %}
 <script>
+    /**
+     * Copia o link de credenciamento público para o clipboard
+     */
+    function copyCheckinLink() {
+        const protocol = window.location.protocol;
+        const host = window.location.host;
+        const hash = "{{ course.checkin_hash }}";
+        const url = `${protocol}//${host}/credenciamento/${hash}/`;
+        
+        navigator.clipboard.writeText(url).then(() => {
+            const btn = document.getElementById('btnCopyLink');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="bi bi-check2-all me-1"></i> Link Copiado!';
+            btn.classList.replace('btn-primary', 'btn-success');
+            
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.classList.replace('btn-success', 'btn-primary');
+            }, 3000);
+        });
+    }
+
     /**
      * Lógica de Check-in via AJAX (Nativo Fetch API)
      * Gerencia a inversão do status de presença sem recarregar a página.

@@ -19,6 +19,9 @@ from .views import (
     CertificateDesignView,
     CertificatePreviewView,
     CertificateTemplateDeleteView,
+    PublicCheckinView,
+    ResetCheckinHashView,
+    ToggleMassPresenceView,
 )
 
 app_name = "core"
@@ -28,6 +31,7 @@ urlpatterns = [
     path("empresa/modelo-certificado/", CertificateDesignView.as_view(), name="certificate_design"),
     path("empresa/modelo-certificado/preview/", CertificatePreviewView.as_view(), name="certificate_preview"),
     path("empresa/modelo-certificado/<int:pk>/excluir/", CertificateTemplateDeleteView.as_view(), name="template_delete"),
+    path("treinamentos/<int:pk>/reset-checkin/", ResetCheckinHashView.as_view(), name="reset_checkin_hash"),
     
     # Instrutores
     path("instrutores/", InstructorListView.as_view(), name="instructor_list"),

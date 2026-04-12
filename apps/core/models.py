@@ -178,6 +178,7 @@ class Course(models.Model):
         blank=True, 
         unique=True
     )
+    checkin_hash = models.UUIDField("Hash de Credenciamento", null=True, blank=True, unique=True)
     registration_start = models.DateTimeField("Início das Inscrições", blank=True, null=True)
     registration_end = models.DateTimeField("Término das Inscrições", blank=True, null=True)
     certificate_start = models.DateTimeField("Início da Solicitação", blank=True, null=True)
@@ -193,10 +194,14 @@ class Course(models.Model):
         return f"{self.name} — {self.city} ({self.start_date})"
 
     def save(self, *args, **kwargs):
-        """Gera um slug amigável único se estiver vazio."""
+        """Gera um slug amigável único e um hash de credenciamento se estiverem vazios."""
         if not self.slug:
             # Concatena o nome slugificado com os 4 primeiros dígitos de um UUID para unicidade absoluta
             self.slug = f"{slugify(self.name)}-{str(uuid.uuid4())[:4]}"
+        
+        if not self.checkin_hash:
+            self.checkin_hash = uuid.uuid4()
+            
         super().save(*args, **kwargs)
 
     @property

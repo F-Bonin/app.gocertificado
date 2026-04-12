@@ -27,6 +27,16 @@
 * [x] **CRUD de Modelos de Certificado:** Implementado o CRUD completo para `CertificateTemplate`, permitindo a criação, edição e exclusão de modelos personalizados com persistência de estado e seleção dinâmica na interface de design.
 * [x] **Correções e Melhorias Técnicas:** O código legado de `certificate_model` global foi removido de `forms.py` e `views.py` para consolidar a arquitetura por Evento, eliminando redundâncias e centralizando a escolha do layout no curso.
 * [x] **Refatoração de UI (Design):** A interface de Configuração de Certificados foi refatorada para um Gerenciador de Ativos limpo, removendo lógicas de toggle obsoletas e consolidando o Construtor de Modelos Personalizados como uma ferramenta independente.
+* [x] **Magic Link de Credenciamento:** Criada a infraestrutura de backend (Hash UUID, Views e Rotas) e a interface dedicada (`public_checkin.html`) para o Magic Link de credenciamento público e check-in em massa, permitindo o controle de presença externo seguro com opções de cópia e revogação de acesso no painel administrativo.
+* [x] **Bugfix de Rota:** Corrigido o erro `NoReverseMatch` na rota `public_toggle_presence` ajustando a tipagem para UUID e removendo argumentos redundantes no template `public_checkin.html`.
+* [x] **Refatoração de Rotas (SaaS):** As rotas de credenciamento público foram movidas para o aplicativo raiz (`registrations`), garantindo URLs limpas e removendo a dependência de autenticação de sessão para o acesso via Magic Link. Implementado também o endpoint de check-in individual público e realizados os ajustes de namespace nos templates `presence_list.html` e `public_checkin.html`.
+* [x] **Melhorias Técnicas (Credenciamento):** A View `PublicTogglePresenceView` agora dispara a task do Celery `issue_certificate_task` automaticamente ao confirmar a presença do aluno, garantindo a emissão imediata para solicitações pendentes.
+* [x] **Bugfix de Template:** Corrigido o erro de `TemplateDoesNotExist` na `PublicCheckinView` ajustando o `template_name` para o caminho correto (`core/public_checkin.html`).
+* [x] **Segurança e Compatibilidade (Credenciamento):** As Views públicas de Credenciamento receberam a importação de `JsonResponse` e a isenção `@method_decorator(csrf_exempt, name='dispatch')` para evitar bloqueios de CSRF em abas anônimas e dispositivos móveis, garantindo o funcionamento do Magic Link na porta do evento.
+* [x] **Quick Link Email API:** Criado endpoint na API pública de credenciamento (`PublicSendLinkEmailView`) para envio rápido de links de inscrição e certificado via e-mail utilizando o SMTP do sistema.
+* [x] **Refatoração de UI/UX (Credenciamento):** O painel de credenciamento público foi refatorado para exibir cards de "Links de Acesso Rápido" (Inscrição e Certificado). A tabela de participantes agora conta com numeração sequencial (#), exibição de profissão e um motor de feedback visual imediato (badge interativo) no Check-in individual via AJAX.
+* [x] **Impressão Multimodal:** Implementada funcionalidade de impressão com dois modos (Física e Digital) no painel de credenciamento público. A Impressão Digital foi corrigida com fallback de texto limpo para o Status, garantindo legibilidade perfeita em PDFs.
+* [x] **Correções e Melhorias Técnicas:** O método `save()` do modelo `Course` foi refatorada para injetar o `checkin_hash` automaticamente, evitando erros de migração com callable defaults em tabelas populadas.
 * [x] **Sprint 3 Concluída:** Finalizada a implementação da Automação Celery baseada em Match de CPF e Check-in, incluindo atualização de UX na tela de sucesso para feedback em tempo real [20].
 * [x] **Refinamento de UX de Sucesso (Sprint 3):** Injetados dados do evento (`course_name`, `course_date`) na sessão e refatorada a tela de sucesso para exibir mensagens dinâmicas e personalizadas, confirmando a geração automática de certificados para alunos com check-in [21].
 * [x] **Bugfix de Falso Positivo (Celery):** O bug de falso positivo de sucesso no envio de certificado foi corrigido, atrelando a mudança de status da inscrição apenas ao sucesso real do SMTP ou WhatsApp (WAHA) [21].
@@ -81,6 +91,13 @@
 * [x] **Sistema de Expiração de Certificado:** Card dedicado no formulário para controle visual claro sobre a validade do link de emissão [8].
 * [x] **Kill-Switch (Blindagem):** Bloqueio automático de acesso ao formulário caso a data de expiração tenha sido atingida [8].
 * [x] **Controle de Presença:** Novo campo `attended` no modelo `Registration` para validação futura de emissão [10].
+
+**Módulo de Credenciamento Público (Portaria):**
+* [x] Criação de tela pública isolada para credenciamento protegida por Hash UUID.
+* [x] Ações em massa para check-in/check-out e disparo rápido de e-mail (SMTP) na porta do evento.
+* [x] Feedback visual dinâmico (Badge e Switch) com persistência imediata via AJAX (1-Click Check-in).
+* [x] **Auto-Emissão Assíncrona:** Disparo automático da fila Celery vinculada à confirmação de presença do participante.
+* [x] Impressão Multimodal com regras CSS Print: Lista física (com linha de assinatura) e digital (status em texto limpo).
 
 **Correções e Melhorias Técnicas:**
 * [x] **Acessibilidade (Zebra Striping):** O contraste da cor do Zebra Striping foi ajustado (de `#f9f9f9` para `#dce4ec`) para tornar a alternância de linhas mais evidente e melhorar a acessibilidade visual na listagem de eventos [45].
