@@ -8,17 +8,10 @@
         <h3 class="mb-0 text-dark"><i class="bi bi-palette"></i> Configuração do Modelo de Certificado</h3>
     </div>
 
-    <!-- O formulário abraça tudo, como no seu código original -->
-    <form method="post" enctype="multipart/form-data" id="designForm" novalidate>
+    <!-- 1. LOGOMARCA (OPCIONAL) -->
+    <form method="post" enctype="multipart/form-data" action="{% url 'core:certificate_design' %}">
         {% csrf_token %}
-        
-        {# Controle manual dos selects do Django #}
-        <div style="display:none;">
-            {{ form.certificate_model }}
-            {{ form.logo_position }}
-        </div>
-
-        <!-- 1. LOGOMARCA (OPCIONAL) -->
+        <input type="hidden" name="action" value="save_logo">
         <div class="card shadow-sm mb-5 border-0">
             <div class="card-header bg-white border-bottom py-3">
                 <h6 class="mb-0 text-primary fw-bold">1. LOGOMARCA (OPCIONAL)</h6>
@@ -44,12 +37,17 @@
                     {{ form.logo_position }}
                 </div>
 
-                <button type="submit" name="action" value="save_logo" class="btn btn-outline-primary mt-3 shadow-sm">
+                <button type="submit" class="btn btn-outline-primary mt-3 shadow-sm">
                     <i class="bi bi-save me-1"></i> Salvar Logomarca
                 </button>
             </div>
         </div>
+    </form>
 
+    <form method="post" enctype="multipart/form-data" id="designForm" action="{% url 'core:certificate_design' %}" novalidate>
+        {% csrf_token %}
+        <input type="hidden" name="action" value="save_template">
+        
         <!-- 2. MODELO PADRÃO -->
         <div class="card shadow-sm mb-5 border-0" id="container_default">
             <div class="card-header bg-white border-bottom py-3">
@@ -89,6 +87,12 @@
                     <div class="mb-4">
                         <label class="form-label fw-bold">Fundo do Certificado (Template)</label>
                         {{ template_form.background_image }}
+                        {% if template_form.instance.background_image %}
+                        <div class="mb-3 p-3 bg-light rounded border border-success border-opacity-25 shadow-sm">
+                            <p class="fw-bold text-success mb-2"><i class="bi bi-check-circle-fill"></i> Arte de Fundo Atual Carregada:</p>
+                            <img src="{{ template_form.instance.background_image.url }}" alt="Template" style="max-height: 100px;" class="img-fluid rounded border bg-white p-1">
+                        </div>
+                        {% endif %}
                         {% if template_form.background_image.errors %}<div class="text-danger small mt-1">{{ template_form.background_image.errors }}</div>{% endif %}
                         <div class="form-text text-warning mt-1 small">
                             <i class="bi bi-info-circle me-1"></i> Dimensão recomendada: A4 Paisagem (3508 x 2480px), formato JPG ou PNG.
@@ -170,7 +174,7 @@
                         </div>
                     </div>
 
-                    <button type="submit" name="action" value="save_template" class="btn btn-primary btn-lg w-100 shadow-sm fw-bold" style="background-color: #0d6efd;">
+                    <button type="submit" class="btn btn-primary btn-lg w-100 shadow-sm fw-bold" style="background-color: #0d6efd;">
                         <i class="bi bi-check-circle me-2"></i> Salvar Modelo de Certificado
                     </button>
                 </div>
@@ -218,19 +222,15 @@ document.addEventListener("DOMContentLoaded", function() {
     toggleTextsContainer();
 
     // 3. Trava do Submit (Evita salvar sem escolher o modelo)
-    const form = document.getElementById('designForm');
-    if (form) {
-        form.onsubmit = function(e) {
-            const actionBtn = e.submitter;
-            if (actionBtn && actionBtn.value === 'save_logo') return;
-
-            const isDefault = document.querySelector('input[name="certificate_model"][value="default"]').checked;
-            const isCustom = document.querySelector('input[name="certificate_model"][value="custom"]').checked;
+    const designForm = document.getElementById('designForm');
+    if (designForm) {
+        designForm.onsubmit = function(e) {
+            const isDefault = document.getElementById('id_model_default').checked;
+            const isCustom = document.getElementById('id_model_custom').checked;
 
             if (!isDefault && !isCustom) {
                 alert("ATENÇÃO! Você deve obrigatoriamente escolher entre o Modelo Padrão ou o Modelo Personalizado.");
                 e.preventDefault();
-                return;
             }
         };
     }

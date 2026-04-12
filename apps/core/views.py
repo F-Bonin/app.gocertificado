@@ -265,9 +265,9 @@ class CertificateDesignView(LoginRequiredMixin, View):
                 messages.error(request, "Erro ao salvar logomarca.")
                 
         elif acao == 'save_selection':
-            form = CertificateDesignForm(request.POST, instance=company)
-            # Salvamos apenas a seleção do modelo
-            company.certificate_model = request.POST.get('certificate_model')
+            # Mantém a persistência da escolha do modelo ativo
+            model_id = request.POST.get('certificate_model')
+            company.certificate_model = model_id
             company.save(update_fields=['certificate_model'])
             messages.success(request, "Modelo de certificado ativo atualizado!")
             
@@ -279,7 +279,7 @@ class CertificateDesignView(LoginRequiredMixin, View):
                 novo_template.save()
                 messages.success(request, f"Novo modelo '{novo_template.name}' criado com sucesso!")
             else:
-                messages.error(request, "Erro ao criar novo modelo personalizado. Verifique os campos.")
+                messages.error(request, "Erro ao criar novo modelo personalizado.")
 
         return redirect('core:certificate_design')
 
