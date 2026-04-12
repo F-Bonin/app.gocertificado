@@ -129,16 +129,19 @@ def generate_certificate_pdf(certificate) -> bytes:
         if custom_title:
             c.setFillColor(COLOR_PRIMARY)
             c.setFont("Helvetica-Bold", 24)
-            c.drawCentredString(w / 2, h - 5.2 * cm - 40, custom_title)
+            # Sobe a ancoragem do título para a coordenada absoluta 420
+            c.drawCentredString(w / 2, 420, custom_title)
     else:
         # Estabelecendo coordenadas Y absolutas para o Modelo Padrão
         c.setFillColor(COLOR_PRIMARY)
         c.setFont("Helvetica-Bold", 32)
-        c.drawCentredString(w / 2, 340, "CERTIFICADO DE CONCLUSÃO")
+        # Aproxima o título da logomarca para melhor aproveitamento do espaço (Y=420)
+        c.drawCentredString(w / 2, 420, "CERTIFICADO DE CONCLUSÃO")
 
     # ── CORPO ──────────────────────────────────────────────────────
     if is_custom:
-        y = h - 6.5 * cm
+        # Eleva a ancoragem inicial do corpo para y=395 para aproximar do título
+        y = 395
         c.setFillColor(COLOR_TEXT)
         c.setFont("Helvetica", 14)
         
@@ -153,7 +156,8 @@ def generate_certificate_pdf(certificate) -> bytes:
         if t1:
             c.drawCentredString(w / 2, y, t1)
 
-        y -= 0.9 * cm
+        # Reduz o espaçamento após o Texto 1 para 0.7cm
+        y -= 0.7 * cm
         c.setFont("Helvetica-Bold", 16)
         c.setFillColor(COLOR_PRIMARY)
         c.drawCentredString(w / 2, y, (reg.full_name or "").upper())
@@ -201,46 +205,48 @@ def generate_certificate_pdf(certificate) -> bytes:
 
         y -= 0.9 * cm
     else:
-        # Bloco de texto com coordenadas Y absolutas
+        # Bloco de texto com coordenadas Y absolutas para o Modelo Padrão
         c.setFillColor(COLOR_TEXT)
         c.setFont("Helvetica", 13)
-        c.drawCentredString(w / 2, 330, "Certificamos que")
+        # Texto de introdução (Y=360)
+        c.drawCentredString(w / 2, 380, "Certificamos que")
         
         c.setFont("Helvetica-Bold", 26)
         c.setFillColor(COLOR_PRIMARY)
-        c.drawCentredString(w / 2, 290, (reg.full_name or "").upper())
+        # Nome do aluno centralizado (Y=300)
+        c.drawCentredString(w / 2, 300, (reg.full_name or "").upper())
         
-        # Linha decorativa abaixo do nome (Y=290)
+        # Linha decorativa abaixo do nome (Y=300)
         c.setStrokeColor(COLOR_SECONDARY)
         c.setLineWidth(1.5)
         name_w = c.stringWidth((reg.full_name or "").upper(), "Helvetica-Bold", 26)
         line_x = (w - name_w) / 2
-        c.line(line_x, 290 - 4, line_x + name_w, 290 - 4)
+        c.line(line_x, 300 - 4, line_x + name_w, 300 - 4)
         
         c.setFont("Helvetica", 13)
         c.setFillColor(COLOR_TEXT)
-        # Linha do CPF (Y=250)
+        # Detalhes do CPF (Y=260)
         linha_3 = f"portador do CPF: {reg.cpf}, concluiu com êxito o treinamento/Curso/Imersão"
-        c.drawCentredString(w / 2, 250, linha_3)
+        c.drawCentredString(w / 2, 260, linha_3)
         
         c.setFont("Helvetica-Bold", 16)
         c.setFillColor(COLOR_PRIMARY)
-        # Linha do Treinamento/Carga Horária (Y=220)
+        # Nome do treinamento e carga horária (Y=225)
         course_name_display = (reg.course.name if (reg.course and reg.course.name) else (reg.course_name or "Treinamento não informado")).upper()
         course_hrs_val = reg.course.hours if (reg.course and reg.course.hours) else reg.course_workload
         workload_display = f"{course_hrs_val}h" if course_hrs_val else "Carga horária não informada"
         linha_4 = f"{course_name_display} — Carga Horária: {workload_display}"
-        c.drawCentredString(w / 2, 220, linha_4)
+        c.drawCentredString(w / 2, 225, linha_4)
         
         c.setFont("Helvetica", 12)
         c.setFillColor(COLOR_TEXT)
-        # Linha da Cidade/Data (Y=190)
+        # Cidade e Data (Y=195)
         city_display = reg.course.city if (reg.course and reg.course.city) else "Cidade não informada"
         state_display = reg.course.state if (reg.course and reg.course.state) else "UF"
         course_dt_val = reg.course.start_date if (reg.course and reg.course.start_date) else reg.course_date
         data_str = course_dt_val.strftime('%d/%m/%Y') if course_dt_val else "Data não informada"
         linha_5 = f"realizado em {city_display}/{state_display} em {data_str}."
-        c.drawCentredString(w / 2, 190, linha_5)
+        c.drawCentredString(w / 2, 195, linha_5)
 
     # ── Linha divisória ────────────────────────────────────────────
 
@@ -398,16 +404,19 @@ def generate_preview_pdf(company, model_type, template=None) -> bytes:
         if title_text:
             c.setFillColor(COLOR_PRIMARY)
             c.setFont("Helvetica-Bold", 24)
-            c.drawCentredString(w / 2, h - 5.2 * cm - 15, title_text)
+            # Sincroniza o título do preview personalizado com a coordenada absoluta 420
+            c.drawCentredString(w / 2, 420, title_text)
     else:
         # Sincronizado com Modelo Padrão real
         c.setFillColor(COLOR_PRIMARY)
         c.setFont("Helvetica-Bold", 32)
-        c.drawCentredString(w / 2, 340, "CERTIFICADO DE CONCLUSÃO")
+        # Aproxima o título da logomarca (Y=420)
+        c.drawCentredString(w / 2, 420, "CERTIFICADO DE CONCLUSÃO")
 
     # ── CORPO ──────────────────────────────────────────────────────
     if model_type == 'custom':
-        y = h - 6.5 * cm
+        # Eleva a ancoragem inicial do corpo para y=395 para aproximar do título
+        y = 395
         c.setFillColor(COLOR_TEXT)
         c.setFont("Helvetica", 14)
 
@@ -422,7 +431,8 @@ def generate_preview_pdf(company, model_type, template=None) -> bytes:
         if t1:
             c.drawCentredString(w / 2, y, t1)
 
-        y -= 1.5 * cm
+        # Reduz o espaçamento após o Texto 1 para 0.7cm no preview
+        y -= 0.7 * cm
         c.setFont("Helvetica-Bold", 16)
         c.setFillColor(COLOR_PRIMARY)
         c.drawCentredString(w / 2, y, "NOME DO PARTICIPANTE DE TESTE")
@@ -465,36 +475,38 @@ def generate_preview_pdf(company, model_type, template=None) -> bytes:
         # Sincronizado com Modelo Padrão real usando coordenadas Y absolutas
         c.setFillColor(COLOR_TEXT)
         c.setFont("Helvetica", 13)
-        c.drawCentredString(w / 2, 330, "Certificamos que")
+        # Texto de introdução (Y=380)
+        c.drawCentredString(w / 2, 600, "Certificamos que")
         
         c.setFont("Helvetica-Bold", 26)
         c.setFillColor(COLOR_PRIMARY)
-        c.drawCentredString(w / 2, 290, "NOME DO PARTICIPANTE DE TESTE")
+        # Nome do aluno centralizado (Y=300)
+        c.drawCentredString(w / 2, 300, "NOME DO PARTICIPANTE DE TESTE")
         
-        # Linha decorativa abaixo do nome (Y=290)
+        # Linha decorativa abaixo do nome (Y=300)
         c.setStrokeColor(COLOR_SECONDARY)
         c.setLineWidth(1.5)
         name_w = c.stringWidth("NOME DO PARTICIPANTE DE TESTE", "Helvetica-Bold", 26)
         line_x = (w - name_w) / 2
-        c.line(line_x, 290 - 4, line_x + name_w, 290 - 4)
+        c.line(line_x, 300 - 4, line_x + name_w, 300 - 4)
         
         c.setFont("Helvetica", 13)
         c.setFillColor(COLOR_TEXT)
-        # Linha do CPF (Y=250)
+        # Detalhes do CPF (Y=260)
         linha_3 = "portador do CPF: 123.456.789-00, concluiu com êxito o treinamento/Curso/Imersão"
-        c.drawCentredString(w / 2, 250, linha_3)
+        c.drawCentredString(w / 2, 260, linha_3)
         
         c.setFont("Helvetica-Bold", 16)
         c.setFillColor(COLOR_PRIMARY)
-        # Linha do Treinamento/Carga Horária (Y=220)
+        # Nome do treinamento e carga horária (Y=225)
         linha_4 = "TREINAMENTO DE DEMONSTRAÇÃO — Carga Horária: 10h"
-        c.drawCentredString(w / 2, 220, linha_4)
+        c.drawCentredString(w / 2, 225, linha_4)
         
         c.setFont("Helvetica", 12)
         c.setFillColor(COLOR_TEXT)
-        # Linha da Cidade/Data (Y=190)
+        # Cidade e Data (Y=195)
         linha_5 = "realizado em SUA CIDADE / UF em 10/10/2026."
-        c.drawCentredString(w / 2, 190, linha_5)
+        c.drawCentredString(w / 2, 195, linha_5)
 
     # ── Linha divisória ────────────────────────────────────────────
 
