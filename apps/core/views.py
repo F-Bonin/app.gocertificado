@@ -273,13 +273,6 @@ class CertificateDesignView(LoginRequiredMixin, View):
             else:
                 messages.error(request, "Erro ao salvar logomarca.")
                 
-        elif acao == 'save_selection':
-            # Mantém a persistência da escolha do modelo ativo
-            model_id = request.POST.get('certificate_model')
-            company.certificate_model = model_id
-            company.save(update_fields=['certificate_model'])
-            messages.success(request, "Modelo de certificado ativo atualizado!")
-            
         elif acao == 'save_template':
             # Busca instância se ID for passado (edição), senão cria (instancia vazia)
             template_id = request.POST.get('template_id')
