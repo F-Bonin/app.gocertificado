@@ -47,6 +47,7 @@
     <form method="post" enctype="multipart/form-data" id="designForm" action="{% url 'core:certificate_design' %}" novalidate>
         {% csrf_token %}
         <input type="hidden" name="action" value="save_template">
+        <input type="hidden" name="template_id" value="{{ template_form.instance.id|default:'' }}">
         
         <!-- 2. MODELO PADRÃO -->
         <div class="card shadow-sm mb-5 border-0" id="container_default">
@@ -67,8 +68,11 @@
 
         <!-- 3. MODELO PERSONALIZADO -->
         <div class="card shadow-sm mb-5 border rounded" id="container_custom">
-            <div class="card-header bg-white border-bottom py-3">
+            <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
                 <h6 class="mb-0 text-primary fw-bold">3. MODELO PERSONALIZADO</h6>
+                <a href="{% url 'core:certificate_design' %}" class="btn btn-sm btn-outline-success ms-auto">
+                    <i class="bi bi-plus-lg"></i> Criar Novo
+                </a>
             </div>
             <div class="card-body p-4">
                 <div class="form-check form-switch mb-4">
@@ -181,6 +185,59 @@
             </div>
         </div>
     </form>
+
+    <!-- TABELA DE GESTÃO DE MODELOS SALVOS -->
+    <div class="card shadow-sm border-0 mt-5">
+        <div class="card-header bg-white border-bottom py-3">
+            <h6 class="mb-0 text-primary fw-bold"><i class="bi bi-list-ul"></i> Seus Modelos Salvos</h6>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">Nome do Modelo</th>
+                            <th>Data de Criação</th>
+                            <th class="text-end pe-4">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for modelo in modelos_salvos %}
+                        <tr>
+                            <td class="ps-4">
+                                <span class="fw-bold text-dark">{{ modelo.name }}</span>
+                                {# Aqui podemos injetar uma lógica futura para mostrar qual está ativo no campo certificate_model da Empresa #}
+                            </td>
+                            <td>{{ modelo.created_at|date:"d/m/Y H:i" }}</td>
+                            <td class="text-end pe-4">
+                                <div class="btn-group">
+                                    <a href="{% url 'core:certificate_preview' %}?type=custom&template_id={{ modelo.id }}" target="_blank" class="btn btn-sm btn-outline-secondary" title="Visualizar">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a href="?edit_template={{ modelo.id }}" class="btn btn-sm btn-outline-primary" title="Editar">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <form action="{% url 'core:template_delete' modelo.id %}" method="post" class="d-inline" onsubmit="return confirm('Excluir este modelo permanentemente?');">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Excluir">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="3" class="text-center py-4 text-muted">
+                                Nenhum modelo personalizado criado ainda.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}
 

@@ -243,13 +243,22 @@ class CertificateDesignView(LoginRequiredMixin, View):
     def get(self, request):
         company = request.user.profile.company
         form = CertificateDesignForm(instance=company)
-        template_form = CertificateTemplateForm()
+        
+        # Lógica de seleção de modelo para edição (CRUD)
+        template_id = request.GET.get('edit_template')
+        if template_id:
+            instance = get_object_or_404(CertificateTemplate, id=template_id, company=company)
+            template_form = CertificateTemplateForm(instance=instance)
+        else:
+            template_form = CertificateTemplateForm()
+
         modelos_salvos = CertificateTemplate.objects.filter(company=company).order_by('-created_at')
         
         return render(request, self.template_name, {
             'form': form,
             'template_form': template_form,
-            'modelos_salvos': modelos_salvos
+            'modelos_salvos': modelos_salvos,
+            'editing_template': template_id
         })
 
     def post(self, request):
@@ -272,16 +281,36 @@ class CertificateDesignView(LoginRequiredMixin, View):
             messages.success(request, "Modelo de certificado ativo atualizado!")
             
         elif acao == 'save_template':
-            template_form = CertificateTemplateForm(request.POST, request.FILES)
+            # Busca instância se ID for passado (edição), senão cria (instancia vazia)
+            template_id = request.POST.get('template_id')
+            instance = None
+            if template_id:
+                instance = get_object_or_404(CertificateTemplate, id=template_id, company=company)
+            
+            template_form = CertificateTemplateForm(request.POST, request.FILES, instance=instance)
             if template_form.is_valid():
                 novo_template = template_form.save(commit=False)
                 novo_template.company = company
                 novo_template.save()
-                messages.success(request, f"Novo modelo '{novo_template.name}' criado com sucesso!")
+                msg = f"Modelo '{novo_template.name}' atualizado!" if instance else f"Novo modelo '{novo_template.name}' criado!"
+                messages.success(request, msg)
             else:
-                messages.error(request, "Erro ao criar novo modelo personalizado.")
+                messages.error(request, "Erro ao salvar modelo personalizado.")
 
         return redirect('core:certificate_design')
+
+
+class CertificateTemplateDeleteView(LoginRequiredMixin, DeleteView):
+    """Exclui um modelo personalizado da empresa."""
+    model = CertificateTemplate
+    success_url = reverse_lazy("core:certificate_design")
+
+    def get_queryset(self):
+        return CertificateTemplate.objects.filter(company=self.request.user.profile.company)
+
+    def delete(self, request, *args, **kwargs):
+        messages.success(self.request, "Modelo personalizado removido com sucesso.")
+        return super().delete(request, *args, **kwargs)
 
 
 class ToggleRegistrationLinkView(LoginRequiredMixin, View):

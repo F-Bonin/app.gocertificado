@@ -18,6 +18,7 @@ from .views import (
     CourseLinkGeneratorView,
     CertificateDesignView,
     CertificatePreviewView,
+    CertificateTemplateDeleteView,
 )
 
 app_name = "core"
@@ -26,6 +27,7 @@ urlpatterns = [
     path("", CompanyUpdateView.as_view(), name="company_edit"),
     path("empresa/modelo-certificado/", CertificateDesignView.as_view(), name="certificate_design"),
     path("empresa/modelo-certificado/preview/", CertificatePreviewView.as_view(), name="certificate_preview"),
+    path("empresa/modelo-certificado/<int:pk>/excluir/", CertificateTemplateDeleteView.as_view(), name="template_delete"),
     
     # Instrutores
     path("instrutores/", InstructorListView.as_view(), name="instructor_list"),
