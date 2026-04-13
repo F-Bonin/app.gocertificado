@@ -429,7 +429,7 @@ class TogglePresenceView(LoginRequiredMixin, View):
         
         # DISPARO AUTOMÁTICO (CELERY): Se o check-in foi habilitado e o aluno já possui 
         # uma solicitação de certificado pendente, dispara a emissão assíncrona imediatamente.
-        if registration.attended and registration.status == Registration.Status.PENDING:
+        if registration.attended and registration.status == Registration.Status.PENDING and registration.is_requested:
             issue_certificate_task.delay(str(registration.id))
         
         # Retorna resposta JSON para atualização reativa na interface (JS)
@@ -494,7 +494,7 @@ class ToggleMassPresenceView(View):
             registrations.update(attended=new_status, checkin_at=now)
 
             if new_status:
-                for reg in registrations.filter(status='pending'):
+                for reg in registrations.filter(status='pending', is_requested=True):
                     issue_certificate_task.delay(str(reg.id))
 
             # Sênior Fix: Converte UTC para a hora local (America/Sao_Paulo) antes de formatar a string
@@ -524,7 +524,7 @@ class PublicTogglePresenceView(View):
         registration.checkin_at = timezone.now() if registration.attended else None
         registration.save(update_fields=['attended', 'checkin_at'])
         
-        if registration.attended and registration.status == Registration.Status.PENDING:
+        if registration.attended and registration.status == Registration.Status.PENDING and registration.is_requested:
             issue_certificate_task.delay(str(registration.id))
             
         # Sênior Fix: Converte UTC para a hora local (America/Sao_Paulo) antes de formatar a string

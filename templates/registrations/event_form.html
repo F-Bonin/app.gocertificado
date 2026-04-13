@@ -133,6 +133,11 @@
                             <div class="col-md-5 mb-3">
                                 <label for="{{ form.cep.id_for_label }}" class="form-label fw-bold small">{{ form.cep.label }}</label>
                                 {{ form.cep }}
+                        <div class="form-text small mt-1 mb-2">
+                            <a href="https://buscacepinter.correios.com.br/app/endereco/index.php" target="_blank" class="text-decoration-none">
+                                <i class="bi bi-search me-1"></i>Não sabe o seu CEP? Busque aqui
+                            </a>
+                        </div>
                                 {% if form.cep.errors %}<div class="text-danger small">{{ form.cep.errors.0 }}</div>{% endif %}
                             </div>
                         </div>
@@ -330,54 +335,60 @@
                 genderSelect.addEventListener('change', toggleCustomGender);
                 toggleCustomGender();
             }
+        });
+    </script>
+</body>
+</html>
 
-            // --- ViaCEP ---
-            const cepInput = document.getElementById('id_cep');
+{% block extra_js %}
+<script>
+// Sênior Fix: Motor AJAX Vanilla para consulta automática de CEP (ViaCEP)
+document.addEventListener('DOMContentLoaded', function() {
+    const cepInput = document.getElementById('id_cep');
+    if (cepInput) {
+        cepInput.addEventListener('blur', function() {
+            // Remove tudo que não for número
+            const cep = this.value.replace(/\D/g, '');
+            if (cep.length !== 8) return;
+            
             const streetInput = document.getElementById('id_street');
             const neighborhoodInput = document.getElementById('id_neighborhood');
             const cityInput = document.getElementById('id_city');
             const stateInput = document.getElementById('id_state');
             const numberInput = document.getElementById('id_number');
-
-            if (cepInput) {
-                const toggleReadOnly = (isReadOnly) => {
-                    if (streetInput) streetInput.readOnly = isReadOnly;
-                    if (neighborhoodInput) neighborhoodInput.readOnly = isReadOnly;
-                    if (cityInput) cityInput.readOnly = isReadOnly;
-                    if (stateInput) stateInput.readOnly = isReadOnly;
-                };
-
-                cepInput.addEventListener('blur', () => {
-                    const cep = cepInput.value.replace(/\D/g, '');
-                    if (cep.length !== 8) return;
-                    
-                    if (streetInput) streetInput.value = "...";
-                    if (neighborhoodInput) neighborhoodInput.value = "...";
-                    if (cityInput) cityInput.value = "...";
-                    if (stateInput) stateInput.value = "...";
-                    toggleReadOnly(true);
-
-                    fetch(`https://viacep.com.br/ws/${cep}/json/`)
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.erro) {
-                                alert("CEP não encontrado.");
-                                toggleReadOnly(false);
-                                return;
-                            }
-                            if (streetInput) streetInput.value = data.logradouro;
-                            if (neighborhoodInput) neighborhoodInput.value = data.bairro;
-                            if (cityInput) cityInput.value = data.localidade;
-                            if (stateInput) stateInput.value = data.uf;
-                            if (numberInput) numberInput.focus();
-                        })
-                        .catch(error => {
-                            console.error('Erro ao buscar CEP:', error);
-                            toggleReadOnly(false);
-                        });
+            
+            // Feedback visual de carregamento
+            if(streetInput) streetInput.value = 'Buscando...';
+            if(neighborhoodInput) neighborhoodInput.value = 'Buscando...';
+            if(cityInput) cityInput.value = 'Buscando...';
+            if(stateInput) stateInput.value = '...';
+            
+            fetch(`https://viacep.com.br/ws/${cep}/json/`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.erro) {
+                        alert('CEP não encontrado na base dos Correios.');
+                        if(streetInput) streetInput.value = '';
+                        if(neighborhoodInput) neighborhoodInput.value = '';
+                        if(cityInput) cityInput.value = '';
+                        if(stateInput) stateInput.value = '';
+                    } else {
+                        if(streetInput) streetInput.value = data.logradouro;
+                        if(neighborhoodInput) neighborhoodInput.value = data.bairro;
+                        if(cityInput) cityInput.value = data.localidade;
+                        if(stateInput) stateInput.value = data.uf;
+                        if(numberInput) numberInput.focus(); // Foco automático no número
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro na API ViaCEP:', error);
+                    if(streetInput) streetInput.value = '';
+                    if(neighborhoodInput) neighborhoodInput.value = '';
+                    if(cityInput) cityInput.value = '';
+                    if(stateInput) stateInput.value = '';
                 });
-            }
         });
-    </script>
-</body>
-</html>
+    }
+});
+</script>
+{% endblock %}

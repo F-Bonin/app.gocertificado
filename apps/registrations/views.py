@@ -12,51 +12,27 @@ from .forms import RegistrationForm
 
 
 class RegistrationCreateView(CreateView):
-    """Exibe e processa o formulário de solicitação de certificado do participante."""
+    """Exibe e processa o formulário de solicitação de certificado (PÓS-EVENTO)."""
     model = Registration
     form_class = RegistrationForm
     template_name = "registrations/form.html"
     success_url = reverse_lazy("registrations:registration_success")
-    is_pre_event = False  # Define se a view é de pré-evento
 
     def dispatch(self, request, *args, **kwargs):
-        """
-        Blindagem: Verifica se a solicitação de certificado está dentro do período permitido.
-        """
         course = get_object_or_404(Course, slug=self.kwargs['slug'])
-        now = timezone.now()
-        
-        # Trava: Início da Solicitação (se definido)
-        if course.certificate_start and now < course.certificate_start:
-            return render(request, "registrations/time_locked.html", {
-                "course": course, 
-                "action_type": "solicitação de certificado", 
-                "lock_state": "early", 
-                "target_date": course.certificate_start
-            }, status=403)
-            
-        # Trava: Término da Solicitação (se definido)
-        if course.certificate_end and now > course.certificate_end:
-            return render(request, "registrations/time_locked.html", {
-                "course": course, 
-                "action_type": "solicitação de certificado", 
-                "lock_state": "late", 
-                "target_date": course.certificate_end
-            }, status=403)
-            
+        # Ajuste Sênior: certificate_end substituiu expires_at conforme CURRENT_STATE.md
+        if course.certificate_end and timezone.now() > course.certificate_end:
+            return HttpResponseForbidden(
+                "<div style='text-align:center; margin-top:50px; font-family:sans-serif;'>"
+                "<h2>A solicitação de certificado para este treinamento foi encerrada.</h2>"
+                "<p>O prazo limite para preenchimento deste formulário expirou.</p>"
+                "</div>"
+            )
         return super().dispatch(request, *args, **kwargs)
 
     def get_initial(self):
-        """
-        Preenche os dados iniciais do formulário baseando-se no curso encontrado via Slug.
-        Removido o uso de self.request.GET para evitar manipulação via Query String.
-        """
         initial = super().get_initial()
-        
-        # Busca direta no banco de dados utilizando o Slug amigável da URL
         course = get_object_or_404(Course, slug=self.kwargs['slug'])
-        
-        # Preenche os campos de endereço da instituição baseados no curso
         initial.update({
             "institution_name": course.institution_name,
             "institution_street": course.institution_street,
@@ -67,154 +43,144 @@ class RegistrationCreateView(CreateView):
         return initial
 
     def form_valid(self, form):
-        """
-        Lógica Sênior: Máquina de estados baseada em persistência no banco de dados.
-        Utiliza 'certificate_requested' para diferenciar solicitações inéditas de duplicidades.
-        """
-        # 1. Recuperação de dados base
         course = get_object_or_404(Course, slug=self.kwargs['slug'])
         cpf = form.cleaned_data.get('cpf')
-        inscricao = Registration.objects.filter(cpf=cpf, course=course).first()
+        full_name = form.cleaned_data.get('full_name', '')
+        # Ajuste Sênior: Extração segura do primeiro nome para evitar exibição de lista
+        first_name = full_name.split()[0] if full_name else ""
+        course_date_str = course.start_date.strftime('%d/%m/%Y') if course.start_date else ""
+
+        from apps.registrations.models import Registration
+        reg = Registration.objects.filter(cpf=cpf, course=course).first()
+
+        if not reg:
+            # REGRA 5: CPF não encontrado
+            msg = (f"{first_name}, seu número de CPF não consta em nossa base de dados para o evento "
+                   f"{course.name} realizado no dia {course_date_str}. Pode ser que você tenha digitado "
+                   f"seu CPF errado, ou você não tenha feito inscrição para esse evento. Caso não tenha "
+                   f"feito a inscrição, entre em contato com o responsável pelo evento. Após realizar sua "
+                   f"inscrição, faça a solicitação do seu certificado preenchendo este formulário. Obrigado!")
+            form.add_error('cpf', msg)
+            return self.form_invalid(form)
+
+        # Atualiza os dados da inscrição existente em vez de duplicar
+        for field, value in form.cleaned_data.items():
+            setattr(reg, field, value)
+
+        # MOTOR DE REGRAS PÓS-EVENTO
+        from apps.certificates.tasks import issue_certificate_task
+
+        if reg.attended:
+            if reg.status == Registration.Status.PENDING:
+                # REGRA 1
+                msg = (f"{first_name}, obrigado! Seus dados foram enviados. Seu Certificado do evento "
+                       f"{course.name}, realizado em {course_date_str}, está sendo gerado. Você o receberá no e-mail "
+                       f"que informou ao preencher o formulário. Se o e-mail não chegar em sua caixa de entrada, "
+                       f"verificar no SPAM ou no lixo eletrônico. Se não o receber, por favor entre em contato "
+                       f"com o responsável pelo evento.")
+                reg.is_requested = True
+                reg.save()
+                issue_certificate_task.delay(str(reg.id))
+            else:
+                # REGRA 2
+                msg = (f"{first_name}, Você já solicitou seu certificado do evento {course.name}, "
+                       f"realizado em {course_date_str}. Caso não tenha recebido em sua caixa de entrada, "
+                       f"verifique o SPAM e Lixo eletrônico. Se já verificou ou teve algum problema com as "
+                       f"informações do seu certificado, entre em contato com o responsável pelo evento.")
+                reg.is_requested = True
+                reg.save()
+        else:
+            if not reg.is_requested:
+                # REGRA 3
+                msg = (f"{first_name}, obrigado! Seus dados foram enviados. Seu Certificado do evento "
+                       f"{course.name}, realizado em {course_date_str}, está sendo gerado. Assim que sua "
+                       f"presença for confirmada você receberá seu certificado no e-mail que informou ao "
+                       f"preencher o formulário. Se o e-mail não chegar em sua caixa de entrada, verificar "
+                       f"no SPAM ou no lixo eletrônico. Se não o receber, por favor entre em contato com o "
+                       f"responsável pelo evento.")
+                reg.is_requested = True
+                reg.save()
+            else:
+                # REGRA 4
+                msg = (f"{first_name}, Você já solicitou seu certificado do evento {course.name}, "
+                       f"realizado em {course_date_str}. Assim que sua presença for confirmada você receberá "
+                       f"seu certificado no e-mail que informou ao preencher o formulário. Se o e-mail não "
+                       f"chegar em sua caixa de entrada, verificar no SPAM ou no lixo eletrônico. Se não o "
+                       f"receber, por favor entre em contato com o responsável pelo evento.")
+                reg.save()
+
+        self.request.session['success_message'] = msg
+        # Sênior Fix: Preenche o objeto obrigatório do CreateView para não quebrar o redirecionamento
+        self.object = reg 
+        return HttpResponseRedirect(self.get_success_url())
+
+    def get_context_data(self, **kwargs):
+        """
+        Sênior Fix: Recupera o Treinamento no banco de dados via slug da URL
+        e injeta no contexto do template para popular os dados visuais do evento
+        (Nome, Data, Carga Horária, Local).
+        """
+        context = super().get_context_data(**kwargs)
+        from django.shortcuts import get_object_or_404
+        from apps.core.models import Course
         
-        # 2. Extração do nome para feedback personalizado
-        full_name = form.cleaned_data.get('full_name') if not inscricao else inscricao.full_name
-        first_name = full_name.split()[0] if full_name else "Participante"
+        # Busca o curso real pelo Slug da URL para garantir segurança
+        context['course'] = get_object_or_404(Course, slug=self.kwargs['slug'])
+        return context
 
-        # 3. Injeção de metadados na sessão (Obrigatórios para o template)
-        self.request.session['registered_first_name'] = first_name
-        self.request.session['course_name'] = course.name
-        self.request.session['course_date'] = course.start_date.strftime('%d/%m/%Y')
+class EventRegistrationCreateView(RegistrationCreateView):
+    """Exibe e processa o formulário de Inscrição (PRÉ-EVENTO)."""
+    template_name = "registrations/event_form.html"
 
-        if inscricao:
-            # Caso 1: Certificado já enviado anteriormente -> Exibe Condição 2
-            if inscricao.status == Registration.Status.SENT:
-                self.request.session['already_requested'] = True
-                self.object = inscricao
-                return HttpResponseRedirect(self.get_success_url())
-            
-            # Caso 2: Atualização de Registro Existente (Match de CPF)
-            # Verifica se já houve uma solicitação prévia para diferenciar Condição 3 de 4
-            ja_solicitou_antes = inscricao.certificate_requested
+    def dispatch(self, request, *args, **kwargs):
+        course = get_object_or_404(Course, slug=self.kwargs['slug'])
+        now = timezone.now()
+        
+        if course.registration_start and now < course.registration_start:
+            return HttpResponseForbidden(
+                "<div style='text-align:center; margin-top:50px; font-family:sans-serif;'>"
+                "<h2>As inscrições para este evento ainda não começaram.</h2>"
+                "</div>"
+            )
+        if course.registration_end and now > course.registration_end:
+            return HttpResponseForbidden(
+                "<div style='text-align:center; margin-top:50px; font-family:sans-serif;'>"
+                "<h2>As inscrições para este evento foram encerradas.</h2>"
+                "</div>"
+            )
+        return super(RegistrationCreateView, self).dispatch(request, *args, **kwargs)
 
-            # Absorve correções cadastrais
-            for field, value in form.cleaned_data.items():
-                setattr(inscricao, field, value)
-            
-            inscricao.certificate_requested = True  # Persiste a solicitação no banco
-            inscricao.save()
-            self.object = inscricao
+    def form_valid(self, form):
+        course = get_object_or_404(Course, slug=self.kwargs['slug'])
+        
+        if Registration.objects.filter(cpf=form.instance.cpf, course=course).exists():
+            form.add_error('cpf', 'Este CPF já está inscrito nesta turma/data deste evento.')
+            return self.form_invalid(form)
 
-            # Verifica automação via Celery (Check-in confirmado)
-            if not self.is_pre_event and inscricao.attended:
-                from apps.certificates.tasks import issue_certificate_task
-                issue_certificate_task.delay(str(inscricao.pk))
-                self.request.session['auto_emitted'] = True  # Exibe Condição 1
-            elif ja_solicitou_antes:
-                # Se não tem check-in e já tinha solicitado antes -> Exibe Condição 4
-                self.request.session['already_pending'] = True
-            
-            # Se ja_solicitou_antes era False, cai no else do template -> Exibe Condição 3
-            return HttpResponseRedirect(self.get_success_url())
-
-        # Caso 3: Nova Inscrição (Criação de Registro)
         inscricao = form.save(commit=False)
         inscricao.course = course
         inscricao.course_name = course.name
         inscricao.course_date = course.start_date
         inscricao.course_workload = course.hours
-        inscricao.certificate_requested = True  # Marca como solicitado no banco
+        inscricao.is_requested = False
         inscricao.save()
-        self.object = inscricao
 
-        # Verifica automação imediata para novos registros
-        if not self.is_pre_event and inscricao.attended:
-            from apps.certificates.tasks import issue_certificate_task
-            issue_certificate_task.delay(str(inscricao.pk))
-            self.request.session['auto_emitted'] = True # Exibe Condição 1
-        
-        # Sem flags adicionais, o template exibirá a Condição 3 (Solicitação Pendente Inédita)
+        # Ajuste Sênior: Extração segura do primeiro nome
+        first_name = inscricao.full_name.split()[0] if inscricao.full_name else ""
+        course_date_str = course.start_date.strftime('%d/%m/%Y') if course.start_date else ""
+
+        # REGRA 0
+        self.request.session['success_message'] = (
+            f"{first_name}, obrigado! Seus dados foram registrados e enviados ao responsável "
+            f"pelo evento {course.name} a ser realizado em {course_date_str}. Bom evento para você! Até breve!"
+        )
+        # Sênior Fix: Preenche o objeto obrigatório do CreateView para não quebrar o redirecionamento
+        self.object = inscricao 
         return HttpResponseRedirect(self.get_success_url())
 
-    def get_context_data(self, **kwargs):
-        """
-        Repassa os dados do objeto course para o contexto da página de inscrição de forma segura.
-        """
-        context = super().get_context_data(**kwargs)
-        
-        # Busca o curso novamente via slug para garantir que os dados exibidos no template venham do banco
-        context['course'] = get_object_or_404(Course, slug=self.kwargs['slug'])
-        return context
-
-
-class EventRegistrationCreateView(RegistrationCreateView):
-    """View para inscrição pré-evento (antes do treinamento ocorrer)."""
-    template_name = "registrations/event_form.html"
-    is_pre_event = True  # Marca como pré-evento para evitar automação de certificado
-
-    def dispatch(self, request, *args, **kwargs):
-        """
-        Blindagem: Verifica se o período de inscrição pré-evento é válido.
-        """
-        course = get_object_or_404(Course, slug=self.kwargs['slug'])
-        now = timezone.now()
-
-        # Trava: Início das Inscrições (se definido)
-        if course.registration_start and now < course.registration_start:
-            return render(request, "registrations/time_locked.html", {
-                "course": course, 
-                "action_type": "inscrição", 
-                "lock_state": "early", 
-                "target_date": course.registration_start
-            }, status=403)
-
-        # Trava: Término das Inscrições (se definido)
-        if course.registration_end and now > course.registration_end:
-            return render(request, "registrations/time_locked.html", {
-                "course": course, 
-                "action_type": "inscrição", 
-                "lock_state": "late", 
-                "target_date": course.registration_end
-            }, status=403)
-
-        # Pula o dispatch da RegistrationCreateView (que checa certificate_start/end)
-        return super(RegistrationCreateView, self).dispatch(request, *args, **kwargs)
-
-    def form_valid(self, form):
-        """
-        Proteção contra duplicidade no pré-evento e injeção de dados na sessão.
-        """
-        course = get_object_or_404(Course, slug=self.kwargs['slug'])
-        cpf = form.cleaned_data.get('cpf')
-        
-        # Bloqueio de duplicidade: Garante que o CPF não se inscreva duas vezes no mesmo curso
-        if Registration.objects.filter(cpf=cpf, course=course).exists():
-            form.add_error('cpf', 'Você já está inscrito neste evento.')
-            return self.form_invalid(form)
-            
-        # Prossegue com o salvamento base e injeção de flags de sessão
-        response = super().form_valid(form)
-        
-        self.request.session['is_event'] = True
-        self.request.session['course_name'] = self.object.course.name
-        self.request.session['course_date'] = self.object.course.start_date.strftime('%d/%m/%Y')
-        
-        return response
-
-
 class RegistrationSuccessView(TemplateView):
-    """Tela de agradecimento personalizada conforme o estado da solicitação."""
     template_name = "registrations/registration_success.html"
-
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        
-        # Resgate centralizado das flags de controle para renderização das 4 condições
-        context["first_name"] = self.request.session.pop("registered_first_name", "")
-        context["course_name"] = self.request.session.pop("course_name", "")
-        context["course_date"] = self.request.session.pop("course_date", "")
-        context["already_requested"] = self.request.session.pop("already_requested", False)
-        context["already_pending"] = self.request.session.pop("already_pending", False)
-        context["auto_emitted"] = self.request.session.pop("auto_emitted", False)
-        context["is_event"] = self.request.session.pop("is_event", False)
-        
+        context["success_message"] = self.request.session.pop("success_message", "Ação processada com sucesso.")
         return context

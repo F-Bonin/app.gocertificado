@@ -1,100 +1,22 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sucesso | e-Certificado</title>
-    <!-- Bootstrap 5 CSS via CDN -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Bootstrap Icons via CDN -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <style>
-        body {
-            background-color: #f8f9fa;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .success-container {
-            max-width: 600px;
-            text-align: center;
-            padding: 2rem;
-        }
-    </style>
-</head>
-<body>
+{% extends "base.html" %}
 
-    <div class="container d-flex justify-content-center">
-        <div class="success-container">
-            {% if is_event %}
-                {# Inscrição pré-evento confirmada #}
-                <div class="text-center">
-                    <i class="bi bi-check-circle text-success display-1 mb-4"></i>
-                    <h2 class="fw-bold text-success mb-3">Inscrição Confirmada!</h2>
-                    <p class="text-muted fs-5">
-                        Sua inscrição no evento <strong>{{ course_name }}</strong>, <br>marcado para o dia <strong>{{ course_date }}</strong>, foi realizada com sucesso.
-                        <br><br>
-                        Obrigado por garantir sua participação!
-                    </p>
-                </div>
-            {% elif auto_emitted %}
-                {# Condição 1: Automação Celery acionada (Aluno com check-in) #}
-                <div class="text-center">
-                    <i class="bi bi-rocket-takeoff text-success display-1 mb-4"></i>
-                    <h2 class="fw-bold text-success mb-3">{{ first_name|default:"Aluno" }}, obrigado!</h2>
-                    <p class="text-muted fs-5 mt-2">
-                        Seus dados foram enviados. Seu Certificado do evento <strong>{{ course_name }}</strong>, realizado em <strong>{{ course_date }}</strong>, está sendo gerado.
-                        <br><br>
-                        Você o receberá no e-mail que informou ao preencher o formulário.
-                        <br>
-                        Se o e-mail não chegar em sua caixa de entrada, verificar no SPAM ou no lixo eletrônico. Se não o receber, por favor entre em contato com o responsável pelo evento.
-                    </p>
-                </div>
-            {% elif already_requested %}
-                {# Condição 2: Certificado já enviado anteriormente #}
-                <div class="text-center">
-                    <i class="bi bi-exclamation-circle text-warning display-1 mb-4"></i>
-                    <h2 class="fw-bold text-warning mb-3">Atenção!</h2>
-                    <p class="text-muted fs-5 mt-2">
-                        <strong>{{ first_name|default:"Aluno" }}</strong>, Você já solicitou seu certificado do evento <strong>{{ course_name }}</strong>, realizado em <strong>{{ course_date }}</strong>.
-                        <br><br>
-                        Caso não tenha recebido em sua caixa de entrada, verifique o SPAM e Lixo eletrônico.
-                        <br>
-                        Se já verificou ou tenha tido algum problema com as informações do seu certificado, entre em contato com o responsável pelo evento.
-                    </p>
-                </div>
-            {% elif already_pending %}
-                {# Condição 4: Duplicidade Pendente (Já solicitou mas aguarda check-in) #}
-                <div class="text-center">
-                    <i class="bi bi-info-circle text-info display-1 mb-4"></i>
-                    <h2 class="fw-bold text-info mb-3">Atenção!</h2>
-                    <p class="text-muted fs-5 mt-2">
-                        <strong>{{ first_name|default:"Aluno" }}</strong>, Você já solicitou seu certificado do evento <strong>{{ course_name }}</strong>, realizado em <strong>{{ course_date }}</strong>.
-                        <br><br>
-                        Assim que sua presença for confirmada você receberá seu certificado no e-mail que informou ao preencher o formulário.
-                        <br>
-                        Se o e-mail não chegar em sua caixa de entrada, verificar no SPAM ou no lixo eletrônico. Se não o receber, por favor entre em contato com o responsável pelo evento.
-                    </p>
-                </div>
-            {% else %}
-                {# Condição 3: Solicitação padrão enviada (Aguardando check-in) #}
-                <div class="text-center">
-                    <i class="bi bi-hourglass-split text-info display-1 mb-4"></i>
-                    <h2 class="fw-bold text-info mb-3">{{ first_name|default:"Aluno" }}, obrigado!</h2>
-                    <p class="text-muted fs-5 mt-2">
-                        Seus dados foram enviados. Seu Certificado do evento <strong>{{ course_name }}</strong>, realizado em <strong>{{ course_date }}</strong>, está sendo gerado.
-                        <br><br>
-                        Assim que sua presença for confirmada você receberá seu certificado no e-mail que informou ao preencher o formulário.
-                        <br>
-                        Se o e-mail não chegar em sua caixa de entrada, verificar no SPAM ou no lixo eletrônico. Se não o receber, por favor entre em contato com o responsável pelo evento.
-                    </p>
-                </div>
-            {% endif %}
+{% block title %}Aviso do Sistema{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 text-center py-5">
+        <div class="card p-5 shadow-sm border-0" style="border-radius: 15px;">
+            <div class="mb-4">
+                <i class="bi bi-envelope-paper-fill text-primary" style="font-size: 4rem;"></i>
+            </div>
+            <h3 class="fw-bold text-dark mb-4">Aviso do Sistema</h3>
+            <p class="text-muted fs-5" style="line-height: 1.6;">
+                {{ success_message }}
+            </p>
+            <div class="mt-4">
+                <a href="javascript:window.close();" class="btn btn-outline-primary px-4 rounded-pill">Fechar Janela</a>
+            </div>
         </div>
     </div>
-
-    <!-- Bootstrap 5 JS Bundle via CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+</div>
+{% endblock %}
