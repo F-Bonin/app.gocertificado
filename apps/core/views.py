@@ -444,7 +444,14 @@ class PublicCheckinView(View):
     template_name = "core/public_checkin.html"
 
     def get(self, request, checkin_hash):
-        course = get_object_or_404(Course, checkin_hash=checkin_hash)
+        from django.shortcuts import render
+        from apps.core.models import Course
+        
+        try:
+            course = Course.objects.get(checkin_hash=checkin_hash)
+        except Course.DoesNotExist:
+            return render(request, 'core/revoked_link.html', status=404)
+
         registrations = course.registrations.all().order_by('full_name')
         return render(request, self.template_name, {
             'course': course,

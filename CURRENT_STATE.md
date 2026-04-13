@@ -74,8 +74,8 @@
 * [x] **Exibição Explícita de Datas:** Adicionado card `alert-info` no topo dos formulários públicos exibindo datas de início e encerramento formatadas (Django `|date`) [12].
 * [x] **Correção de Formatação:** Implementada separação de filtros de data e hora no Django (`|date:"d/m/Y"` e `|date:"H:i"`) para garantir a exibição correta da palavra "às" e evitar o erro "à00" [14].
 * [x] **Bloqueio Visual Dinâmico:** Ocultação automática do formulário (`display: none`) e exibição de status "Abre em", "Expira em" ou "Encerrado" baseada no horário do cliente sincronizado com o servidor [12].
-* [x] **UX de Erro Temporal:** Refatoração do backend (`dispatch`) para renderizar template elegante (`time_locked.html`) em vez de erro de texto puro quando o acesso ocorre fora do período permitido [16].
-* [x] **Páginas de Bloqueio Visual:** Criado o template `time_locked.html` com Card Bootstrap e cronômetro regressivo inteligente para acessos antecipados [17].
+* [x] **UX de Erro Temporal:** Refatoração do backend (`dispatch`) para renderizar template elegante (`time_locked.html`) ou (`revoked_link.html`) em vez de erro de texto puro quando o acesso ocorre fora do período permitido ou o link foi revogado. A View `PublicCheckinView` agora intercepta `Course.DoesNotExist` e renderiza a tela de acesso revogado com status 404.
+* [x] **Páginas de Bloqueio Visual:** Criado o template `time_locked.html` com Card Bootstrap e cronômetro regressivo inteligente para acessos antecipados, e o template `revoked_link.html` para acessos a links desativados pelo administrador.
 * [x] **Solicitação de Certificado:** Substituído o campo `expires_at` por `certificate_start` e `certificate_end` no modelo `Course` para controle bidirecional (abertura e fechamento) [11].
 * [x] **Inscrição Pré-Evento:** Utilização dos campos `registration_start` e `registration_end` para controle de acesso ao formulário de inscrição [11].
 * [x] **Travas de Segurança (Backend):** Implementada lógica robusta no método `dispatch` das views para bloquear acesso fora dos períodos definidos, retornando `HttpResponseForbidden` [11].
@@ -95,6 +95,8 @@
 * [x] **Módulo de Credenciamento Público (Portaria):**
 * [x] Criação de tela pública isolada para credenciamento protegida por Hash UUID.
 * [x] Ações em massa para check-in/check-out e disparo rápido de e-mail (SMTP) na porta do evento.
+* [x] **Check-in em Massa (Admin):** Implementada a lógica Javascript para Check-in em Massa e impressão multimodal (Digital/Física) no painel administrativo, sincronizada com o motor de badges e horários em tempo real.
+* [x] **Espelhamento de Layout (Admin):** O painel administrativo da Lista de Presença foi atualizado para espelhar o layout da tabela pública, incluindo a barra de ações em massa, contador dinâmico, exibição de data/hora de check-in e o campo Profissão do participante (presence_list.html).
 * [x] **Fuso Horário (Accreditation):** O fuso horário (timezone) foi fixado nas respostas AJAX das Views de credenciamento (individual e em massa) utilizando `localtime()`, garantindo que o horário exibido no frontend respeite a configuração local.
 * [x] **Refinamento de UI (Dashboard Público):** Refinada a interface dos botões de impressão (correção de hover), implementada a exibição dinâmica da data/hora do check-in na tabela e atualizado o motor Javascript para sincronização em tempo real desses dados.
 * [x] **Persistência de Check-in:** As Views de credenciamento (individual e em massa) agora gravam a data/hora exata do check-in no banco de dados e retornam essa informação formatada para o frontend.
