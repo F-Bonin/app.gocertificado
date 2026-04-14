@@ -45,9 +45,10 @@ class RegistrationCreateView(CreateView):
     def form_valid(self, form):
         course = get_object_or_404(Course, slug=self.kwargs['slug'])
         cpf = form.cleaned_data.get('cpf')
-        full_name = form.cleaned_data.get('full_name', '')
-        # Ajuste Sênior: Extração segura do primeiro nome para evitar exibição de lista
-        first_name = full_name.split()[0] if full_name else ""
+        
+        # Sênior Fix: Extrai apenas o primeiro nome como string (corrige bug de exibição de lista)
+        name_parts = form.cleaned_data.get('full_name', '').split()
+        first_name = name_parts[0] if name_parts else ""
         course_date_str = course.start_date.strftime('%d/%m/%Y') if course.start_date else ""
 
         from apps.registrations.models import Registration
@@ -63,9 +64,19 @@ class RegistrationCreateView(CreateView):
             form.add_error('cpf', msg)
             return self.form_invalid(form)
 
-        # Atualiza os dados da inscrição existente em vez de duplicar
+        # Sênior Fix: Trava Anti-Fraude (Normalização rigorosa de strings removendo espaços duplos e capitalização)
+        registered_name = " ".join(reg.full_name.split()).lower()
+        input_name = " ".join(form.cleaned_data.get('full_name', '').split()).lower()
+        
+        if registered_name != input_name:
+            form.add_error('full_name', 'O nome informado não corresponde ao participante cadastrado com este CPF. Por motivos de segurança, a solicitação foi bloqueada. Revise os dados ou contate o responsável do evento.')
+            return self.form_invalid(form)
+
+        # Atualiza apenas dados secundários de contato/endereço. Blinda a identidade core.
+        protected_fields = ['full_name', 'cpf', 'rg', 'birth_date']
         for field, value in form.cleaned_data.items():
-            setattr(reg, field, value)
+            if field not in protected_fields and value:
+                setattr(reg, field, value)
 
         # MOTOR DE REGRAS PÓS-EVENTO
         from apps.certificates.tasks import issue_certificate_task
@@ -110,7 +121,6 @@ class RegistrationCreateView(CreateView):
                 reg.save()
 
         self.request.session['success_message'] = msg
-        # Sênior Fix: Preenche o objeto obrigatório do CreateView para não quebrar o redirecionamento
         self.object = reg 
         return HttpResponseRedirect(self.get_success_url())
 
@@ -165,8 +175,8 @@ class EventRegistrationCreateView(RegistrationCreateView):
         inscricao.is_requested = False
         inscricao.save()
 
-        # Ajuste Sênior: Extração segura do primeiro nome
-        first_name = inscricao.full_name.split()[0] if inscricao.full_name else ""
+        name_parts = inscricao.full_name.split() if inscricao.full_name else []
+        first_name = name_parts[0] if name_parts else ""
         course_date_str = course.start_date.strftime('%d/%m/%Y') if course.start_date else ""
 
         # REGRA 0
@@ -174,7 +184,6 @@ class EventRegistrationCreateView(RegistrationCreateView):
             f"{first_name}, obrigado! Seus dados foram registrados e enviados ao responsável "
             f"pelo evento {course.name} a ser realizado em {course_date_str}. Bom evento para você! Até breve!"
         )
-        # Sênior Fix: Preenche o objeto obrigatório do CreateView para não quebrar o redirecionamento
         self.object = inscricao 
         return HttpResponseRedirect(self.get_success_url())
 

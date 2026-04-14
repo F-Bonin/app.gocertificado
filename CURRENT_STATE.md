@@ -107,6 +107,7 @@
 * [x] Impressão Multimodal com regras CSS Print: Lista física (com linha de assinatura) e digital (status em texto limpo).
 
 **Correções e Melhorias Técnicas:**
+* [x] **UX de Erros Críticos:** A interface do formulário de solicitação (`form.html`) recebeu um Modal Extravagante (Bootstrap 5) para interrupção de fluxo em caso de bloqueio de segurança (Spoofing) ou CPF inexistente.
 * [x] **Acessibilidade (Zebra Striping):** O contraste da cor do Zebra Striping foi ajustado (de `#f9f9f9` para `#dce4ec`) para tornar a alternância de linhas mais evidente e melhorar a acessibilidade visual na listagem de eventos [45].
 * [x] **Zebra Striping (Listagem):** O Zebra Striping na listagem de eventos foi resolvido de forma definitiva manipulando a variável `--bs-table-bg` inline via `forloop` do Django, garantindo compatibilidade total com o Bootstrap 5 e legibilidade superior [44].
 * [x] **Interface Mestre-Detalhe:** A interface de listagem de cursos foi refatorada com o padrão Mestre-Detalhe (Accordion Rows) para ocultar e organizar os links e controles de forma limpa [39].
@@ -114,6 +115,9 @@
 * [x] **Otimização de Lógica:** Implementada propriedade `@property is_expired` no modelo `Course` para centralizar a regra de expiração [8].
 * [x] **Ajuste de Fluxo (Duplicidade):** O fluxo de duplicidade no backend foi refatorado para respeitar reversões de check-in e disparar o Celery corretamente, e o copy visual da tela de pendência foi ajustado para maior clareza [31].
 * [x] **Máquina de Estados (Database Tracking):** Refatorada a lógica do `form_valid` para integrar o campo persistente `certificate_requested`. O sistema agora diferencia com precisão milimétrica as 4 condições de sucesso (Inédita, Duplicidade Pendente, Já Enviado e Automação) utilizando uma combination de estado de banco e flags de sessão [36].
+* [x] **Segurança Anti-Fraude:** Implementada trava de segurança na View de solicitação de certificado que impede o roubo de identidade e a sobrescrita de dados sensíveis (Nome, CPF, RG, Data de Nascimento). O sistema agora valida o nome informado contra o nome cadastrado na inscrição (com normalização de strings) e blinda os campos core da identidade.
+* [x] **Bugfix de Extração de Nome:** Corrigido o bug de extração do primeiro nome nas Views de inscrição e solicitação, garantindo a exibição correta como string simples em vez de lista.
+* [x] **Correções e Melhorias Técnicas:** O método `get_registration_url` do modelo `Course` foi corrigido para retornar a rota `registrations:event_form`, consertando o bug do envio de link incorreto por e-mail na página de credenciamento.
 * [x] **Correções e Melhorias Técnicas:** Corrigido o bug de redirecionamento NoneType nas views de formulário público (Inscrição e Solicitação) atribuindo corretamente a propriedade self.object antes do redirecionamento de sucesso. [52]
 * [x] **Melhorias Técnicas (UX):** A UI da tela de Sucesso (`registration_success.html`) foi aprimorada com layout moderno (ícone de foguete) e recebeu um fallback de JavaScript para lidar com o bloqueio de `window.close()` imposto pelos navegadores modernos.
 * [x] **Correções e Melhorias Técnicas:** O método `get_context_data` foi restaurado nas Views de inscrição/solicitação para corrigir a exibição dinâmica dos dados do evento (Nome, Data, Carga Horária, Local) no frontend. [50]

@@ -215,8 +215,7 @@ class Course(models.Model):
     def get_registration_url(self):
         """Retorna a URL limpa de inscrição utilizando o novo padrão de Slug."""
         from django.urls import reverse
-        
         if not self.slug:
             return ""
-            
-        return reverse("registrations:form", kwargs={"slug": self.slug})
+        # Sênior Fix: Apontando obrigatoriamente para o formulário de Inscrição (Pré-evento)
+        return reverse("registrations:event_form", kwargs={"slug": self.slug})

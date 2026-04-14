@@ -15,6 +15,7 @@
     </style>
 </head>
 <body>
+{% block content %}
 
     <div class="container">
         <div class="form-container">
@@ -388,5 +389,53 @@
             });
         });
     </script>
+    <!-- Sênior Fix: Modal Extravagante para Erros Críticos (Anti-Fraude e CPF não encontrado) -->
+    {% if form.cpf.errors or form.full_name.errors %}
+    <div class="modal fade" id="criticalErrorModal" tabindex="-1" aria-labelledby="criticalErrorModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+                <!-- Cabeçalho do Modal com Ícone -->
+                <div class="modal-header border-0 bg-danger bg-opacity-10 justify-content-center" style="border-top-left-radius: 20px; border-top-right-radius: 20px; padding: 2.5rem 1rem 1rem;">
+                    <div class="text-center">
+                        <i class="bi bi-shield-fill-x text-danger" style="font-size: 4.5rem;"></i>
+                        <h3 class="modal-title fw-bold text-danger mt-3" id="criticalErrorModalLabel" style="letter-spacing: -0.5px;">Acesso Bloqueado</h3>
+                    </div>
+                </div>
+                <!-- Corpo do Modal com a Mensagem Dinâmica do Backend -->
+                <div class="modal-body text-center p-4 fs-5 text-secondary" style="line-height: 1.6;">
+                    {% if form.full_name.errors %}
+                        {{ form.full_name.errors.0 }}
+                    {% elif form.cpf.errors %}
+                        {{ form.cpf.errors.0 }}
+                    {% endif %}
+                </div>
+                <!-- Rodapé com Botão de Ação -->
+                <div class="modal-footer border-0 justify-content-center pb-4">
+                    <button type="button" class="btn btn-danger btn-lg px-5 rounded-pill fw-bold shadow-sm" data-bs-dismiss="modal">
+                        <i class="bi bi-check2-circle me-2"></i>Entendi
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+{% endblock %}
 </body>
+
+{% block extra_js %}
+<script>
+    // Motor JS: Dispara o Modal do Bootstrap 5 caso o backend tenha retornado erros críticos
+    document.addEventListener("DOMContentLoaded", function() {
+        const errorModalEl = document.getElementById('criticalErrorModal');
+        if (errorModalEl) {
+            // Instancia o modal travando o clique fora dele (backdrop: static) para forçar o usuário a ler
+            const errorModal = new bootstrap.Modal(errorModalEl, {
+                backdrop: 'static',
+                keyboard: false
+            });
+            errorModal.show();
+        }
+    });
+</script>
+{% endblock %}
 </html>
