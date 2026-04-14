@@ -143,25 +143,32 @@
                                     <div class="col-md-5">
                                         <div class="card h-100 border-0 shadow-sm">
                                             <div class="card-body p-3">
-                                                <label class="small fw-bold text-primary mb-2 d-block">
-                                                    <i class="bi bi-patch-check me-1"></i> Link de Solicitação (Certificado)
-                                                </label>
-                                                <div class="input-group input-group-sm mb-3">
-                                                    <input type="text" class="form-control bg-white" readonly id="link-cert-{{ course.id }}" value="{{ request.scheme }}://{{ request.get_host }}{% url 'registrations:form' course.slug %}">
-                                                    <button class="btn btn-primary" type="button" onclick="copyLink('link-cert-{{ course.id }}')"><i class="bi bi-clipboard me-1"></i>Copiar</button>
-                                                </div>
-                                                <form method="post" action="{% url 'core:toggle_certificate' course.id %}">
-                                                    {% csrf_token %}
-                                                    {% if course.certificate_end and course.certificate_end < now %}
-                                                        <button type="submit" class="btn btn-sm btn-outline-primary w-100 fw-bold py-2">
-                                                            <i class="bi bi-unlock-fill me-1"></i> Reabrir Solicitação
-                                                        </button>
-                                                    {% else %}
-                                                        <button type="submit" class="btn btn-sm btn-primary w-100 fw-bold py-2">
-                                                            <i class="bi bi-slash-circle me-1"></i> Encerrar Solicitação
-                                                        </button>
-                                                    {% endif %}
-                                                </form>
+                                                {% if not course.no_certificate %}
+                                                    <label class="small fw-bold text-primary mb-2 d-block">
+                                                        <i class="bi bi-patch-check me-1"></i> Link de Solicitação (Certificado)
+                                                    </label>
+                                                    <div class="input-group input-group-sm mb-3">
+                                                        <input type="text" class="form-control bg-white" readonly id="link-cert-{{ course.id }}" value="{{ request.scheme }}://{{ request.get_host }}{% url 'registrations:form' course.slug %}">
+                                                        <button class="btn btn-primary" type="button" onclick="copyLink('link-cert-{{ course.id }}')"><i class="bi bi-clipboard me-1"></i>Copiar</button>
+                                                    </div>
+                                                    <form method="post" action="{% url 'core:toggle_certificate' course.id %}">
+                                                        {% csrf_token %}
+                                                        {% if course.certificate_end and course.certificate_end < now %}
+                                                            <button type="submit" class="btn btn-sm btn-outline-primary w-100 fw-bold py-2">
+                                                                <i class="bi bi-unlock-fill me-1"></i> Reabrir Solicitação
+                                                            </button>
+                                                        {% else %}
+                                                            <button type="submit" class="btn btn-sm btn-primary w-100 fw-bold py-2">
+                                                                <i class="bi bi-slash-circle me-1"></i> Encerrar Solicitação
+                                                            </button>
+                                                        {% endif %}
+                                                    </form>
+                                                {% else %}
+                                                    <!-- Aviso de Evento sem Certificado -->
+                                                    <div class="d-flex flex-column justify-content-center align-items-center h-100 p-2 bg-danger bg-opacity-10 border border-danger border-opacity-25 rounded text-center w-100">
+                                                        <span class="text-danger fw-bold small"><i class="bi bi-shield-x me-1"></i>Esse evento não gera certificado</span>
+                                                    </div>
+                                                {% endif %}
                                             </div>
                                         </div>
                                     </div>

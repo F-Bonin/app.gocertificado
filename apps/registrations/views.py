@@ -19,15 +19,19 @@ class RegistrationCreateView(CreateView):
     success_url = reverse_lazy("registrations:registration_success")
 
     def dispatch(self, request, *args, **kwargs):
+        """
+        Blindagem: Verifica se o curso já expirou antes de permitir o acesso à View.
+        """
         course = get_object_or_404(Course, slug=self.kwargs['slug'])
-        # Ajuste Sênior: certificate_end substituiu expires_at conforme CURRENT_STATE.md
-        if course.certificate_end and timezone.now() > course.certificate_end:
-            return HttpResponseForbidden(
-                "<div style='text-align:center; margin-top:50px; font-family:sans-serif;'>"
-                "<h2>A solicitação de certificado para este treinamento foi encerrada.</h2>"
-                "<p>O prazo limite para preenchimento deste formulário expirou.</p>"
-                "</div>"
-            )
+
+        if course.expires_at and timezone.now() > course.expires_at:
+            context = {
+                "action_type": "solicitação de certificado",
+                "lock_state": "late",
+                "target_date": course.expires_at
+            }
+            return render(request, "time_locked.html", context, status=403)
+
         return super().dispatch(request, *args, **kwargs)
 
     def get_initial(self):
@@ -143,21 +147,30 @@ class EventRegistrationCreateView(RegistrationCreateView):
     template_name = "registrations/event_form.html"
 
     def dispatch(self, request, *args, **kwargs):
+        """
+        Blindagem: Verifica se o período de inscrição pré-evento é válido.
+        """
         course = get_object_or_404(Course, slug=self.kwargs['slug'])
         now = timezone.now()
-        
+
+        # 1. Validação de Início (Se definido)
         if course.registration_start and now < course.registration_start:
-            return HttpResponseForbidden(
-                "<div style='text-align:center; margin-top:50px; font-family:sans-serif;'>"
-                "<h2>As inscrições para este evento ainda não começaram.</h2>"
-                "</div>"
-            )
+            context = {
+                "action_type": "inscrição",
+                "lock_state": "early",
+                "target_date": course.registration_start
+            }
+            return render(request, "time_locked.html", context, status=403)
+
+        # 2. Validação de Término (Se definido)
         if course.registration_end and now > course.registration_end:
-            return HttpResponseForbidden(
-                "<div style='text-align:center; margin-top:50px; font-family:sans-serif;'>"
-                "<h2>As inscrições para este evento foram encerradas.</h2>"
-                "</div>"
-            )
+            context = {
+                "action_type": "inscrição",
+                "lock_state": "late",
+                "target_date": course.registration_end
+            }
+            return render(request, "time_locked.html", context, status=403)
+
         return super(RegistrationCreateView, self).dispatch(request, *args, **kwargs)
 
     def form_valid(self, form):

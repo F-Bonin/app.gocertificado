@@ -103,6 +103,7 @@
             </div>
         </div>
         <!-- LINK DE CERTIFICADO -->
+        {% if not course.no_certificate %}
         <div class="col-md-6">
             <div class="card h-100 border-0 shadow-sm">
                 <div class="card-body p-3">
@@ -118,6 +119,12 @@
                 </div>
             </div>
         </div>
+        {% else %}
+        <!-- Sênior Fix: Alerta visual substituto quando o evento não gera certificado -->
+        <div class="mt-2 p-2 bg-danger bg-opacity-10 border border-danger border-opacity-25 rounded text-center w-100">
+            <span class="text-danger fw-bold small"><i class="bi bi-shield-x me-1"></i>Esse evento não gera certificado</span>
+        </div>
+        {% endif %}
     </div>
 
             <!-- Ações em Massa e Impressão -->

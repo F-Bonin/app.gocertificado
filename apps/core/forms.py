@@ -42,7 +42,7 @@ class CourseForm(forms.ModelForm):
         fields = [
             "name", "start_date", "end_date", "hours",
             "registration_start", "registration_end",
-            "certificate_start", "certificate_end",
+            "expires_at", "no_certificate",
             "cep", "institution_name", "institution_street", "institution_number",
             "institution_neighborhood", "institution_complement",
             "city", "state",
@@ -51,12 +51,12 @@ class CourseForm(forms.ModelForm):
         ]
         widgets = {
             "name": forms.TextInput(attrs={"class": "form-control"}),
-            "start_date": forms.DateInput(format='%Y-%m-%d', attrs={"class": "form-control", "type": "date"}),
-            "end_date": forms.DateInput(format='%Y-%m-%d', attrs={"class": "form-control", "type": "date"}),
-            "registration_start": forms.DateTimeInput(format='%Y-%m-%dT%H:%M', attrs={'type': 'datetime-local', 'class': 'form-control'}),
-            "registration_end": forms.DateTimeInput(format='%Y-%m-%dT%H:%M', attrs={'type': 'datetime-local', 'class': 'form-control'}),
-            "certificate_start": forms.DateTimeInput(format='%Y-%m-%dT%H:%M', attrs={'type': 'datetime-local', 'class': 'form-control'}),
-            "certificate_end": forms.DateTimeInput(format='%Y-%m-%dT%H:%M', attrs={'type': 'datetime-local', 'class': 'form-control'}),
+            "start_date": forms.DateInput(attrs={"class": "form-control", "type": "date"}),
+            "end_date": forms.DateInput(attrs={"class": "form-control", "type": "date"}),
+            "registration_start": forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
+            "registration_end": forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
+            "expires_at": forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
+            "no_certificate": forms.CheckboxInput(attrs={"class": "form-check-input", "id": "check_no_certificate"}),
             "cep": forms.TextInput(attrs={"class": "form-control", "placeholder": "00000-000", "id": "id_course_cep"}),
             "city": forms.TextInput(attrs={"class": "form-control", "id": "id_course_city", "readonly": True}),
             "state": forms.TextInput(attrs={"class": "form-control", "id": "id_course_state", "readonly": True}),

@@ -8,7 +8,7 @@ from .views import (
     DashboardView, LinkGeneratorView, BulkSendCertificatesView,
     ResetCertificateStatusView, DeleteRegistrationView,
     ParticipantListView, ExportParticipantsCSVView,
-    CheckRegistrationStatusView
+    CheckRegistrationStatusView, RegistrationUpdateView
 )
 
 app_name = "certificates"
@@ -18,6 +18,7 @@ urlpatterns = [
     path("", AdminPanelView.as_view(), name="panel"),
     path("check-status/", CheckRegistrationStatusView.as_view(), name="check_status"),
     path("participantes/", ParticipantListView.as_view(), name="participants"),
+    path("participante/<uuid:pk>/editar/", RegistrationUpdateView.as_view(), name="participant_edit"),
     path("exportar-alunos-csv/", ExportParticipantsCSVView.as_view(), name="export_csv"),
     path("gerador-link/", LinkGeneratorView.as_view(), name="link_generator"),
     path("emissao-massa/", BulkSendCertificatesView.as_view(), name="bulk_issue"),

@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ action_type|capfirst }} | Status do Acesso{% endblock %}
+
+{% block content %}
+<div class="container d-flex align-items-center justify-content-center" style="min-height: 80vh;">
+    <div class="card shadow-lg border-0" style="max-width: 500px; width: 100%; border-radius: 15px;">
+        <div class="card-body p-5 text-center">
+            
+            <!-- Ícone de Relógio/Bloqueio -->
+            <div class="mb-4">
+                {% if lock_state == 'early' %}
+                    <i class="bi bi-clock-history text-primary" style="font-size: 4rem;"></i>
+                {% else %}
+                    <i class="bi bi-calendar-x text-danger" style="font-size: 4rem;"></i>
+                {% endif %}
+            </div>
+
+            {% if lock_state == 'early' %}
+                <h2 class="fw-bold mb-3 text-primary">Acesso Antecipado</h2>
+                <p class="text-muted fs-5">
+                    As {{ action_type }}s serão abertas em:<br>
+                    <span class="fw-bold text-dark">
+                        {{ target_date|date:"d/m/Y" }} às {{ target_date|date:"H:i" }}
+                    </span>
+                </p>
+                <hr class="my-4">
+                
+                <!-- Cronômetro Regressivo -->
+                <div id="countdown_display" class="fs-2 fw-bold text-dark font-monospace mb-2">
+                    00:00:00:00
+                </div>
+                <p class="small text-uppercase fw-bold text-muted">Tempo restante para abertura</p>
+
+                <script>
+                /**
+                 * Lógica do Cronômetro Regressivo (Vanilla JS)
+                 * Calcula a diferença entre agora e a data alvo injetada pelo Django (ISO 8601).
+                 */
+                (function() {
+                    const targetDate = new Date("{{ target_date|date:'c' }}");
+                    const display = document.getElementById('countdown_display');
+
+                    function updateTimer() {
+                        const now = new Date();
+                        const diff = targetDate - now;
+
+                        if (diff <= 0) {
+                            display.innerText = "00:00:00:00";
+                            // Força o recarregamento ao zerar o tempo para liberar o formulário
+                            location.reload();
+                            return;
+                        }
+
+                        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                        const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+                        // Formatação com padding zero à esquerda
+                        display.innerText = 
+                            String(days).padStart(2, '0') + ":" +
+                            String(hours).padStart(2, '0') + ":" +
+                            String(minutes).padStart(2, '0') + ":" +
+                            String(seconds).padStart(2, '0');
+                    }
+
+                    setInterval(updateTimer, 1000);
+                    updateTimer(); // Chamada inicial imediata
+                })();
+                </script>
+
+            {% else %}
+                <h2 class="fw-bold mb-3 text-danger">Acesso Encerrado</h2>
+                <p class="text-muted fs-5">
+                    A {{ action_type }} foi encerrada em:<br>
+                    <span class="fw-bold text-dark">
+                        {{ target_date|date:"d/m/Y" }} às {{ target_date|date:"H:i" }}
+                    </span>
+                </p>
+                
+                <div class="alert alert-light border mt-4">
+                    <p class="mb-0 small text-muted italic">
+                        Para mais informações, entre em contato com o criador do evento.
+                    </p>
+                </div>
+            {% endif %}
+
+            <div class="mt-5">
+                <a href="javascript:history.back()" class="btn btn-outline-secondary px-4 rounded-pill">
+                    <i class="bi bi-arrow-left me-2"></i>Voltar
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Estilização extra para o card centralizado */
+    body {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    }
+</style>
+{% endblock %}

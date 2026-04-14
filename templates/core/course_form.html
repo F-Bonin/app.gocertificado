@@ -1,7 +1,7 @@
 {% extends 'painel/base_painel.html' %}
 
 {% block title %}
-    {% if object %}Editar Evento{% else %}Novo Evento{% endif %} | e-Certificado
+{% if object %}Editar Evento{% else %}Novo Evento{% endif %} | e-Certificado
 {% endblock %}
 
 {% block content %}
@@ -21,7 +21,7 @@
             <div class="card-body p-4">
                 <form method="post" novalidate id="courseForm">
                     {% csrf_token %}
-                    
+
                     <!-- 1. Identificação do Evento -->
                     <div class="mb-3">
                         <label for="{{ form.name.id_for_label }}" class="form-label fw-bold small text-muted">
@@ -73,7 +73,7 @@
                             </div>
                         </div>
                         <div class="col-md-8">
-                             <label for="{{ form.institution_name.id_for_label }}" class="form-label fw-bold small text-muted">
+                            <label for="{{ form.institution_name.id_for_label }}" class="form-label fw-bold small text-muted">
                                 {{ form.institution_name.label }}
                             </label>
                             {{ form.institution_name }}
@@ -141,15 +141,13 @@
                             <p class="text-muted small mb-3">
                                 Defina o período em que o formulário de inscrição pré-evento estará disponível para os participantes.
                             </p>
-                            
                             <div class="form-check form-switch mb-3">
-                                <input class="form-check-input" type="checkbox" id="check_registration_open" 
-                                       {% if not form.registration_start.value and not form.registration_end.value %}checked{% endif %}>
+                                <input class="form-check-input" type="checkbox" id="check_registration_open"
+                                    {% if not form.registration_start.value and not form.registration_end.value %}checked{% endif %}>
                                 <label class="form-check-label fw-bold text-dark" for="check_registration_open">
                                     O link nunca expira (sempre disponível)
                                 </label>
                             </div>
-
                             <div id="registration_dates_container" {% if not form.registration_start.value and not form.registration_end.value %}style="display:none;"{% endif %}>
                                 <div class="p-3 bg-light rounded border border-success border-opacity-25">
                                     <div class="row">
@@ -181,106 +179,111 @@
                         </div>
                     </div>
 
-                    <!-- 3. Período de Solicitação de Certificado -->
-                    <div class="card mb-4 border-primary shadow-sm">
-                        <div class="card-header bg-primary text-white fw-bold d-flex align-items-center">
-                            <i class="bi bi-clock-history me-2 fs-5"></i>
-                            Período de Solicitação (Certificado)
-                        </div>
-                        <div class="card-body">
-                            <p class="text-muted small mb-3">
-                                Defina o intervalo em que os alunos poderão preencher o formulário de solicitação deste certificado.
-                            </p>
-                            
-                            <div class="form-check form-switch mb-3">
-                                <input class="form-check-input" type="checkbox" id="check_no_expire" 
-                                       {% if not form.certificate_start.value and not form.certificate_end.value %}checked{% endif %}>
-                                <label class="form-check-label fw-bold text-dark" for="check_no_expire">
-                                    O link está sempre disponível (sem restrição de data)
+                    <!-- NOVO BLOCO: Trava de Certificado -->
+                    <div class="card mb-4 border-danger shadow-sm">
+                        <div class="card-body bg-danger bg-opacity-10 rounded">
+                            <div class="form-check form-switch fs-5 mb-0">
+                                {{ form.no_certificate }}
+                                <label class="form-check-label fw-bold text-danger ms-2" for="{{ form.no_certificate.id_for_label }}">
+                                    ESTE EVENTO NÃO TERÁ CERTIFICADO
                                 </label>
                             </div>
+                            <div class="form-text text-danger mt-2 small fw-semibold">
+                                <i class="bi bi-exclamation-triangle-fill me-1"></i>Ao ativar esta opção, as configurações de certificado serão ocultadas e o sistema NÃO gerará o link de solicitação de certificado.
+                            </div>
+                        </div>
+                    </div>
 
-                            <div id="expire_date_container" {% if not form.certificate_start.value and not form.certificate_end.value %}style="display:none;"{% endif %}>
-                                <div class="p-3 bg-light rounded border border-primary border-opacity-25">
-                                    <div class="row">
-                                        <div class="col-md-6 mb-3 mb-md-0">
-                                            <label for="{{ form.certificate_start.id_for_label }}" class="form-label fw-bold small text-primary">
-                                                Início da Disponibilidade
-                                            </label>
-                                            {{ form.certificate_start }}
-                                            {% if form.certificate_start.errors %}
-                                                <div class="text-danger small mt-1">{{ form.certificate_start.errors.0 }}</div>
-                                            {% endif %}
+                    <!-- Wrapper dinâmico: Será ocultado se a flag no_certificate estiver ativa -->
+                    <div id="certificate_settings_wrapper">
+
+                        <!-- 3. Expiração do Link (Refatoração: Novo Card) -->
+                        <div class="card bg-light border-0 mb-4 mt-4 shadow-sm">
+                            <div class="card-header bg-white py-3 border-bottom-0 d-flex align-items-center">
+                                <i class="bi bi-clock-history me-2 text-primary fs-5"></i>
+                                <h6 class="mb-0 fw-bold">Expiração do Link de Solicitação (Certificado)</h6>
+                            </div>
+                            <div class="card-body pt-0">
+                                <p class="text-muted small mb-3">
+                                    Defina até quando os alunos poderão preencher o formulário de solicitação deste certificado.
+                                </p>
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="check_no_expire"
+                                        {% if not form.expires_at.value %}checked{% endif %}>
+                                    <label class="form-check-label fw-bold text-dark" for="check_no_expire">
+                                        O link nunca expira (sempre disponível)
+                                    </label>
+                                </div>
+                                <div id="expire_date_container" {% if not form.expires_at.value %}style="display:none;"{% endif %}>
+                                    <div class="p-3 bg-white rounded border border-primary border-opacity-25">
+                                        <label for="{{ form.expires_at.id_for_label }}" class="form-label fw-bold small text-primary">
+                                            Data e Hora Limite para Solicitações
+                                        </label>
+                                        {{ form.expires_at }}
+                                        <div class="form-text small mt-2">
+                                            <i class="bi bi-info-circle me-1"></i>
+                                            Após esta data, o link exibirá uma mensagem de "Encerrado".
                                         </div>
-                                        <div class="col-md-6">
-                                            <label for="{{ form.certificate_end.id_for_label }}" class="form-label fw-bold small text-primary">
-                                                Término da Disponibilidade
-                                            </label>
-                                            {{ form.certificate_end }}
-                                            {% if form.certificate_end.errors %}
-                                                <div class="text-danger small mt-1">{{ form.certificate_end.errors.0 }}</div>
-                                            {% endif %}
-                                        </div>
-                                    </div>
-                                    <div class="form-text small mt-2">
-                                        <i class="bi bi-info-circle me-1"></i>
-                                        Fora deste intervalo, o link de solicitação ficará desativado.
+                                        {% if form.expires_at.errors %}
+                                            <div class="text-danger small mt-1">{{ form.expires_at.errors.0 }}</div>
+                                        {% endif %}
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
 
-                    <hr class="my-4 opacity-10">
+                        <hr class="my-4 opacity-10">
 
-                    <!-- 4. Design do Certificado -->
-                    <div class="mb-3">
-                        <label for="{{ form.certificate_template.id_for_label }}" class="form-label fw-bold small text-muted">
-                            {{ form.certificate_template.label }}
-                        </label>
-                        {{ form.certificate_template }}
-                        <div class="form-text small text-info">
-                            <i class="bi bi-info-circle me-1"></i>
-                            {{ form.certificate_template.help_text }}
-                        </div>
-                        {% if form.certificate_template.errors %}
-                            <div class="text-danger small mt-1">{{ form.certificate_template.errors.0 }}</div>
-                        {% endif %}
-                    </div>
-
-                    <div class="mb-4">
-                        <label for="{{ form.num_signatures.id_for_label }}" class="form-label fw-bold small text-muted">
-                            {{ form.num_signatures.label }}
-                        </label>
-                        {{ form.num_signatures }}
-                    </div>
-
-                    <div class="row mb-3" id="div_sig1">
-                        <div class="col-md-12">
-                            <label for="{{ form.signature_1.id_for_label }}" class="form-label fw-bold small text-muted">
-                                {{ form.signature_1.label }}
+                        <!-- 4. Design do Certificado -->
+                        <div class="mb-3">
+                            <label for="{{ form.certificate_template.id_for_label }}" class="form-label fw-bold small text-muted">
+                                {{ form.certificate_template.label }}
                             </label>
-                            {{ form.signature_1 }}
+                            {{ form.certificate_template }}
+                            <div class="form-text small text-info">
+                                <i class="bi bi-info-circle me-1"></i>
+                                {{ form.certificate_template.help_text }}
+                            </div>
+                            {% if form.certificate_template.errors %}
+                                <div class="text-danger small mt-1">{{ form.certificate_template.errors.0 }}</div>
+                            {% endif %}
                         </div>
-                    </div>
 
-                    <div class="row mb-3" id="div_sig2">
-                        <div class="col-md-12">
-                            <label for="{{ form.signature_2.id_for_label }}" class="form-label fw-bold small text-muted">
-                                {{ form.signature_2.label }}
+                        <div class="mb-4">
+                            <label for="{{ form.num_signatures.id_for_label }}" class="form-label fw-bold small text-muted">
+                                {{ form.num_signatures.label }}
                             </label>
-                            {{ form.signature_2 }}
+                            {{ form.num_signatures }}
                         </div>
-                    </div>
 
-                    <div class="row mb-3" id="div_sig3">
-                        <div class="col-md-12">
-                            <label for="{{ form.signature_3.id_for_label }}" class="form-label fw-bold small text-muted">
-                                {{ form.signature_3.label }}
-                            </label>
-                            {{ form.signature_3 }}
+                        <div class="row mb-3" id="div_sig1">
+                            <div class="col-md-12">
+                                <label for="{{ form.signature_1.id_for_label }}" class="form-label fw-bold small text-muted">
+                                    {{ form.signature_1.label }}
+                                </label>
+                                {{ form.signature_1 }}
+                            </div>
                         </div>
-                    </div>
+
+                        <div class="row mb-3" id="div_sig2">
+                            <div class="col-md-12">
+                                <label for="{{ form.signature_2.id_for_label }}" class="form-label fw-bold small text-muted">
+                                    {{ form.signature_2.label }}
+                                </label>
+                                {{ form.signature_2 }}
+                            </div>
+                        </div>
+
+                        <div class="row mb-3" id="div_sig3">
+                            <div class="col-md-12">
+                                <label for="{{ form.signature_3.id_for_label }}" class="form-label fw-bold small text-muted">
+                                    {{ form.signature_3.label }}
+                                </label>
+                                {{ form.signature_3 }}
+                            </div>
+                        </div>
+
+                    </div> <!-- Fim do certificate_settings_wrapper -->
 
                     <hr class="my-4 opacity-10">
 
@@ -290,37 +293,39 @@
                             <i class="bi bi-check2-circle me-1"></i> Salvar Evento
                         </button>
                     </div>
+
                 </form>
             </div>
         </div>
-        
+
         {% if not object %}
-        <div class="alert alert-info mt-4 small border-0 shadow-sm">
-            <i class="bi bi-info-circle-fill me-2"></i>
-            Ao salvar, um <strong>Link Único</strong> de inscrição será gerado automaticamente para este evento.
-        </div>
+            <div class="alert alert-info mt-4 small border-0 shadow-sm">
+                <i class="bi bi-info-circle-fill me-2"></i>
+                Ao salvar, um <strong>Link Único</strong> de inscrição será gerado automaticamente para este evento.
+            </div>
         {% endif %}
+
     </div>
 </div>
 
 <!-- Modal de Confirmação de Assinatura -->
 <div class="modal fade" id="noSignatureModal" tabindex="-1" aria-labelledby="noSignatureModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content border-warning">
-      <div class="modal-header bg-warning text-dark">
-        <h5 class="modal-title" id="noSignatureModalLabel"><i class="bi bi-exclamation-triangle-fill me-2"></i> Atenção: Nenhuma Assinatura</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-      </div>
-      <div class="modal-body text-center py-4">
-        <p class="mb-0 fs-5">Você não selecionou nenhuma assinatura para este treinamento.</p>
-        <p class="text-muted mt-2">O certificado será gerado <strong>sem assinaturas</strong> no rodapé.</p>
-      </div>
-      <div class="modal-footer justify-content-center">
-        <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Cancelar e Voltar</button>
-        <button type="button" class="btn btn-warning px-4" id="btn-confirm-submit">Prosseguir sem Assinatura</button>
-      </div>
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-warning">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title" id="noSignatureModalLabel"><i class="bi bi-exclamation-triangle-fill me-2"></i> Atenção: Nenhuma Assinatura</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body text-center py-4">
+                <p class="mb-0 fs-5">Você não selecionou nenhuma assinatura para este treinamento.</p>
+                <p class="text-muted mt-2">O certificado será gerado <strong>sem assinaturas</strong> no rodapé.</p>
+            </div>
+            <div class="modal-footer justify-content-center">
+                <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Cancelar e Voltar</button>
+                <button type="button" class="btn btn-warning px-4" id="btn-confirm-submit">Prosseguir sem Assinatura</button>
+            </div>
+        </div>
     </div>
-  </div>
 </div>
 
 {% endblock %}
@@ -328,7 +333,7 @@
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    
+
     // --- ViaCEP ---
     const cepInput = document.getElementById('id_course_cep');
     if (cepInput) {
@@ -377,6 +382,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // --- 1. BARREIRA DE DATAS ---
     const startDate = document.getElementById('id_start_date');
     const endDate = document.getElementById('id_end_date');
+
     if (startDate && endDate) {
         if (startDate.value) endDate.min = startDate.value;
         startDate.addEventListener('change', function() {
@@ -386,35 +392,27 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     /**
-     * Lógica de Período de Solicitação (JS)
-     * Gerencia a visibilidade dos campos certificate_start/end e as regras de obrigatoriedade.
+     * Lógica de Expiração de Link
      */
     const checkNoExpire = document.getElementById('check_no_expire');
     const expireContainer = document.getElementById('expire_date_container');
-    const certStartInput = document.querySelector('[name="certificate_start"]');
-    const certEndInput = document.querySelector('[name="certificate_end"]');
+    const expireInput = document.querySelector('[name="expires_at"]');
 
-    if (checkNoExpire && expireContainer && certStartInput && certEndInput) {
+    if (checkNoExpire && expireContainer && expireInput) {
         checkNoExpire.addEventListener('change', function() {
             if (this.checked) {
-                // Link sempre aberto: oculta, limpa e remove obrigatoriedade
                 expireContainer.style.display = 'none';
-                certStartInput.value = '';
-                certEndInput.value = '';
-                certStartInput.required = false;
-                certEndInput.required = false;
+                expireInput.value = '';
+                expireInput.required = false;
             } else {
-                // Período definido: exibe e torna campos obrigatórios
                 expireContainer.style.display = 'block';
-                certStartInput.required = true;
-                certEndInput.required = true;
+                expireInput.required = true;
             }
         });
     }
 
     /**
      * Lógica de Inscrição Pré-Evento (JS)
-     * Gerencia a visibilidade dos campos de período de inscrição.
      */
     const checkRegOpen = document.getElementById('check_registration_open');
     const regContainer = document.getElementById('registration_dates_container');
@@ -424,14 +422,12 @@ document.addEventListener('DOMContentLoaded', function() {
     if (checkRegOpen && regContainer && regStartInput && regEndInput) {
         checkRegOpen.addEventListener('change', function() {
             if (this.checked) {
-                // Link sempre aberto: oculta, limpa e remove obrigatoriedade
                 regContainer.style.display = 'none';
                 regStartInput.value = '';
                 regEndInput.value = '';
                 regStartInput.required = false;
                 regEndInput.required = false;
             } else {
-                // Período definido: exibe e torna campos obrigatórios
                 regContainer.style.display = 'block';
                 regStartInput.required = true;
                 regEndInput.required = true;
@@ -439,15 +435,33 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    /**
+     * NOVO: Lógica da Trava Anti-Certificado (JS)
+     */
+    const noCertToggle = document.getElementById('check_no_certificate');
+    const certWrapper = document.getElementById('certificate_settings_wrapper');
+
+    if (noCertToggle && certWrapper) {
+        function toggleCertSettings() {
+            if (noCertToggle.checked) {
+                certWrapper.style.display = 'none';
+            } else {
+                certWrapper.style.display = 'block';
+            }
+        }
+        noCertToggle.addEventListener('change', toggleCertSettings);
+        toggleCertSettings(); // Executa ao carregar
+    }
+
     // --- 2. TOGGLE DE ASSINATURAS ---
     const numSignatures = document.getElementById('id_num_signatures');
-    // Buscamos pelo atributo 'name' gerado pelo Django, que é infalível
     const sig2 = document.querySelector('[name="signature_2"]');
     const sig3 = document.querySelector('[name="signature_3"]');
 
     function toggleSignatures() {
         if (!numSignatures) return;
         const val = parseInt(numSignatures.value) || 1;
+
         const sig2Container = sig2 ? (sig2.closest('.form-group') || sig2.parentElement) : null;
         const sig3Container = sig3 ? (sig3.closest('.form-group') || sig3.parentElement) : null;
 
@@ -465,9 +479,10 @@ document.addEventListener('DOMContentLoaded', function() {
             if (sig3Container) sig3Container.style.display = '';
         }
     }
+
     if (numSignatures) {
         numSignatures.addEventListener('change', toggleSignatures);
-        toggleSignatures(); 
+        toggleSignatures();
     }
 
     // --- 3. BOTÃO DE SALVAR BLINDADO (CONTROLE TOTAL DO JS) ---
@@ -476,56 +491,58 @@ document.addEventListener('DOMContentLoaded', function() {
         btnSalvar.addEventListener('click', function() {
             const form = this.closest('form');
             const sig1 = document.querySelector('[name="signature_1"]');
+            const noCertToggle = document.getElementById('check_no_certificate');
+            const isNoCert = noCertToggle && noCertToggle.checked;
 
-            // Validação de Período de Solicitação antes do submit
-            if (checkNoExpire && !checkNoExpire.checked && (!certStartInput.value || !certEndInput.value)) {
-                alert('Por favor, informe o período completo de solicitação ou marque "O link está sempre disponível".');
-                return;
+            // Sênior Fix: Se o evento não tem certificado, ignoramos a validação de data de expiração
+            if (!isNoCert) {
+                if (checkNoExpire && !checkNoExpire.checked && !expireInput.value) {
+                    alert('Por favor, informe a data e hora de expiração ou marque "O link nunca expira".');
+                    if(expireInput) expireInput.focus();
+                    return;
+                }
             }
 
-            // Validação de Período de Inscrição antes do submit
-            if (checkRegOpen && !checkRegOpen.checked && (!regStartInput.value || !regEndInput.value)) {
-                alert('Por favor, informe o período completo de inscrição pré-evento ou marque "O link nunca expira".');
-                return;
-            }
-
-            // Aciona os balõezinhos vermelhos de "Campo obrigatório" nativos do navegador
+            // Aciona validações HTML5 nativas nos campos visíveis (Ex: Nome do Evento)
             if (!form.checkValidity()) {
                 form.reportValidity();
                 return;
             }
 
-            // Verifica de forma absoluta se a Assinatura 1 está vazia
-            let isSignatureEmpty = true;
-            if (sig1 && sig1.options.length > 0) {
-                const selectedValue = sig1.options[sig1.selectedIndex].value;
-                if (selectedValue !== '') {
-                    isSignatureEmpty = false; // Tem um ID preenchido
-                }
-            }
-
-            if (isSignatureEmpty) {
-                const modalEl = document.getElementById('noSignatureModal');
-                if (modalEl && typeof bootstrap !== 'undefined') {
-                    const modal = new bootstrap.Modal(modalEl);
-                    modal.show(); // Sobe o modal
-                    
-                    document.getElementById('btn-confirm-submit').onclick = function() {
-                        modal.hide();
-                        form.submit(); // Envia pro banco
-                    };
-                } else {
-                    // Fallback nativo 100% à prova de falhas
-                    if (confirm("Você não escolheu NENHUMA assinatura. O certificado sairá sem assinaturas no rodapé. Deseja prosseguir?")) {
-                        form.submit();
+            // Sênior Fix: Se o evento não tem certificado, ignoramos o Modal de Assinaturas e salvamos direto
+            if (!isNoCert) {
+                let isSignatureEmpty = true;
+                if (sig1 && sig1.options.length > 0) {
+                    const selectedValue = sig1.options[sig1.selectedIndex].value;
+                    if (selectedValue !== '') {
+                        isSignatureEmpty = false;
                     }
                 }
+
+                if (isSignatureEmpty) {
+                    const modalEl = document.getElementById('noSignatureModal');
+                    if (modalEl && typeof bootstrap !== 'undefined') {
+                        const modal = new bootstrap.Modal(modalEl);
+                        modal.show();
+                        document.getElementById('btn-confirm-submit').onclick = function() {
+                            modal.hide();
+                            form.submit();
+                        };
+                    } else {
+                        if (confirm("Você não escolheu NENHUMA assinatura. O certificado sairá sem assinaturas no rodapé. Deseja prosseguir?")) {
+                            form.submit();
+                        }
+                    }
+                } else {
+                    form.submit(); // Tudo preenchido corretamente
+                }
             } else {
-                // Preencheu tudo direitinho, salva direto
+                // Evento SEM certificado: bypass nas regras e submissão direta
                 form.submit();
             }
         });
     }
+
 });
 </script>
 {% endblock %}

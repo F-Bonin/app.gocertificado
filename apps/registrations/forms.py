@@ -43,7 +43,7 @@ class RegistrationForm(forms.ModelForm):
             "profession": forms.TextInput(attrs={
                 "class": "form-control", "placeholder": "Sua profissão"
             }),
-            "birth_date": forms.DateInput(attrs={
+            "birth_date": forms.DateInput(format='%Y-%m-%d', attrs={
                 "class": "form-control", "type": "date"
             }),
             "email": forms.EmailInput(attrs={
@@ -85,6 +85,8 @@ class RegistrationForm(forms.ModelForm):
         }
         labels = {
             "full_name": "Nome completo",
+            "gender": "Gênero",
+            "custom_gender": "Gênero Personalizado (Qual?)",
             "birth_date": "Data de nascimento",
             "email": "E-mail",
             "whatsapp": "WhatsApp (com DDD)",

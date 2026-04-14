@@ -15,8 +15,11 @@ from django.contrib import messages
 from django.http import HttpResponse, JsonResponse
 from django.utils.decorators import method_decorator
 from django.views import View
+from django.views.generic import UpdateView
+from django.urls import reverse_lazy
 
 from apps.registrations.models import Registration
+from apps.registrations.forms import RegistrationForm
 from apps.certificates.models import Certificate
 from apps.certificates.tasks import issue_certificate_task
 
@@ -453,3 +456,22 @@ class CheckRegistrationStatusView(View):
         # Retorna um dicionário { "id_1": "sent", "id_2": "pending" }
         statuses = {str(item['pk']): item['status'] for item in qs}
         return JsonResponse({"statuses": statuses})
+
+
+@method_decorator(login_required, name="dispatch")
+class RegistrationUpdateView(UpdateView):
+    """View para o administrador editar os dados de um participante."""
+    model = Registration
+    form_class = RegistrationForm
+    template_name = "certificates/participant_form.html"
+    success_url = reverse_lazy("certificates:participants")
+
+    def get_queryset(self):
+        # Proteção Multitenant: Garante que o usuário só edite alunos de treinamentos da própria empresa
+        profile = getattr(self.request.user, 'profile', None)
+        company = profile.company if profile else None
+        return Registration.objects.filter(course__company=company)
+
+    def form_valid(self, form):
+        messages.success(self.request, "Dados do participante atualizados com sucesso.")
+        return super().form_valid(form)
