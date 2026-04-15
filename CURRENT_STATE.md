@@ -154,9 +154,9 @@
 ---
 
 #### 🔴 O que ainda precisa ser feito (Roadmap)
-**Prioridade Alta:**
+**Prioridade Prioridade Baixa:**
 * [ ] **Monetização e Assinaturas:** Desenvolvimento de planos de cobrança (Pacote de Créditos ou Assinatura Mensal). Integração com Gateway de Pagamento.
 
-**Prioridade Média:**
+**Prioridade Baixa:**
 * [ ] Deploy em ambiente de homologação [22].
 * [ ] Refatorar envio do WhatsApp para API Oficial da Meta [22].
