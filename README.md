@@ -1,4 +1,4 @@
-# 🎓 Sistema de Certificados
+# 🎓 GoCertificado
 
 Sistema automático de geração e envio de certificados de cursos e treinamentos,
 com QR Code e código numérico para verificação de autenticidade.

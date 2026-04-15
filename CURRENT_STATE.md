@@ -8,6 +8,7 @@
 
 #### ✅ O que já está implementado [6]
 **Estrutura Base e SaaS:**
+* [x] Refinamento de UX/Copy: Rodapés de templates, URLs de PDFs de preview e e-mails atualizados para a estratégia PLG (gocertificado.com e app.gocertificado.com).
 * [x] Rebranding do sistema para GoCertificado e atualização de URLs e domínios de produção para app.gocertificado.com
 * [x] Arquitetura SaaS Multitenant (Login, Registro e Perfil vinculados a Empresas) [6, 11].
 * [x] Models: `Company`, `Instructor`, `Course`, `Registration`, `Certificate`, `CertificateTemplate` [11, 17, 18].
