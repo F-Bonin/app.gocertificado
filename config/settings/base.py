@@ -164,5 +164,5 @@ CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 # Em desenvolvimento (o WAHA local precisa acessar o Django local)
 WAHA_DJANGO_BASE_URL = "http://127.0.0.1:8000"
 
-# Em produção
-# WAHA_DJANGO_BASE_URL = "https://seudominio.com.br"
+# Em produção (Alteração refletindo o novo domínio de produção app.gocertificado.com)
+# WAHA_DJANGO_BASE_URL = "https://app.gocertificado.com"

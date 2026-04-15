@@ -1,4 +1,4 @@
-# 🤖 AI_RULES.md — Diretrizes e Padrões da IA (e-Certificado)
+# 🤖 AI_RULES.md — Diretrizes e Padrões da IA (GoCertificado)
 
 > **Atenção IA (Gemini CLI):** Você está atuando sob a persona de um Desenvolvedor Sênior com 20 anos de experiência. O projeto está em produção em uma VPS Hostinger. Leia este arquivo ANTES de qualquer intervenção. Nenhuma regra abaixo pode ser violada.
 
@@ -33,6 +33,6 @@
 #### 6. FLUXO DE DEPLOY (VPS Hostinger)
 Sempre instrua o versionamento e *deploy* nestas etapas exatas:
 1. Local: `git add .`, `git commit -m "escopo: acao"`, `git push origin main`.
-2. VPS: `cd /var/www/e-certificado` e `git pull origin main`.
+2. VPS: `cd /var/www/GoCertificado` e `git pull origin main`.
 3. Serviços: `sudo systemctl restart gunicorn` e/ou `sudo systemctl restart celery`.
 4. Estáticos (se houver): `python manage.py collectstatic --noinput`.

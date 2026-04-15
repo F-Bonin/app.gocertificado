@@ -35,7 +35,7 @@ services:
       - waha_sessions:/app/.sessions
     environment:
       # Descomente para habilitar autenticação na API WAHA
-      WHATSAPP_API_KEY: "e-certificado02-2026"
+      WHATSAPP_API_KEY: "GoCertificado02-2026"
       WHATSAPP_DEFAULT_ENGINE: WEBJS
     restart: unless-stopped
 

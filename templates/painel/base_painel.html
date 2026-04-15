@@ -108,7 +108,7 @@
     <!-- Sidebar -->
     <div id="sidebar-wrapper">
       <div class="sidebar-heading text-center">
-        <i class="bi bi-patch-check-fill me-2 text-warning"></i>e-Certificado
+        <i class="bi bi-patch-check-fill me-2 text-warning"></i>GoCertificado
       </div>
       <div class="list-group list-group-flush">
         <a href="{% url 'certificates:dashboard' %}" class="list-group-item list-group-item-action {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
@@ -176,7 +176,7 @@
 
       <footer class="footer mt-auto py-3 bg-white text-center border-top">
         <div class="container">
-          <span class="text-muted small">© 2026 {{ request.user.profile.company.name|default:"e-Certificado" }} — Todos os direitos reservados.</span>
+          <span class="text-muted small">© 2026 {{ request.user.profile.company.name|default:"GoCertificado" }} — Todos os direitos reservados.</span>
         </div>
       </footer>
     </div>

@@ -522,7 +522,8 @@ def generate_preview_pdf(company, model_type, template=None) -> bytes:
     qr_size = 2.5 * cm; qr_y = 1.1 * cm; gap = 0.6 * cm
     company_text = f"{company.name} - CNPJ: 00.000.000/0001-00"
     code_text = "Código: 0000 0000 0000"
-    url_text = "https://fbonin.cloud"
+    # Alteração refletindo o novo domínio de produção
+    url_text = "https://app.gocertificado.com"
     total_block_width = qr_size + gap + max(c.stringWidth(company_text, "Helvetica", 10), c.stringWidth(code_text, "Helvetica-Bold", 8), c.stringWidth(url_text, "Helvetica", 7))
     block_start_x = (w - total_block_width) / 2
 
