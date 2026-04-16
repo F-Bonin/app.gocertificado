@@ -82,6 +82,35 @@ class RegistrationCreateView(CreateView):
             if field not in protected_fields and value:
                 setattr(reg, field, value)
 
+        # Lógica para salvar o NPS
+        if course.nps_form:
+            from apps.registrations.models import NPSResponse
+            from apps.core.models import NPSQuestion
+            
+            for key, value in self.request.POST.items():
+                if key.startswith('nps_question_') and value:
+                    try:
+                        question_id = int(key.replace('nps_question_', ''))
+                        question = course.nps_form.questions.filter(id=question_id).first()
+                        
+                        if question:
+                            defaults = {}
+                            if question.question_type == 'score':
+                                try:
+                                    defaults['answer_score'] = int(value)
+                                except ValueError:
+                                    pass
+                            else:
+                                defaults['answer_text'] = value
+                                
+                            NPSResponse.objects.update_or_create(
+                                registration=reg,
+                                question=question,
+                                defaults=defaults
+                            )
+                    except ValueError:
+                        pass
+
         # MOTOR DE REGRAS PÓS-EVENTO
         from apps.certificates.tasks import issue_certificate_task
 

@@ -1,5 +1,5 @@
 from django import forms
-from .models import Company, Instructor, Course
+from .models import Company, Instructor, Course, NPSForm, NPSQuestion
 from apps.certificates.models import CertificateTemplate
 
 
@@ -42,7 +42,7 @@ class CourseForm(forms.ModelForm):
         fields = [
             "name", "start_date", "end_date", "hours",
             "registration_start", "registration_end",
-            "expires_at", "no_certificate",
+            "expires_at", "no_certificate", "nps_form",
             "cep", "institution_name", "institution_street", "institution_number",
             "institution_neighborhood", "institution_complement",
             "city", "state",
@@ -57,6 +57,7 @@ class CourseForm(forms.ModelForm):
             "registration_end": forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
             "expires_at": forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
             "no_certificate": forms.CheckboxInput(attrs={"class": "form-check-input", "id": "check_no_certificate"}),
+            "nps_form": forms.Select(attrs={"class": "form-select"}),
             "cep": forms.TextInput(attrs={"class": "form-control", "placeholder": "00000-000", "id": "id_course_cep"}),
             "city": forms.TextInput(attrs={"class": "form-control", "id": "id_course_city", "readonly": True}),
             "state": forms.TextInput(attrs={"class": "form-control", "id": "id_course_state", "readonly": True}),
@@ -94,6 +95,9 @@ class CourseForm(forms.ModelForm):
             self.fields["certificate_template"].queryset = CertificateTemplate.objects.filter(company=company)
             self.fields["certificate_template"].empty_label = "Modelo Padrão do Sistema"
             self.fields["certificate_template"].help_text = "Se não selecionar nenhum, o sistema usará o Modelo Padrão nativo."
+            
+            self.fields["nps_form"].queryset = NPSForm.objects.filter(company=company)
+            self.fields["nps_form"].empty_label = "Nenhum (Sem feedback)"
 
     def clean(self):
         cleaned_data = super().clean()
@@ -105,6 +109,27 @@ class CourseForm(forms.ModelForm):
                 self.add_error("end_date", "A data de término não pode ser anterior à data de início.")
 
         return cleaned_data
+
+
+class NPSFormModelForm(forms.ModelForm):
+    class Meta:
+        model = NPSForm
+        fields = ["name", "is_mandatory"]
+        widgets = {
+            "name": forms.TextInput(attrs={"class": "form-control"}),
+            "is_mandatory": forms.CheckboxInput(attrs={"class": "form-check-input"}),
+        }
+
+
+class NPSQuestionForm(forms.ModelForm):
+    class Meta:
+        model = NPSQuestion
+        fields = ["text", "question_type", "order"]
+        widgets = {
+            "text": forms.TextInput(attrs={"class": "form-control"}),
+            "question_type": forms.Select(attrs={"class": "form-select"}),
+            "order": forms.NumberInput(attrs={"class": "form-control"}),
+        }
 
 
 class CertificateDesignForm(forms.ModelForm):

@@ -1,0 +1,132 @@
+{% extends 'painel/base_painel.html' %}
+
+{% block title %}
+{% if object %}Editar Formulário NPS{% else %}Novo Formulário NPS{% endif %} | GoCertificado
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="d-flex align-items-center mb-4">
+            <a href="{% url 'core:nps_form_list' %}" class="btn btn-outline-secondary btn-sm me-3">
+                <i class="bi bi-arrow-left"></i> Voltar
+            </a>
+            <h2 class="h4 mb-0 text-primary">
+                <i class="bi bi-chat-square-text me-2"></i>
+                {% if object %}Editar Formulário NPS{% else %}Novo Formulário NPS{% endif %}
+            </h2>
+        </div>
+
+        <!-- Formulário Principal (Metadados) -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-body p-4">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="{{ form.name.id_for_label }}" class="form-label fw-bold small text-muted">
+                            {{ form.name.label }}
+                        </label>
+                        {{ form.name }}
+                        {% if form.name.errors %}
+                            <div class="text-danger small mt-1">{{ form.name.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-check form-switch mb-4">
+                        {{ form.is_mandatory }}
+                        <label class="form-check-label fw-bold" for="{{ form.is_mandatory.id_for_label }}">
+                            {{ form.is_mandatory.label }}
+                        </label>
+                        <div class="form-text small">Se ativo, o aluno não poderá baixar o certificado sem responder a pesquisa.</div>
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <button type="submit" class="btn btn-primary px-5 shadow-sm">
+                            <i class="bi bi-check2-circle me-1"></i> Salvar Formulário
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        {% if object %}
+        <!-- Gestão de Perguntas (Apenas no modo Edição) -->
+        <div class="card shadow-sm border-info border-opacity-25">
+            <div class="card-header bg-info bg-opacity-10 py-3">
+                <h6 class="mb-0 fw-bold"><i class="bi bi-list-check me-2 text-info"></i> Perguntas do Formulário</h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light small">
+                            <tr>
+                                <th class="ps-4" style="width: 60px;">Ordem</th>
+                                <th>Pergunta</th>
+                                <th class="text-center">Tipo</th>
+                                <th class="text-end pe-4">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for q in questions %}
+                            <tr>
+                                <td class="ps-4 text-center">
+                                    <span class="badge bg-light text-dark border">{{ q.order }}</span>
+                                </td>
+                                <td class="fw-semibold">{{ q.text }}</td>
+                                <td class="text-center">
+                                    {% if q.question_type == 'score' %}
+                                        <span class="badge rounded-pill border border-info text-info">Nota (0 a 10)</span>
+                                    {% else %}
+                                        <span class="badge rounded-pill border border-secondary text-secondary">Texto Livre</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end pe-4">
+                                    <form action="{% url 'core:nps_question_delete' q.pk %}" method="post" class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-link text-danger p-0" title="Remover Pergunta" onclick="return confirm('Excluir esta pergunta?')">
+                                            <i class="bi bi-x-circle"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center py-4 text-muted small">
+                                    Nenhuma pergunta adicionada ainda.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Adicionar Nova Pergunta -->
+            <div class="card-footer bg-white p-4">
+                <h6 class="fw-bold mb-3 small text-uppercase text-muted">Adicionar Pergunta</h6>
+                <form action="{% url 'core:nps_question_create' object.id %}" method="post">
+                    {% csrf_token %}
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            {{ question_form.text }}
+                        </div>
+                        <div class="col-md-3">
+                            {{ question_form.question_type }}
+                        </div>
+                        <div class="col-md-1">
+                            {{ question_form.order }}
+                        </div>
+                        <div class="col-md-2 d-grid">
+                            <button type="submit" class="btn btn-outline-info">
+                                <i class="bi bi-plus-lg"></i> Add
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+
+    </div>
+</div>
+{% endblock %}

@@ -175,6 +175,67 @@
                     <div class="d-grid mt-4">
                         <button type="submit" class="btn btn-primary btn-lg shadow-sm">Enviar</button>
                     </div>
+
+                    {% if course.nps_form %}
+                    <!-- Modal de Pesquisa de Satisfação (NPS) -->
+                    <div class="modal fade" id="npsModal" tabindex="-1" aria-labelledby="npsModalLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered modal-lg">
+                            <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+                                <div class="modal-header border-0 bg-primary bg-opacity-10 py-4 justify-content-center">
+                                    <div class="text-center">
+                                        <i class="bi bi-chat-square-heart text-primary" style="font-size: 3rem;"></i>
+                                        <h4 class="modal-title fw-bold text-primary mt-2" id="npsModalLabel">Sua opinião é importante!</h4>
+                                    </div>
+                                </div>
+                                <div class="modal-body p-4 p-md-5">
+                                    <p class="fs-5 mb-4 text-center">Olá, <strong id="nps-nome-display"></strong>! <br>Antes de baixar seu certificado, responda brevemente:</p>
+                                    
+                                    {% for q in course.nps_form.questions.all|dictsort:"order" %}
+                                    <div class="mb-5">
+                                        <label class="form-label fw-bold fs-6 mb-3 d-block text-dark">
+                                            {{ forloop.counter }}. {{ q.text }}
+                                            {% if course.nps_form.is_mandatory %}<span class="text-danger">*</span>{% endif %}
+                                        </label>
+
+                                        {% if q.question_type == 'score' %}
+                                        <div class="d-flex justify-content-between align-items-center bg-light p-3 rounded-pill border shadow-sm px-4">
+                                            <span class="small text-muted fw-bold">0</span>
+                                            <div class="d-flex gap-1 gap-md-2 mx-2">
+                                                {% for i in "0123456789" %}
+                                                <div class="form-check form-check-inline m-0 p-0">
+                                                    <input class="btn-check" type="radio" name="nps_question_{{ q.id }}" id="nps_{{ q.id }}_{{ forloop.counter0 }}" value="{{ forloop.counter0 }}" {% if course.nps_form.is_mandatory %}required{% endif %}>
+                                                    <label class="btn btn-outline-primary btn-sm rounded-circle d-flex align-items-center justify-content-center" for="nps_{{ q.id }}_{{ forloop.counter0 }}" style="width: 32px; height: 32px;">{{ forloop.counter0 }}</label>
+                                                </div>
+                                                {% endfor %}
+                                                <div class="form-check form-check-inline m-0 p-0">
+                                                    <input class="btn-check" type="radio" name="nps_question_{{ q.id }}" id="nps_{{ q.id }}_10" value="10" {% if course.nps_form.is_mandatory %}required{% endif %}>
+                                                    <label class="btn btn-outline-primary btn-sm rounded-circle d-flex align-items-center justify-content-center" for="nps_{{ q.id }}_10" style="width: 32px; height: 32px;">10</label>
+                                                </div>
+                                            </div>
+                                            <span class="small text-muted fw-bold">10</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between px-4 mt-1">
+                                            <span style="font-size: 0.7rem;" class="text-muted">Pouco Provável</span>
+                                            <span style="font-size: 0.7rem;" class="text-muted">Muito Provável</span>
+                                        </div>
+                                        {% else %}
+                                        <textarea class="form-control border-primary border-opacity-25 shadow-sm" name="nps_question_{{ q.id }}" rows="3" placeholder="Sua resposta..." {% if course.nps_form.is_mandatory %}required{% endif %}></textarea>
+                                        {% endif %}
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                <div class="modal-footer border-0 justify-content-center pb-5 px-4">
+                                    {% if not course.nps_form.is_mandatory %}
+                                    <button type="button" id="btn-nps-skip" class="btn btn-link text-muted text-decoration-none me-3">Não quero opinar</button>
+                                    {% endif %}
+                                    <button type="button" id="btn-nps-submit" class="btn btn-success btn-lg px-5 rounded-pill shadow fw-bold">
+                                        Enviar Respostas e Certificado <i class="bi bi-arrow-right-circle ms-2"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
                 </form>
                 </div>
             </div>
@@ -216,11 +277,19 @@
             const confirmModal = new bootstrap.Modal(confirmModalElement);
             const btnConfirmYes = document.getElementById('btn-confirm-yes');
             
+            const npsModalElement = document.getElementById('npsModal');
+            const npsModal = npsModalElement ? new bootstrap.Modal(npsModalElement, {backdrop: 'static'}) : null;
+            const btnNpsSubmit = document.getElementById('btn-nps-submit');
+            const btnNpsSkip = document.getElementById('btn-nps-skip');
+            const npsNomeDisplay = document.getElementById('nps-nome-display');
+
             const inputFullName = document.getElementById('id_full_name');
             const inputCpf = document.getElementById('id_cpf');
             
             const displayNome = document.getElementById('modal-nome-display');
             const displayCpf = document.getElementById('modal-cpf-display');
+
+            const hasNps = {% if course.nps_form %}true{% else %}false{% endif %};
 
             form.addEventListener('submit', function(e) {
                 // Só intercepta se o formulário passar na validação nativa (HTML5)
@@ -236,15 +305,46 @@
                 }
             });
 
-            // Ao clicar em 'Sim' no modal, o formulário é enviado de fato
+            // Ao clicar em 'Sim' no modal de confirmação
             btnConfirmYes.addEventListener('click', function() {
-                // BLOQUEIO DE DUPLO CLIQUE: Desativa o botão e mostra feedback visual
-                this.disabled = true;
-                this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Enviando...';
-                
                 confirmModal.hide();
-                form.submit();
+
+                if (hasNps && npsModal) {
+                    // Se tem NPS, abre o modal do NPS antes de submeter
+                    npsNomeDisplay.innerText = inputFullName.value.split(' ')[0];
+                    npsModal.show();
+                } else {
+                    // Se não tem NPS, submete direto
+                    this.disabled = true;
+                    this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Enviando...';
+                    form.submit();
+                }
             });
+
+            // Lógica do Modal NPS
+            if (btnNpsSubmit) {
+                btnNpsSubmit.addEventListener('click', function() {
+                    if (form.checkValidity()) {
+                        this.disabled = true;
+                        this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processando...';
+                        form.submit();
+                    } else {
+                        form.reportValidity();
+                    }
+                });
+            }
+
+            if (btnNpsSkip) {
+                btnNpsSkip.addEventListener('click', function() {
+                    // Remove obrigatoriedade dos campos NPS para pular
+                    const npsInputs = npsModalElement.querySelectorAll('[name^="nps_question_"]');
+                    npsInputs.forEach(input => input.removeAttribute('required'));
+                    
+                    this.disabled = true;
+                    this.innerHTML = 'Pulando...';
+                    form.submit();
+                });
+            }
 
             // --- Lógica do Cronômetro Reativo (Vanilla JS) ---
             // Injeção de datas com fallback para string vazia via Django

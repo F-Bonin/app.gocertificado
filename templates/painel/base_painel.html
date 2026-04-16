@@ -123,6 +123,9 @@
         <a href="{% url 'core:instructor_list' %}" class="list-group-item list-group-item-action {% if 'instructor' in request.resolver_match.view_name %}active{% endif %}">
           <i class="bi bi-people"></i> Assinaturas Certificado
         </a>
+        <a href="{% url 'core:nps_form_list' %}" class="list-group-item list-group-item-action {% if 'nps' in request.resolver_match.view_name %}active{% endif %}">
+          <i class="bi bi-chat-square-text"></i> Formulários de NPS
+        </a>
         <a href="{% url 'core:course_create' %}" class="list-group-item list-group-item-action {% if request.resolver_match.view_name == 'core:course_create' %}active{% endif %}">
           <i class="bi bi-journal-plus"></i> Criar Evento (Curso)
         </a>

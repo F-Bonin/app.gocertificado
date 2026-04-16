@@ -76,6 +76,59 @@ class Company(models.Model):
         return self.name
 
 
+class NPSForm(models.Model):
+    """
+    Modelo que representa o formulário de pesquisa de satisfação (NPS).
+    Utilizado para isolamento multitenant, permitindo que cada empresa tenha seus próprios formulários personalizados.
+    """
+    company = models.ForeignKey(
+        'Company', 
+        on_delete=models.CASCADE, 
+        related_name='nps_forms', 
+        verbose_name='Empresa'
+    )
+    name = models.CharField(max_length=200, verbose_name='Nome do Formulário')
+    is_mandatory = models.BooleanField(default=False, verbose_name='Resposta Obrigatória?')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Formulário NPS"
+        verbose_name_plural = "Formulários NPS"
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return self.name
+
+
+class NPSQuestion(models.Model):
+    """
+    Representa as perguntas individuais de um formulário NPS.
+    Permite coletar feedbacks quantitativos (notas) e qualitativos (texto livre) dos alunos.
+    """
+    nps_form = models.ForeignKey(
+        NPSForm, 
+        on_delete=models.CASCADE, 
+        related_name='questions', 
+        verbose_name='Formulário'
+    )
+    text = models.CharField(max_length=500, verbose_name='Pergunta')
+    question_type = models.CharField(
+        max_length=10, 
+        choices=[('score', 'Nota (0 a 10)'), ('text', 'Texto Livre')], 
+        default='score', 
+        verbose_name='Tipo de Pergunta'
+    )
+    order = models.PositiveIntegerField(default=0, verbose_name='Ordem')
+
+    class Meta:
+        verbose_name = "Pergunta NPS"
+        verbose_name_plural = "Perguntas NPS"
+        ordering = ['order']
+
+    def __str__(self):
+        return self.text
+
+
 class Instructor(models.Model):
     """Instrutor que ministra treinamentos."""
     company = models.ForeignKey(
@@ -183,6 +236,7 @@ class Course(models.Model):
     registration_end = models.DateTimeField("Término das Inscrições", blank=True, null=True)
     expires_at = models.DateTimeField("Expiração do Certificado", blank=True, null=True)
     no_certificate = models.BooleanField("Este evento não terá certificado", default=False)
+    nps_form = models.ForeignKey('NPSForm', on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Formulário NPS", help_text="Selecione um formulário de feedback opcional para este evento.")
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

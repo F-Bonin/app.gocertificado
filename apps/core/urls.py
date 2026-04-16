@@ -22,6 +22,12 @@ from .views import (
     PublicCheckinView,
     ResetCheckinHashView,
     ToggleMassPresenceView,
+    NPSFormListView,
+    NPSFormCreateView,
+    NPSFormUpdateView,
+    NPSFormDeleteView,
+    NPSQuestionCreateView,
+    NPSQuestionDeleteView,
 )
 
 app_name = "core"
@@ -50,6 +56,14 @@ urlpatterns = [
     path("treinamentos/<int:pk>/toggle-certificate/", ToggleCertificateLinkView.as_view(), name="toggle_certificate"),
     path("treinamentos/<int:pk>/presenca/", EventPresenceListView.as_view(), name="course_presence"),
     path("inscricao/<uuid:reg_id>/toggle-presenca/", TogglePresenceView.as_view(), name="toggle_presence"),
+    
+    # NPS
+    path("nps/", NPSFormListView.as_view(), name="nps_form_list"),
+    path("nps/novo/", NPSFormCreateView.as_view(), name="nps_form_create"),
+    path("nps/<int:pk>/editar/", NPSFormUpdateView.as_view(), name="nps_form_update"),
+    path("nps/<int:pk>/excluir/", NPSFormDeleteView.as_view(), name="nps_form_delete"),
+    path("nps/<int:nps_form_id>/pergunta/nova/", NPSQuestionCreateView.as_view(), name="nps_question_create"),
+    path("nps/pergunta/<int:pk>/excluir/", NPSQuestionDeleteView.as_view(), name="nps_question_delete"),
     
     # Utilitários
     path("treinamentos/gerador/", CourseLinkGeneratorView.as_view(), name="course_link_generator"),

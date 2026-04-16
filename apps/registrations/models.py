@@ -115,3 +115,34 @@ class Registration(models.Model):
         if len(digits) > 4:
             return f"{digits[:3]}...{digits[-2:]}"
         return self.cpf
+
+
+class NPSResponse(models.Model):
+    """
+    Armazena as respostas dos alunos para as pesquisas de satisfação vinculadas a uma inscrição específica.
+    Essencial para coletar feedback quantitativo e qualitativo após a conclusão do evento,
+    permitindo que as empresas analisem o NPS (Net Promoter Score) de seus treinamentos.
+    """
+    registration = models.ForeignKey(
+        'Registration', 
+        on_delete=models.CASCADE, 
+        related_name='nps_responses', 
+        verbose_name='Inscrição'
+    )
+    question = models.ForeignKey(
+        'core.NPSQuestion', 
+        on_delete=models.CASCADE, 
+        related_name='responses', 
+        verbose_name='Pergunta'
+    )
+    answer_score = models.IntegerField(null=True, blank=True, verbose_name='Nota')
+    answer_text = models.TextField(null=True, blank=True, verbose_name='Resposta em Texto')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Resposta NPS"
+        verbose_name_plural = "Respostas NPS"
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f"Resposta de {self.registration.full_name} para {self.question.text[:30]}"

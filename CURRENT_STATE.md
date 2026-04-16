@@ -16,7 +16,7 @@
 * [x] **Padronização de Nomenclatura:** Termos de "Inscrição" alterados para "Solicitação de Certificado" em formulários de emissão [8].
 
 **Correções e Refinamentos (Recente):**
-* [x] **Motor de Regras de Certificado:** Implementadas as 6 regras de negócio no backend para gerenciar o fluxo de inscrição e solicitação de certificado, com mensagens personalizadas enviadas via sessão. [48]
+* [x] **Motor de Regras de Certificado:** Implementadas as 6 regras de negócio no backend para gerenciar o fluxo de inscription e solicitação de certificado, com mensagens personalizadas enviadas via sessão. [48]
 * [x] **Mensagem de Sucesso de Inscrição:** Corrigida a lógica de exibição condicional no template para diferenciar Inscrição de Evento e Solicitação de Certificado [14].
 * [x] **Tabela de Impressão (Bugfix):** Refatoração agressiva do CSS `@media print` para garantir o alinhamento perfeito de bordas e linhas na Lista de Presença em formato A4 [15].
 * [x] **Layout de Impressão (UX):** O layout de impressão da Lista de Presença foi otimizado para formato Paisagem (Landscape) e implementada a classe `nowrap-print` para evitar quebras de linha nas colunas de identificação [16].
@@ -40,8 +40,12 @@
 * [x] **Refatoração de UI/UX (Credenciamento):** O painel de credenciamento público foi refatorado para exibir cards de "Links de Acesso Rápido" (Inscrição e Certificado). A tabela de participantes agora conta com numeração sequencial (#), exibição de profissão e um motor de feedback visual imediato (badge interativo) no Check-in individual via AJAX.
 * [x] **Impressão Multimodal:** Implementada funcionalidade de impressão com dois modos (Física e Digital) no painel de credenciamento público. A Imressão Digital foi corrigida com fallback de texto limpo para o Status, garantindo legibilidade perfeita em PDFs.
 * [x] **Correções e Melhorias Técnicas:** O método `save()` do modelo `Course` foi refatorada para injetar o `checkin_hash` automaticamente, evitando erros de migração com callable defaults em tabelas populadas.
-* [x] **Sprint 3 Concluída:** Finalizada a implementação da Automação Celery baseada em Match de CPF e Check-in, incluindo atualização de UX na tela de sucesso para feedback em tempo real [20].
-* [x] **Refinamento de UX de Sucesso (Sprint 3):** Injetados dados do evento (`course_name`, `course_date`) na sessão e refatorada a tela de sucesso para exibir mensagens dinâmicas e personalizadas, confirmando a geração automática de certificados para alunos com check-in [21].
+* [x] Sprint 3 Concluída: Finalizada a implementação da Automação Celery baseada em Match de CPF e Check-in, incluindo atualização de UX na tela de sucesso para feedback em tempo real [20].
+* [x] Modelagem de dados do NPS (NPSForm, NPSQuestion, NPSResponse) e vínculo com modelo Course adicionados.
+* [x] Backend CRUD do NPS (Forms, Views, URLs) construído e protegido via Multitenant.
+* [x] Etapa 3 do NPS: Interfaces administrativas de criação e edição de formulários e injeção do seletor no cadastro de Eventos.
+* [x] Etapa 4 do NPS: Interceptação via Modal Frontend no fluxo público de solicitação de certificados e persistência inteligente de respostas (NPSResponse) no Backend.
+* [x] Refinamento de UX de Sucesso (Sprint 3): Injetados dados do evento (`course_name`, `course_date`) na sessão e refatorada a tela de sucesso para exibir mensagens dinâmicas e personalizadas, confirmando a geração automática de certificados para alunos com check-in [21].
 * [x] **Bugfix de Falso Positivo (Celery):** O bug de falso positivo de sucesso no envio de certificado foi corrigido, atrelando a mudança de status da inscrição apenas ao sucesso real do SMTP ou WhatsApp (WAHA) [21].
 * [x] **Trava de Re-emissão (UX/Backend):** Implementada trava de segurança que impede a re-emissão de certificados já enviados (`status=SENT`), redirecionando o aluno para a tela de sucesso com uma flag específica (`already_requested`) [22].
 * [x] **Refinamento de UX de Sucesso (Copy Final):** Refatoração completa da tela de sucesso com o copy exato solicitado pelo cliente, incluindo o tratamento visual para duplicidade e automação de envio [23].
@@ -123,7 +127,7 @@
 * [x] **Ajuste de Fluxo (Duplicidade):** O fluxo de duplicidade no backend foi refatorado para respeitar reversões de check-in e disparar o Celery corretamente, e o copy visual da tela de pendência foi ajustado para maior clareza [31].
 * [x] **Máquina de Estados (Database Tracking):** Refatorada a lógica do `form_valid` para integrar o campo persistente `certificate_requested`. O sistema agora diferencia com precisão milimétrica as 4 condições de sucesso (Inédita, Duplicidade Pendente, Já Enviado e Automação) utilizando uma combination de estado de banco e flags de sessão [36].
 * [x] **Segurança Anti-Fraude:** Implementada trava de segurança na View de solicitação de certificado que impede o roubo de identidade e a sobrescrita de dados sensíveis (Nome, CPF, RG, Data de Nascimento). O sistema agora valida o nome informado contra o nome cadastrado na inscrição (com normalização de strings) e blinda os campos core da identidade.
-* [x] **Bugfix de Extração de Nome:** Corrigido o bug de extração do primeiro nome nas Views de inscrição e solicitação, garantindo a exibição correta como string simples em vez de lista.
+* [x] **Bugfix de Extração de Nome:** Corrigido o bug de extração do primeiro nome nas Views de inscription e solicitação, garantindo a exibição correta como string simples em vez de lista.
 * [x] **Correções e Melhorias Técnicas:** O método `get_registration_url` do modelo `Course` foi corrigido para retornar a rota `registrations:event_form`, consertando o bug do envio de link incorreto por e-mail na página de credenciamento.
 * [x] **Correções e Melhorias Técnicas:** Corrigido o bug de redirecionamento NoneType nas views de formulário público (Inscrição e Solicitação) atribuindo corretamente a propriedade self.object antes do redirecionamento de sucesso. [52]
 * [x] **Melhorias Técnicas (UX):** A UI da tela de Sucesso (`registration_success.html`) foi aprimorada com layout moderno (ícone de foguete) e recebeu um fallback de JavaScript para lidar com o bloqueio de `window.close()` imposto pelos navegadores modernos.

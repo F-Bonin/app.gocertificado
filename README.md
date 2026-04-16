@@ -1,7 +1,6 @@
 # 🎓 GoCertificado
 
-Sistema automático de geração e envio de certificados de cursos e treinamentos,
-com QR Code e código numérico para verificação de autenticidade.
+Sistema de Gestão, Operação e Certificação de Eventos como Curso, Treinamento, Workshop, Palestra, Congresso, ou qualquer outro evento, seja promovido por pessoa física ou instituições, que desejam realizar eventos organizados e seguros que geram impacto real na experiência do participante, com processos tecnologicos, automações de ponta a ponta, da inscrição à geração e envio de certificados, com QR Code e código numérico com sistema anti-fraude, com as melhores práticas de compliance, auditoria e garatina de segurança e autenticidade.
 
 ---
 

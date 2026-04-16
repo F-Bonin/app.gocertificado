@@ -16,10 +16,11 @@ from apps.certificates.services.pdf_generator import generate_preview_pdf
 from apps.certificates.models import CertificateTemplate
 from apps.certificates.tasks import issue_certificate_task
 from apps.registrations.models import Registration
-from .models import Company, Instructor, Course
+from .models import Company, Instructor, Course, NPSForm, NPSQuestion
 from .forms import (
     CompanyForm, InstructorForm, CourseForm, 
-    CertificateDesignForm, CertificateTemplateForm
+    CertificateDesignForm, CertificateTemplateForm,
+    NPSFormModelForm, NPSQuestionForm
 )
 
 
@@ -246,7 +247,7 @@ class CertificateDesignView(LoginRequiredMixin, View):
     def get(self, request):
         company = request.user.profile.company
         form = CertificateDesignForm(instance=company)
-        
+
         # Lógica de seleção de modelo para edição (CRUD)
         template_id = request.GET.get('edit_template')
         if template_id:
@@ -256,7 +257,7 @@ class CertificateDesignView(LoginRequiredMixin, View):
             template_form = CertificateTemplateForm()
 
         modelos_salvos = CertificateTemplate.objects.filter(company=company).order_by('-created_at')
-        
+
         return render(request, self.template_name, {
             'form': form,
             'template_form': template_form,
@@ -267,7 +268,7 @@ class CertificateDesignView(LoginRequiredMixin, View):
     def post(self, request):
         company = request.user.profile.company
         acao = request.POST.get('action')
-        
+
         if acao == 'save_logo':
             form = CertificateDesignForm(request.POST, request.FILES, instance=company)
             if form.is_valid():
@@ -275,14 +276,14 @@ class CertificateDesignView(LoginRequiredMixin, View):
                 messages.success(request, "Logomarca atualizada com sucesso!")
             else:
                 messages.error(request, "Erro ao salvar logomarca.")
-                
+
         elif acao == 'save_template':
             # Busca instância se ID for passado (edição), senão cria (instancia vazia)
             template_id = request.POST.get('template_id')
             instance = None
             if template_id:
                 instance = get_object_or_404(CertificateTemplate, id=template_id, company=company)
-            
+
             template_form = CertificateTemplateForm(request.POST, request.FILES, instance=instance)
             if template_form.is_valid():
                 novo_template = template_form.save(commit=False)
@@ -362,12 +363,12 @@ class CertificatePreviewView(LoginRequiredMixin, View):
         # ==========================================
         if model_type == 'custom':
             template_id = request.GET.get('template_id')
-            
+
             if template_id:
                 template = CertificateTemplate.objects.filter(id=template_id, company=company).first()
             else:
                 template = CertificateTemplate.objects.filter(company=company).order_by('-id').first()
-                
+
             if not template:
                 return HttpResponse("Nenhum modelo personalizado encontrado. Salve um modelo primeiro.", status=404)
 
@@ -376,7 +377,7 @@ class CertificatePreviewView(LoginRequiredMixin, View):
         # ==========================================
         # 1. Geramos os bytes crus do arquivo PDF
         pdf_bytes = generate_preview_pdf(company, model_type, template)
-        
+
         # 2. Empacotamos numa resposta HTTP válida para o navegador ler como PDF
         return HttpResponse(pdf_bytes, content_type='application/pdf')
 
@@ -420,18 +421,18 @@ class TogglePresenceView(LoginRequiredMixin, View):
             id=reg_id, 
             course__company=request.user.profile.company
         )
-        
+
         # Inverte o valor de attended (True vira False, e vice-versa)
         registration.attended = not registration.attended
-        
+
         # Otimização: Salva apenas o campo alterado
         registration.save(update_fields=['attended'])
-        
+
         # DISPARO AUTOMÁTICO (CELERY): Se o check-in foi habilitado e o aluno já possui 
         # uma solicitação de certificado pendente, dispara a emissão assíncrona imediatamente.
         if registration.attended and registration.status == Registration.Status.PENDING and registration.is_requested:
             issue_certificate_task.delay(str(registration.id))
-        
+
         # Retorna resposta JSON para atualização reativa na interface (JS)
         return JsonResponse({
             "ok": True, 
@@ -446,7 +447,7 @@ class PublicCheckinView(View):
     def get(self, request, checkin_hash):
         from django.shortcuts import render
         from apps.core.models import Course
-        
+
         try:
             course = Course.objects.get(checkin_hash=checkin_hash)
         except Course.DoesNotExist:
@@ -489,7 +490,7 @@ class ToggleMassPresenceView(View):
             action = data.get('action')
             new_status = True if action == 'check_all' else False
             now = timezone.now() if new_status else None
-            
+
             registrations = course.registrations.all()
             registrations.update(attended=new_status, checkin_at=now)
 
@@ -517,16 +518,16 @@ class PublicTogglePresenceView(View):
         from apps.certificates.tasks import issue_certificate_task
         from django.utils import timezone
         from django.utils.timezone import localtime
-        
+
         registration = get_object_or_404(Registration, id=reg_id)
-        
+
         registration.attended = not registration.attended
         registration.checkin_at = timezone.now() if registration.attended else None
         registration.save(update_fields=['attended', 'checkin_at'])
-        
+
         if registration.attended and registration.status == Registration.Status.PENDING and registration.is_requested:
             issue_certificate_task.delay(str(registration.id))
-            
+
         # Sênior Fix: Converte UTC para a hora local (America/Sao_Paulo) antes de formatar a string
         checkin_str = localtime(registration.checkin_at).strftime('%d/%m/%y %H:%Mh') if registration.checkin_at else ""
         return JsonResponse({"ok": True, "attended": registration.attended, "checkin_time": checkin_str})
@@ -541,23 +542,23 @@ class PublicSendLinkEmailView(View):
     def post(self, request, checkin_hash):
         from django.core.mail import send_mail
         from django.conf import settings
-        
+
         course = get_object_or_404(Course, checkin_hash=checkin_hash)
-        
+
         try:
             data = json.loads(request.body)
             email_destinatario = data.get('email')
             tipo_link = data.get('type') # 'inscricao' ou 'certificado'
-            
+
             if not email_destinatario:
                 return JsonResponse({"ok": False, "error": "E-mail não informado."}, status=400)
 
             link_inscricao = f"{request.scheme}://{request.get_host()}{course.get_registration_url()}"
             link_certificado = f"{request.scheme}://{request.get_host()}/solic-cert-{course.slug}/"
-            
+
             subject = f"Links do Evento: {course.name}"
             message = f"Olá,\n\nConforme solicitado no credenciamento do evento '{course.name}', seguem os links de acesso:\n\n"
-            
+
             if tipo_link == 'inscricao':
                 message += f"Link para Inscrição: {link_inscricao}\n"
             elif tipo_link == 'certificado':
@@ -575,7 +576,100 @@ class PublicSendLinkEmailView(View):
                 [email_destinatario],
                 fail_silently=False,
             )
-            
+
             return JsonResponse({"ok": True})
         except Exception as e:
             return JsonResponse({"ok": False, "error": str(e)}, status=400)
+
+
+class NPSFormListView(LoginRequiredMixin, ListView):
+    """Lista formulários NPS da empresa do usuário."""
+    model = NPSForm
+    template_name = "core/nps_form_list.html"
+    context_object_name = "nps_forms"
+
+    def get_queryset(self):
+        return NPSForm.objects.filter(company=self.request.user.profile.company)
+
+
+class NPSFormCreateView(LoginRequiredMixin, CreateView):
+    """Cria novo formulário NPS vinculado à empresa do usuário."""
+    model = NPSForm
+    form_class = NPSFormModelForm
+    template_name = "core/nps_form_form.html"
+    success_url = reverse_lazy("core:nps_form_list")
+
+    def form_valid(self, form):
+        form.instance.company = self.request.user.profile.company
+        messages.success(self.request, "Formulário NPS criado com sucesso!")
+        return super().form_valid(form)
+
+
+class NPSFormUpdateView(LoginRequiredMixin, UpdateView):
+    """Edita formulário NPS e gerencia suas perguntas."""
+    model = NPSForm
+    form_class = NPSFormModelForm
+    template_name = "core/nps_form_form.html"
+    success_url = reverse_lazy("core:nps_form_list")
+
+    def get_queryset(self):
+        return NPSForm.objects.filter(company=self.request.user.profile.company)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['question_form'] = NPSQuestionForm()
+        context['questions'] = self.object.questions.all().order_by('order')
+        return context
+
+    def form_valid(self, form):
+        messages.success(self.request, "Formulário NPS atualizado!")
+        return super().form_valid(form)
+
+
+class NPSFormDeleteView(LoginRequiredMixin, DeleteView):
+    """Exclui formulário NPS."""
+    model = NPSForm
+    template_name = "core/nps_form_confirm_delete.html"
+    success_url = reverse_lazy("core:nps_form_list")
+
+    def get_queryset(self):
+        return NPSForm.objects.filter(company=self.request.user.profile.company)
+
+    def delete(self, request, *args, **kwargs):
+        messages.success(self.request, "Formulário NPS removido com sucesso.")
+        return super().delete(request, *args, **kwargs)
+
+
+class NPSQuestionCreateView(LoginRequiredMixin, CreateView):
+    """Cria uma nova pergunta para um formulário NPS específico."""
+    model = NPSQuestion
+    form_class = NPSQuestionForm
+
+    def form_valid(self, form):
+        nps_form_id = self.kwargs.get('nps_form_id')
+        nps_form = get_object_or_404(
+            NPSForm, 
+            id=nps_form_id, 
+            company=self.request.user.profile.company
+        )
+        form.instance.nps_form = nps_form
+        messages.success(self.request, "Pergunta adicionada com sucesso!")
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse_lazy('core:nps_form_update', kwargs={'pk': self.kwargs.get('nps_form_id')})
+
+
+class NPSQuestionDeleteView(LoginRequiredMixin, DeleteView):
+    """Exclui uma pergunta NPS."""
+    model = NPSQuestion
+
+    def get_queryset(self):
+        return NPSQuestion.objects.filter(nps_form__company=self.request.user.profile.company)
+
+    def get_success_url(self):
+        return reverse_lazy('core:nps_form_update', kwargs={'pk': self.object.nps_form.id})
+
+    def delete(self, request, *args, **kwargs):
+        messages.success(self.request, "Pergunta removida.")
+        return super().delete(request, *args, **kwargs)
