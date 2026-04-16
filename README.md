@@ -6,7 +6,7 @@ Sistema de Gestão, Operação e Certificação de Eventos como Curso, Treinamen
 
 ## ✨ Funcionalidades
 
-- **Formulário de inscrição** público para participantes
+- **Formulário de inscrição** público para participantes/alunos
 - **Painel do responsável** com lista de participantes e botão "Enviar Certificado"
 - **Geração de PDF** profissional com layout personalizado (ReportLab)
 - **Envio por e-mail** com PDF anexado (Gmail SMTP gratuito)
