@@ -4,9 +4,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Solicitação de Certificado | GoCertificado</title>
+    <title>Solicitação de Certificado | e-Certificado</title>
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <style>
         body { background-color: #f8f9fa; }
         .form-container { max-width: 800px; margin: 50px auto; }
@@ -15,28 +16,28 @@
     </style>
 </head>
 <body>
+
 {% block content %}
+<div class="container">
+    <div class="form-container">
+        <div class="card p-4 p-md-5">
+            <div class="text-center mb-4">
+                <img src="{% static 'images/logo.png' %}" alt="Logo da Empresa" class="mb-3" style="max-height: 80px; object-fit: contain; width: auto;">
+                <h2 class="fw-bold">Solicitação de Certificado</h2>
+                <p class="text-muted">Preencha os campos do formulário para solicitar seu certificado.</p>
+            </div>
 
-    <div class="container">
-        <div class="form-container">
-            <div class="card p-4 p-md-5">
-                <div class="text-center mb-4">
-                    <img src="{% static 'images/logo.png' %}" alt="Logo da Empresa" class="mb-3" style="max-height: 80px; object-fit: contain; width: auto;">
-                    <h2 class="fw-bold">Solicitação de Certificado</h2>
-                    <p class="text-muted">Preencha os campos do formulário para solicitar seu certificado.</p>
-                </div>
+            <!-- Card de Status e Cronômetro Reativo -->
+            <div class="alert alert-info shadow-sm mb-4">
+                <p class="mb-1 fw-bold text-center">
+                    Início: {{ course.certificate_start|date:"d/m/Y" }} às {{ course.certificate_start|date:"H:i" }}{% if course.certificate_end %} | Encerramento: {{ course.certificate_end|date:"d/m/Y" }} às {{ course.certificate_end|date:"H:i" }}{% endif %}
+                </p>
+                <div id="timer_display" class="fs-4 fw-bold text-danger text-center mt-2"></div>
+            </div>
 
-                <!-- Card de Status e Cronômetro Reativo -->
-                <div class="alert alert-info shadow-sm mb-4">
-                    <p class="mb-1 fw-bold text-center">
-                        {# Separação dos filtros de data e hora para evitar bug de escape no Django #}
-                        Início: {{ course.certificate_start|date:"d/m/Y" }} às {{ course.certificate_start|date:"H:i" }}{% if course.certificate_end %} | Encerramento: {{ course.certificate_end|date:"d/m/Y" }} às {{ course.certificate_end|date:"H:i" }}{% endif %}
-                    </p>
-                    <div id="timer_display" class="fs-4 fw-bold text-danger text-center mt-2"></div>
-                </div>
-
-                <div id="certificate_form_wrapper">
-                    <form method="post" novalidate>
+            <!-- Wrapper do Formulário -->
+            <div id="certificate_form_wrapper">
+                <form method="post" novalidate>
                     {% csrf_token %}
                     
                     <div class="section-title">Dados do Treinamento</div>
@@ -48,7 +49,6 @@
                         <p class="mb-0"><strong>Carga Horária:</strong> <span class="text-muted">{{ course.hours }}h</span></p>
                     </div>
 
-                    {# Campos de treinamento ocultos para persistência no POST #}
                     <div style="display: none;">
                         {{ form.course_name }}
                         {{ form.course_date }}
@@ -59,9 +59,8 @@
                         {{ form.institution_neighborhood }}
                         {{ form.institution_complement }}
                     </div>
-                    
-                    <div class="section-title">Dados Pessoais</div>
 
+                    <div class="section-title">Dados Pessoais</div>
                     <div class="mb-3">
                         <label for="{{ form.full_name.id_for_label }}" class="form-label fw-bold small">{{ form.full_name.label }}</label>
                         {{ form.full_name }}
@@ -121,7 +120,6 @@
                     </div>
 
                     <div class="section-title mt-4">Endereço</div>
-
                     <div class="row">
                         <div class="col-md-5 mb-3">
                             <label for="{{ form.cep.id_for_label }}" class="form-label fw-bold small">{{ form.cep.label }}</label>
@@ -176,366 +174,332 @@
                         <button type="submit" class="btn btn-primary btn-lg shadow-sm">Enviar</button>
                     </div>
 
+                    <!-- ========================================== -->
+                    <!-- INÍCIO DO MODAL NPS (DENTRO DO FORM) -->
+                    <!-- ========================================== -->
                     {% if course.nps_form %}
-                    <!-- Modal de Pesquisa de Satisfação (NPS) -->
-                    <div class="modal fade" id="npsModal" tabindex="-1" aria-labelledby="npsModalLabel" aria-hidden="true">
+                    <div class="modal fade" id="npsModal" tabindex="-1" aria-labelledby="npsModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
                         <div class="modal-dialog modal-dialog-centered modal-lg">
-                            <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
-                                <div class="modal-header border-0 bg-primary bg-opacity-10 py-4 justify-content-center">
-                                    <div class="text-center">
-                                        <i class="bi bi-chat-square-heart text-primary" style="font-size: 3rem;"></i>
-                                        <h4 class="modal-title fw-bold text-primary mt-2" id="npsModalLabel">Sua opinião é importante!</h4>
-                                    </div>
+                            <div class="modal-content border-0 shadow-lg">
+                                <div class="modal-header bg-primary text-white">
+                                    <h5 class="modal-title fw-bold"><i class="bi bi-chat-square-text-fill me-2"></i>Pesquisa de Satisfação</h5>
                                 </div>
-                                <div class="modal-body p-4 p-md-5">
-                                    <p class="fs-5 mb-4 text-center">Olá, <strong id="nps-nome-display"></strong>! <br>Antes de baixar seu certificado, responda brevemente:</p>
+                                <div class="modal-body p-4">
+                                    <p class="fs-5 mb-4"><strong id="nps-nome-display"></strong>, antes de liberar seu certificado, conte-nos sua experiência:</p>
                                     
                                     {% for q in course.nps_form.questions.all|dictsort:"order" %}
-                                    <div class="mb-5">
-                                        <label class="form-label fw-bold fs-6 mb-3 d-block text-dark">
-                                            {{ forloop.counter }}. {{ q.text }}
-                                            {% if course.nps_form.is_mandatory %}<span class="text-danger">*</span>{% endif %}
-                                        </label>
-
-                                        {% if q.question_type == 'score' %}
-                                        <div class="d-flex justify-content-between align-items-center bg-light p-3 rounded-pill border shadow-sm px-4">
-                                            <span class="small text-muted fw-bold">0</span>
-                                            <div class="d-flex gap-1 gap-md-2 mx-2">
-                                                {% for i in "0123456789" %}
-                                                <div class="form-check form-check-inline m-0 p-0">
-                                                    <input class="btn-check" type="radio" name="nps_question_{{ q.id }}" id="nps_{{ q.id }}_{{ forloop.counter0 }}" value="{{ forloop.counter0 }}" {% if course.nps_form.is_mandatory %}required{% endif %}>
-                                                    <label class="btn btn-outline-primary btn-sm rounded-circle d-flex align-items-center justify-content-center" for="nps_{{ q.id }}_{{ forloop.counter0 }}" style="width: 32px; height: 32px;">{{ forloop.counter0 }}</label>
+                                        <div class="mb-4 p-3 bg-light rounded border shadow-sm">
+                                            <label class="fw-bold mb-3 d-block text-dark">{{ q.text }}</label>
+                                            
+                                            {% if q.question_type == 'score' %}
+                                                <div class="d-flex justify-content-between flex-wrap gap-2 px-2">
+                                                    {% for i in "0123456789"|make_list %}
+                                                        <div class="form-check form-check-inline m-0">
+                                                            <input class="form-check-input" style="transform: scale(1.3);" type="radio" name="nps_question_{{ q.id }}" id="q_{{ q.id }}_{{ i }}" value="{{ i }}" {% if course.nps_form.is_mandatory %}required{% endif %}>
+                                                            <label class="form-check-label fw-bold mt-1" for="q_{{ q.id }}_{{ i }}">{{ i }}</label>
+                                                        </div>
+                                                    {% endfor %}
+                                                    <div class="form-check form-check-inline m-0">
+                                                        <input class="form-check-input" style="transform: scale(1.3);" type="radio" name="nps_question_{{ q.id }}" id="q_{{ q.id }}_10" value="10" {% if course.nps_form.is_mandatory %}required{% endif %}>
+                                                        <label class="form-check-label fw-bold mt-1" for="q_{{ q.id }}_10">10</label>
+                                                    </div>
                                                 </div>
-                                                {% endfor %}
-                                                <div class="form-check form-check-inline m-0 p-0">
-                                                    <input class="btn-check" type="radio" name="nps_question_{{ q.id }}" id="nps_{{ q.id }}_10" value="10" {% if course.nps_form.is_mandatory %}required{% endif %}>
-                                                    <label class="btn btn-outline-primary btn-sm rounded-circle d-flex align-items-center justify-content-center" for="nps_{{ q.id }}_10" style="width: 32px; height: 32px;">10</label>
+                                                <div class="d-flex justify-content-between mt-3 px-2 small text-muted fw-bold">
+                                                    <span>0 - Muito Ruim</span>
+                                                    <span>10 - Excelente</span>
                                                 </div>
-                                            </div>
-                                            <span class="small text-muted fw-bold">10</span>
+                                            {% else %}
+                                                <textarea class="form-control" name="nps_question_{{ q.id }}" rows="3" placeholder="Sua resposta sincera..." {% if course.nps_form.is_mandatory %}required{% endif %}></textarea>
+                                            {% endif %}
                                         </div>
-                                        <div class="d-flex justify-content-between px-4 mt-1">
-                                            <span style="font-size: 0.7rem;" class="text-muted">Pouco Provável</span>
-                                            <span style="font-size: 0.7rem;" class="text-muted">Muito Provável</span>
-                                        </div>
-                                        {% else %}
-                                        <textarea class="form-control border-primary border-opacity-25 shadow-sm" name="nps_question_{{ q.id }}" rows="3" placeholder="Sua resposta..." {% if course.nps_form.is_mandatory %}required{% endif %}></textarea>
-                                        {% endif %}
-                                    </div>
                                     {% endfor %}
+                                    
                                 </div>
-                                <div class="modal-footer border-0 justify-content-center pb-5 px-4">
+                                <div class="modal-footer justify-content-center border-top-0 pb-4">
                                     {% if not course.nps_form.is_mandatory %}
-                                    <button type="button" id="btn-nps-skip" class="btn btn-link text-muted text-decoration-none me-3">Não quero opinar</button>
+                                        <button type="button" id="btn-nps-skip" class="btn btn-outline-secondary px-4 fw-bold">Não quero opinar</button>
                                     {% endif %}
-                                    <button type="button" id="btn-nps-submit" class="btn btn-success btn-lg px-5 rounded-pill shadow fw-bold">
-                                        Enviar Respostas e Certificado <i class="bi bi-arrow-right-circle ms-2"></i>
-                                    </button>
+                                    <button type="button" id="btn-nps-submit" class="btn btn-success px-5 shadow-sm fw-bold"><i class="bi bi-send-check-fill me-2"></i>Enviar Respostas e Certificado</button>
                                 </div>
                             </div>
                         </div>
                     </div>
                     {% endif %}
-                </form>
+                    <!-- FIM DO MODAL NPS -->
+
+                </form> <!-- O formulário original fecha aqui (com segurança) -->
+            </div> <!-- Fecha certificate_form_wrapper -->
+        </div> <!-- Fecha card -->
+    </div> <!-- Fecha form-container -->
+</div> <!-- Fecha container principal -->
+
+<!-- Bootstrap 5 JS Bundle -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Modal de Confirmação de Dados (Fica fora do form) -->
+<div class="modal fade" id="confirmDataModal" tabindex="-1" aria-labelledby="confirmDataModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title fw-bold" id="confirmDataModalLabel">Atenção! Confirme seus dados:</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-2 fs-5">Antes de concluirmos o envio dos seus dados, confirme:</p>
+                <div class="p-3 bg-light rounded border-start border-4 border-warning mb-3">
+                    <p class="mb-1">Seu nome: <strong id="modal-nome-display"></strong></p>
+                    <p class="mb-0">CPF: <strong id="modal-cpf-display"></strong></p>
                 </div>
+                <p class="fw-bold fs-5 text-center mb-0">Estão corretos?</p>
+            </div>
+            <div class="modal-footer justify-content-center border-top-0 pb-4">
+                <button type="button" class="btn btn-outline-danger px-4" data-bs-dismiss="modal">Não! Quero alterar.</button>
+                <button type="button" id="btn-confirm-yes" class="btn btn-success px-4 shadow-sm">Sim! Estão corretos!</button>
             </div>
         </div>
     </div>
+</div>
 
-    <!-- Bootstrap 5 JS Bundle -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // --- Lógica de Interceptação do Formulário e Modal de Confirmação ---
+    const form = document.querySelector('form');
+    const confirmModalElement = document.getElementById('confirmDataModal');
+    const confirmModal = new bootstrap.Modal(confirmModalElement);
     
-    <!-- Modal de Confirmação de Dados -->
-    <div class="modal fade" id="confirmDataModal" tabindex="-1" aria-labelledby="confirmDataModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header bg-light">
-                    <h5 class="modal-title fw-bold" id="confirmDataModalLabel">Atenção! Confirme seus dados:</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <p class="mb-2 fs-5">Antes de concluirmos o envio dos seus dados, confirme:</p>
-                    <div class="p-3 bg-light rounded border-start border-4 border-warning mb-3">
-                        <p class="mb-1">Seu nome: <strong id="modal-nome-display"></strong></p>
-                        <p class="mb-0">CPF: <strong id="modal-cpf-display"></strong></p>
-                    </div>
-                    <p class="fw-bold fs-5 text-center mb-0">Estão corretos?</p>
-                </div>
-                <div class="modal-footer justify-content-center border-top-0 pb-4">
-                    <button type="button" class="btn btn-outline-danger px-4" data-bs-dismiss="modal">Não! Quero alterar.</button>
-                    <button type="button" id="btn-confirm-yes" class="btn btn-success px-4 shadow-sm">Sim! Estão corretos!</button>
-                </div>
-            </div>
-        </div>
-    </div>
+    const btnConfirmYes = document.getElementById('btn-confirm-yes');
+    const inputFullName = document.getElementById('id_full_name');
+    const inputCpf = document.getElementById('id_cpf');
+    const displayNome = document.getElementById('modal-nome-display');
+    const displayCpf = document.getElementById('modal-cpf-display');
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // --- Lógica de Interceptação do Formulário e Modal de Confirmação ---
-            const form = document.querySelector('form');
-            const confirmModalElement = document.getElementById('confirmDataModal');
-            const confirmModal = new bootstrap.Modal(confirmModalElement);
-            const btnConfirmYes = document.getElementById('btn-confirm-yes');
+    // 1. Intercepta o botão de Enviar do formulário base
+    form.addEventListener('submit', function(e) {
+        if (form.checkValidity()) {
+            e.preventDefault(); 
+            displayNome.innerText = inputFullName.value;
+            displayCpf.innerText = inputCpf.value;
+            confirmModal.show();
+        }
+    });
+
+    // 2. Intercepta o "Sim! Estão corretos" e faz o roteamento pro NPS (se houver)
+    btnConfirmYes.addEventListener('click', function() {
+        const hasNps = {% if course.nps_form %}true{% else %}false{% endif %};
+
+        if (hasNps) {
+            confirmModal.hide(); // Esconde a validação do CPF
             
+            // Popula o nome no modal do NPS e Abre
+            document.getElementById('nps-nome-display').innerText = inputFullName.value;
             const npsModalElement = document.getElementById('npsModal');
-            const npsModal = npsModalElement ? new bootstrap.Modal(npsModalElement, {backdrop: 'static'}) : null;
-            const btnNpsSubmit = document.getElementById('btn-nps-submit');
-            const btnNpsSkip = document.getElementById('btn-nps-skip');
-            const npsNomeDisplay = document.getElementById('nps-nome-display');
-
-            const inputFullName = document.getElementById('id_full_name');
-            const inputCpf = document.getElementById('id_cpf');
-            
-            const displayNome = document.getElementById('modal-nome-display');
-            const displayCpf = document.getElementById('modal-cpf-display');
-
-            const hasNps = {% if course.nps_form %}true{% else %}false{% endif %};
-
-            form.addEventListener('submit', function(e) {
-                // Só intercepta se o formulário passar na validação nativa (HTML5)
-                if (form.checkValidity()) {
-                    e.preventDefault(); // Impede o envio imediato
-                    
-                    // Preenche os dados no modal para conferência
-                    displayNome.innerText = inputFullName.value;
-                    displayCpf.innerText = inputCpf.value;
-                    
-                    // Abre o modal de confirmação
-                    confirmModal.show();
-                }
+            const npsModal = new bootstrap.Modal(npsModalElement, {
+                backdrop: 'static',
+                keyboard: false
             });
+            npsModal.show();
+        } else {
+            // Se não tem NPS, segue fluxo padrão antigo
+            this.disabled = true;
+            this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Enviando...';
+            confirmModal.hide();
+            form.submit();
+        }
+    });
 
-            // Ao clicar em 'Sim' no modal de confirmação
-            btnConfirmYes.addEventListener('click', function() {
-                confirmModal.hide();
-
-                if (hasNps && npsModal) {
-                    // Se tem NPS, abre o modal do NPS antes de submeter
-                    npsNomeDisplay.innerText = inputFullName.value.split(' ')[0];
-                    npsModal.show();
-                } else {
-                    // Se não tem NPS, submete direto
-                    this.disabled = true;
-                    this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Enviando...';
-                    form.submit();
-                }
-            });
-
-            // Lógica do Modal NPS
-            if (btnNpsSubmit) {
-                btnNpsSubmit.addEventListener('click', function() {
-                    if (form.checkValidity()) {
-                        this.disabled = true;
-                        this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processando...';
-                        form.submit();
-                    } else {
-                        form.reportValidity();
-                    }
-                });
-            }
-
-            if (btnNpsSkip) {
-                btnNpsSkip.addEventListener('click', function() {
-                    // Remove obrigatoriedade dos campos NPS para pular
-                    const npsInputs = npsModalElement.querySelectorAll('[name^="nps_question_"]');
-                    npsInputs.forEach(input => input.removeAttribute('required'));
-                    
-                    this.disabled = true;
-                    this.innerHTML = 'Pulando...';
-                    form.submit();
-                });
-            }
-
-            // --- Lógica do Cronômetro Reativo (Vanilla JS) ---
-            // Injeção de datas com fallback para string vazia via Django
-            const startStr = "{{ course.certificate_start|date:'c'|default:'' }}";
-            const endStr = "{{ course.certificate_end|date:'c'|default:'' }}";
-            
-            const certificateStart = startStr ? new Date(startStr) : null;
-            const certificateEnd = endStr ? new Date(endStr) : null;
-            
-            const timerDisplay = document.getElementById('timer_display');
-            const formWrapper = document.getElementById('certificate_form_wrapper');
-
-            function updateCountdown() {
-                const now = new Date();
-                
-                // Caso o início esteja definido e ainda não tenha chegado
-                if (certificateStart && now < certificateStart) {
-                    const diff = certificateStart - now;
-                    timerDisplay.innerText = "Abre em: " + formatDiff(diff);
-                    if (formWrapper) formWrapper.style.display = 'none';
+    // 3. Ações exclusivas dos botões do NPS
+    {% if course.nps_form %}
+        const btnNpsSubmit = document.getElementById('btn-nps-submit');
+        if (btnNpsSubmit) {
+            btnNpsSubmit.addEventListener('click', function() {
+                if (!form.checkValidity()) {
+                    form.reportValidity(); // Mostra campos em vermelho se faltar algo
                     return;
                 }
-
-                // Se não houver data de encerramento, o link é vitalício ou indeterminado
-                if (!certificateEnd) {
-                    timerDisplay.innerText = "Disponível por tempo indeterminado";
-                    if (formWrapper) formWrapper.style.display = 'block';
-                    return;
-                }
-
-                // Se houver data de encerramento e já passou
-                if (now > certificateEnd) {
-                    timerDisplay.innerText = "Encerrado";
-                    if (formWrapper) formWrapper.style.display = 'none';
-                } else {
-                    // Período de solicitações abertas com data de fim
-                    const diff = certificateEnd - now;
-                    timerDisplay.innerText = "Expira em: " + formatDiff(diff);
-                    if (formWrapper) formWrapper.style.display = 'block';
-                }
-            }
-
-            function formatDiff(ms) {
-                if (isNaN(ms) || ms < 0) return "00:00:00";
-                
-                const totalSeconds = Math.floor(ms / 1000);
-                const days = Math.floor(totalSeconds / 86400);
-                const hours = Math.floor((totalSeconds % 86400) / 3600);
-                const minutes = Math.floor((totalSeconds % 3600) / 60);
-                const seconds = totalSeconds % 60;
-                
-                let result = "";
-                if (days > 0) result += days + (days === 1 ? " dia " : " dias ");
-                result += String(hours).padStart(2, '0') + ":" + 
-                          String(minutes).padStart(2, '0') + ":" + 
-                          String(seconds).padStart(2, '0');
-                return result;
-            }
-
-            // Atualiza o cronômetro a cada 1 segundo
-            setInterval(updateCountdown, 1000);
-            updateCountdown(); // Execução imediata ao carregar
-
-            // --- Lógica do Gênero ---
-            const genderSelect = document.getElementById('id_gender');
-            const customGenderDiv = document.getElementById('div_id_custom_gender');
-            const customGenderInput = document.getElementById('id_custom_gender');
-
-            function toggleCustomGender() {
-                if (genderSelect.value === 'O') {
-                    customGenderDiv.style.display = 'block';
-                    customGenderInput.setAttribute('required', 'required');
-                } else {
-                    customGenderDiv.style.display = 'none';
-                    customGenderInput.removeAttribute('required');
-                }
-            }
-
-            genderSelect.addEventListener('change', toggleCustomGender);
-            
-            // Executa ao carregar para caso de erro de validação retornar com valor 'O'
-            toggleCustomGender();
-
-            // --- ViaCEP ---
-            const cepInput = document.getElementById('id_cep');
-            const streetInput = document.getElementById('id_street');
-            const neighborhoodInput = document.getElementById('id_neighborhood');
-            const cityInput = document.getElementById('id_city');
-            const stateInput = document.getElementById('id_state');
-            const numberInput = document.getElementById('id_number');
-
-            const toggleReadOnly = (isReadOnly) => {
-                streetInput.readOnly = isReadOnly;
-                neighborhoodInput.readOnly = isReadOnly;
-                cityInput.readOnly = isReadOnly;
-                stateInput.readOnly = isReadOnly;
-            };
-
-            cepInput.addEventListener('blur', () => {
-                const cep = cepInput.value.replace(/\D/g, '');
-
-                if (cep.length !== 8) {
-                    return;
-                }
-                
-                streetInput.value = "..."
-                neighborhoodInput.value = "..."
-                cityInput.value = "..."
-                stateInput.value = "..."
-                toggleReadOnly(true);
-
-                fetch(`https://viacep.com.br/ws/${cep}/json/`)
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.erro) {
-                            alert("CEP não encontrado. Por favor, preencha o endereço manualmente.");
-                            streetInput.value = "";
-                            neighborhoodInput.value = "";
-                            cityInput.value = "";
-                            stateInput.value = "";
-                            toggleReadOnly(false);
-                            return;
-                        }
-                        
-                        streetInput.value = data.logradouro;
-                        neighborhoodInput.value = data.bairro;
-                        cityInput.value = data.localidade;
-                        stateInput.value = data.uf;
-
-                        // Foca no campo de número, que é o próximo passo lógico
-                        numberInput.focus();
-                    })
-                    .catch(error => {
-                        console.error('Erro ao buscar CEP:', error);
-                        alert("Ocorreu um erro ao buscar o CEP. Por favor, preencha o endereço manualmente.");
-                        streetInput.value = "";
-                        neighborhoodInput.value = "";
-                        cityInput.value = "";
-                        stateInput.value = "";
-                        toggleReadOnly(false);
-                    });
+                this.disabled = true;
+                this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processando...';
+                form.submit(); 
             });
-        });
-    </script>
-    <!-- Sênior Fix: Modal Extravagante para Erros Críticos (Anti-Fraude e CPF não encontrado) -->
-    {% if form.cpf.errors or form.full_name.errors %}
-    <div class="modal fade" id="criticalErrorModal" tabindex="-1" aria-labelledby="criticalErrorModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
-                <!-- Cabeçalho do Modal com Ícone -->
-                <div class="modal-header border-0 bg-danger bg-opacity-10 justify-content-center" style="border-top-left-radius: 20px; border-top-right-radius: 20px; padding: 2.5rem 1rem 1rem;">
-                    <div class="text-center">
-                        <i class="bi bi-shield-fill-x text-danger" style="font-size: 4.5rem;"></i>
-                        <h3 class="modal-title fw-bold text-danger mt-3" id="criticalErrorModalLabel" style="letter-spacing: -0.5px;">Acesso Bloqueado</h3>
-                    </div>
+        }
+
+        const btnNpsSkip = document.getElementById('btn-nps-skip');
+        if (btnNpsSkip) {
+            btnNpsSkip.addEventListener('click', function() {
+                // Remove a obrigatoriedade (required) dos inputs de NPS
+                const npsInputs = document.querySelectorAll('[name^="nps_question_"]');
+                npsInputs.forEach(input => input.removeAttribute('required'));
+
+                this.disabled = true;
+                this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processando...';
+                form.submit();
+            });
+        }
+    {% endif %}
+
+    // --- Lógica do Cronômetro Reativo (Vanilla JS) ---
+    const startStr = "{{ course.certificate_start|date:'c'|default:'' }}";
+    const endStr = "{{ course.certificate_end|date:'c'|default:'' }}";
+    const certificateStart = startStr ? new Date(startStr) : null;
+    const certificateEnd = endStr ? new Date(endStr) : null;
+    const timerDisplay = document.getElementById('timer_display');
+    const formWrapper = document.getElementById('certificate_form_wrapper');
+
+    function updateCountdown() {
+        const now = new Date();
+        if (certificateStart && now < certificateStart) {
+            const diff = certificateStart - now;
+            timerDisplay.innerText = "Abre em: " + formatDiff(diff);
+            if (formWrapper) formWrapper.style.display = 'none';
+            return;
+        }
+        if (!certificateEnd) {
+            timerDisplay.innerText = "Disponível por tempo indeterminado";
+            if (formWrapper) formWrapper.style.display = 'block';
+            return;
+        }
+        if (now > certificateEnd) {
+            timerDisplay.innerText = "Encerrado";
+            if (formWrapper) formWrapper.style.display = 'none';
+        } else {
+            const diff = certificateEnd - now;
+            timerDisplay.innerText = "Expira em: " + formatDiff(diff);
+            if (formWrapper) formWrapper.style.display = 'block';
+        }
+    }
+
+    function formatDiff(ms) {
+        if (isNaN(ms) || ms < 0) return "00:00:00";
+        const totalSeconds = Math.floor(ms / 1000);
+        const days = Math.floor(totalSeconds / 86400);
+        const hours = Math.floor((totalSeconds % 86400) / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+        let result = "";
+        if (days > 0) result += days + (days === 1 ? " dia " : " dias ");
+        result += String(hours).padStart(2, '0') + ":" +
+                  String(minutes).padStart(2, '0') + ":" +
+                  String(seconds).padStart(2, '0');
+        return result;
+    }
+    setInterval(updateCountdown, 1000);
+    updateCountdown();
+
+    // --- Lógica do Gênero ---
+    const genderSelect = document.getElementById('id_gender');
+    const customGenderDiv = document.getElementById('div_id_custom_gender');
+    const customGenderInput = document.getElementById('id_custom_gender');
+
+    function toggleCustomGender() {
+        if (genderSelect.value === 'O') {
+            customGenderDiv.style.display = 'block';
+            customGenderInput.setAttribute('required', 'required');
+        } else {
+            customGenderDiv.style.display = 'none';
+            customGenderInput.removeAttribute('required');
+        }
+    }
+    genderSelect.addEventListener('change', toggleCustomGender);
+    toggleCustomGender();
+
+    // --- ViaCEP ---
+    const cepInput = document.getElementById('id_cep');
+    const streetInput = document.getElementById('id_street');
+    const neighborhoodInput = document.getElementById('id_neighborhood');
+    const cityInput = document.getElementById('id_city');
+    const stateInput = document.getElementById('id_state');
+    const numberInput = document.getElementById('id_number');
+
+    const toggleReadOnly = (isReadOnly) => {
+        streetInput.readOnly = isReadOnly;
+        neighborhoodInput.readOnly = isReadOnly;
+        cityInput.readOnly = isReadOnly;
+        stateInput.readOnly = isReadOnly;
+    };
+
+    cepInput.addEventListener('blur', () => {
+        const cep = cepInput.value.replace(/\D/g, '');
+        if (cep.length !== 8) return;
+        
+        streetInput.value = "..."
+        neighborhoodInput.value = "..."
+        cityInput.value = "..."
+        stateInput.value = "..."
+        toggleReadOnly(true);
+
+        fetch(`https://viacep.com.br/ws/${cep}/json/`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.erro) {
+                    alert("CEP não encontrado. Por favor, preencha o endereço manualmente.");
+                    streetInput.value = "";
+                    neighborhoodInput.value = "";
+                    cityInput.value = "";
+                    stateInput.value = "";
+                    toggleReadOnly(false);
+                    return;
+                }
+                streetInput.value = data.logradouro;
+                neighborhoodInput.value = data.bairro;
+                cityInput.value = data.localidade;
+                stateInput.value = data.uf;
+                numberInput.focus();
+            })
+            .catch(error => {
+                console.error('Erro ao buscar CEP:', error);
+                alert("Ocorreu um erro ao buscar o CEP. Por favor, preencha o endereço manualmente.");
+                streetInput.value = "";
+                neighborhoodInput.value = "";
+                cityInput.value = "";
+                stateInput.value = "";
+                toggleReadOnly(false);
+            });
+    });
+});
+</script>
+
+<!-- Sênior Fix: Modal Extravagante para Erros Críticos (Anti-Fraude e CPF não encontrado) -->
+{% if form.cpf.errors or form.full_name.errors %}
+<div class="modal fade" id="criticalErrorModal" tabindex="-1" aria-labelledby="criticalErrorModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+            <div class="modal-header border-0 bg-danger bg-opacity-10 justify-content-center" style="border-top-left-radius: 20px; border-top-right-radius: 20px; padding: 2.5rem 1rem 1rem;">
+                <div class="text-center">
+                    <i class="bi bi-shield-fill-x text-danger" style="font-size: 4.5rem;"></i>
+                    <h3 class="modal-title fw-bold text-danger mt-3" id="criticalErrorModalLabel" style="letter-spacing: -0.5px;">Acesso Bloqueado</h3>
                 </div>
-                <!-- Corpo do Modal com a Mensagem Dinâmica do Backend -->
-                <div class="modal-body text-center p-4 fs-5 text-secondary" style="line-height: 1.6;">
-                    {% if form.full_name.errors %}
-                        {{ form.full_name.errors.0 }}
-                    {% elif form.cpf.errors %}
-                        {{ form.cpf.errors.0 }}
-                    {% endif %}
-                </div>
-                <!-- Rodapé com Botão de Ação -->
-                <div class="modal-footer border-0 justify-content-center pb-4">
-                    <button type="button" class="btn btn-danger btn-lg px-5 rounded-pill fw-bold shadow-sm" data-bs-dismiss="modal">
-                        <i class="bi bi-check2-circle me-2"></i>Entendi
-                    </button>
-                </div>
+            </div>
+            <div class="modal-body text-center p-4 fs-5 text-secondary" style="line-height: 1.6;">
+                {% if form.full_name.errors %}
+                    {{ form.full_name.errors.0 }}
+                {% elif form.cpf.errors %}
+                    {{ form.cpf.errors.0 }}
+                {% endif %}
+            </div>
+            <div class="modal-footer border-0 justify-content-center pb-4">
+                <button type="button" class="btn btn-danger btn-lg px-5 rounded-pill fw-bold shadow-sm" data-bs-dismiss="modal">
+                    <i class="bi bi-check2-circle me-2"></i>Entendi
+                </button>
             </div>
         </div>
     </div>
-    {% endif %}
+</div>
+{% endif %}
+
 {% endblock %}
 </body>
 
 {% block extra_js %}
 <script>
-    // Motor JS: Dispara o Modal do Bootstrap 5 caso o backend tenha retornado erros críticos
-    document.addEventListener("DOMContentLoaded", function() {
-        const errorModalEl = document.getElementById('criticalErrorModal');
-        if (errorModalEl) {
-            // Instancia o modal travando o clique fora dele (backdrop: static) para forçar o usuário a ler
-            const errorModal = new bootstrap.Modal(errorModalEl, {
-                backdrop: 'static',
-                keyboard: false
-            });
-            errorModal.show();
-        }
-    });
+document.addEventListener("DOMContentLoaded", function() {
+    const errorModalEl = document.getElementById('criticalErrorModal');
+    if (errorModalEl) {
+        const errorModal = new bootstrap.Modal(errorModalEl, {
+            backdrop: 'static',
+            keyboard: false
+        });
+        errorModal.show();
+    }
+});
 </script>
 {% endblock %}
 </html>
