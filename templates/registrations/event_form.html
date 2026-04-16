@@ -220,7 +220,7 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // --- Lógica de Interceptação do Formulário e Modal de Confirmação ---
-            const form = document.querySelector('form');
+            const form = document.querySelector('#registration_form_wrapper form');
             const confirmModalElement = document.getElementById('confirmDataModal');
             const confirmModal = new bootstrap.Modal(confirmModalElement);
             const btnConfirmYes = document.getElementById('btn-confirm-yes');

@@ -42,6 +42,8 @@
 * [x] **Correções e Melhorias Técnicas:** O método `save()` do modelo `Course` foi refatorada para injetar o `checkin_hash` automaticamente, evitando erros de migração com callable defaults em tabelas populadas.
 * [x] Sprint 3 Concluída: Finalizada a implementação da Automação Celery baseada em Match de CPF e Check-in, incluindo atualização de UX na tela de sucesso para feedback em tempo real [20].
 * [x] Modelagem de dados do NPS (NPSForm, NPSQuestion, NPSResponse) e vínculo com modelo Course adicionados.
+* [x] **Higienização de Template:** O arquivo `templates/registrations/form.html` foi sanitizado para remover duplicação de código e tags de bloco redundantes (`{% block ... %}`), consolidando-o como uma página standalone válida. [54]
+* [x] **Correção Estrutural:** O campo `nps_form` no modelo `Course` foi reposicionado para logo abaixo de `certificate_template` e seus parâmetros foram atualizados para garantir a integração correta com a pesquisa de satisfação. [53]
 * [x] Backend CRUD do NPS (Forms, Views, URLs) construído e protegido via Multitenant.
 * [x] Etapa 3 do NPS: Interfaces administrativas de criação e edição de formulários e injeção do seletor no cadastro de Eventos.
 * [x] Etapa 4 do NPS: Interceptação via Modal Frontend no fluxo público de solicitação de certificados e persistência inteligente de respostas (NPSResponse) no Backend.

@@ -17,7 +17,6 @@
 </head>
 <body>
 
-{% block content %}
 <div class="container">
     <div class="form-container">
         <div class="card p-4 p-md-5">
@@ -227,7 +226,7 @@
                     {% endif %}
                     <!-- FIM DO MODAL NPS -->
 
-                </form> <!-- O formulário original fecha aqui (com segurança) -->
+                </form> <!-- O formulário original fecha aqui -->
             </div> <!-- Fecha certificate_form_wrapper -->
         </div> <!-- Fecha card -->
     </div> <!-- Fecha form-container -->
@@ -236,7 +235,7 @@
 <!-- Bootstrap 5 JS Bundle -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-<!-- Modal de Confirmação de Dados (Fica fora do form) -->
+<!-- Modal de Confirmação de Dados -->
 <div class="modal fade" id="confirmDataModal" tabindex="-1" aria-labelledby="confirmDataModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -262,8 +261,7 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // --- Lógica de Interceptação do Formulário e Modal de Confirmação ---
-    const form = document.querySelector('form');
+    const form = document.querySelector('#certificate_form_wrapper form');
     const confirmModalElement = document.getElementById('confirmDataModal');
     const confirmModal = new bootstrap.Modal(confirmModalElement);
     
@@ -273,24 +271,21 @@ document.addEventListener('DOMContentLoaded', function() {
     const displayNome = document.getElementById('modal-nome-display');
     const displayCpf = document.getElementById('modal-cpf-display');
 
-    // 1. Intercepta o botão de Enviar do formulário base
     form.addEventListener('submit', function(e) {
         if (form.checkValidity()) {
-            e.preventDefault(); 
+            e.preventDefault();
             displayNome.innerText = inputFullName.value;
             displayCpf.innerText = inputCpf.value;
             confirmModal.show();
         }
     });
 
-    // 2. Intercepta o "Sim! Estão corretos" e faz o roteamento pro NPS (se houver)
+    // ÚNICO LISTENER DO BOTÃO SIM: Roteia para o NPS se houver
     btnConfirmYes.addEventListener('click', function() {
         const hasNps = {% if course.nps_form %}true{% else %}false{% endif %};
 
         if (hasNps) {
-            confirmModal.hide(); // Esconde a validação do CPF
-            
-            // Popula o nome no modal do NPS e Abre
+            confirmModal.hide();
             document.getElementById('nps-nome-display').innerText = inputFullName.value;
             const npsModalElement = document.getElementById('npsModal');
             const npsModal = new bootstrap.Modal(npsModalElement, {
@@ -299,7 +294,6 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             npsModal.show();
         } else {
-            // Se não tem NPS, segue fluxo padrão antigo
             this.disabled = true;
             this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Enviando...';
             confirmModal.hide();
@@ -307,25 +301,24 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // 3. Ações exclusivas dos botões do NPS
+    // Ações exclusivas dos botões do NPS
     {% if course.nps_form %}
         const btnNpsSubmit = document.getElementById('btn-nps-submit');
         if (btnNpsSubmit) {
             btnNpsSubmit.addEventListener('click', function() {
                 if (!form.checkValidity()) {
-                    form.reportValidity(); // Mostra campos em vermelho se faltar algo
+                    form.reportValidity();
                     return;
                 }
                 this.disabled = true;
                 this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processando...';
-                form.submit(); 
+                form.submit();
             });
         }
 
         const btnNpsSkip = document.getElementById('btn-nps-skip');
         if (btnNpsSkip) {
             btnNpsSkip.addEventListener('click', function() {
-                // Remove a obrigatoriedade (required) dos inputs de NPS
                 const npsInputs = document.querySelectorAll('[name^="nps_question_"]');
                 npsInputs.forEach(input => input.removeAttribute('required'));
 
@@ -336,7 +329,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     {% endif %}
 
-    // --- Lógica do Cronômetro Reativo (Vanilla JS) ---
+    // Cronômetro Reativo
     const startStr = "{{ course.certificate_start|date:'c'|default:'' }}";
     const endStr = "{{ course.certificate_end|date:'c'|default:'' }}";
     const certificateStart = startStr ? new Date(startStr) : null;
@@ -384,7 +377,7 @@ document.addEventListener('DOMContentLoaded', function() {
     setInterval(updateCountdown, 1000);
     updateCountdown();
 
-    // --- Lógica do Gênero ---
+    // Lógica do Gênero e ViaCEP
     const genderSelect = document.getElementById('id_gender');
     const customGenderDiv = document.getElementById('div_id_custom_gender');
     const customGenderInput = document.getElementById('id_custom_gender');
@@ -398,10 +391,11 @@ document.addEventListener('DOMContentLoaded', function() {
             customGenderInput.removeAttribute('required');
         }
     }
-    genderSelect.addEventListener('change', toggleCustomGender);
-    toggleCustomGender();
+    if(genderSelect){
+        genderSelect.addEventListener('change', toggleCustomGender);
+        toggleCustomGender();
+    }
 
-    // --- ViaCEP ---
     const cepInput = document.getElementById('id_cep');
     const streetInput = document.getElementById('id_street');
     const neighborhoodInput = document.getElementById('id_neighborhood');
@@ -416,48 +410,48 @@ document.addEventListener('DOMContentLoaded', function() {
         stateInput.readOnly = isReadOnly;
     };
 
-    cepInput.addEventListener('blur', () => {
-        const cep = cepInput.value.replace(/\D/g, '');
-        if (cep.length !== 8) return;
-        
-        streetInput.value = "..."
-        neighborhoodInput.value = "..."
-        cityInput.value = "..."
-        stateInput.value = "..."
-        toggleReadOnly(true);
+    if(cepInput){
+        cepInput.addEventListener('blur', () => {
+            const cep = cepInput.value.replace(/\D/g, '');
+            if (cep.length !== 8) return;
+            
+            streetInput.value = "..."
+            neighborhoodInput.value = "..."
+            cityInput.value = "..."
+            stateInput.value = "..."
+            toggleReadOnly(true);
 
-        fetch(`https://viacep.com.br/ws/${cep}/json/`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.erro) {
-                    alert("CEP não encontrado. Por favor, preencha o endereço manualmente.");
+            fetch(`https://viacep.com.br/ws/${cep}/json/`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.erro) {
+                        alert("CEP não encontrado. Por favor, preencha o endereço manualmente.");
+                        streetInput.value = "";
+                        neighborhoodInput.value = "";
+                        cityInput.value = "";
+                        stateInput.value = "";
+                        toggleReadOnly(false);
+                        return;
+                    }
+                    streetInput.value = data.logradouro;
+                    neighborhoodInput.value = data.bairro;
+                    cityInput.value = data.localidade;
+                    stateInput.value = data.uf;
+                    numberInput.focus();
+                })
+                .catch(error => {
+                    console.error('Erro ao buscar CEP:', error);
                     streetInput.value = "";
                     neighborhoodInput.value = "";
                     cityInput.value = "";
                     stateInput.value = "";
                     toggleReadOnly(false);
-                    return;
-                }
-                streetInput.value = data.logradouro;
-                neighborhoodInput.value = data.bairro;
-                cityInput.value = data.localidade;
-                stateInput.value = data.uf;
-                numberInput.focus();
-            })
-            .catch(error => {
-                console.error('Erro ao buscar CEP:', error);
-                alert("Ocorreu um erro ao buscar o CEP. Por favor, preencha o endereço manualmente.");
-                streetInput.value = "";
-                neighborhoodInput.value = "";
-                cityInput.value = "";
-                stateInput.value = "";
-                toggleReadOnly(false);
-            });
-    });
+                });
+        });
+    }
 });
 </script>
 
-<!-- Sênior Fix: Modal Extravagante para Erros Críticos (Anti-Fraude e CPF não encontrado) -->
 {% if form.cpf.errors or form.full_name.errors %}
 <div class="modal fade" id="criticalErrorModal" tabindex="-1" aria-labelledby="criticalErrorModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -485,10 +479,8 @@ document.addEventListener('DOMContentLoaded', function() {
 </div>
 {% endif %}
 
-{% endblock %}
 </body>
 
-{% block extra_js %}
 <script>
 document.addEventListener("DOMContentLoaded", function() {
     const errorModalEl = document.getElementById('criticalErrorModal');
@@ -501,5 +493,5 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 });
 </script>
-{% endblock %}
+
 </html>

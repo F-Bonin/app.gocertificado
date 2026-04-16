@@ -47,7 +47,8 @@ class CourseForm(forms.ModelForm):
             "institution_neighborhood", "institution_complement",
             "city", "state",
             "signature_1", "signature_2", "signature_3",
-            "certificate_template"
+            "certificate_template",
+            "nps_form"
         ]
         widgets = {
             "name": forms.TextInput(attrs={"class": "form-control"}),
@@ -71,6 +72,7 @@ class CourseForm(forms.ModelForm):
             "signature_2": forms.Select(attrs={"class": "form-select"}),
             "signature_3": forms.Select(attrs={"class": "form-select"}),
             "certificate_template": forms.Select(attrs={"class": "form-select"}),
+            "nps_form": forms.Select(attrs={"class": "form-select"}),
         }
 
     def __init__(self, *args, **kwargs):

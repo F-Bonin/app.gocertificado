@@ -223,6 +223,7 @@ class Course(models.Model):
         verbose_name="Modelo de Certificado",
         help_text='Selecione o layout personalizado para os certificados deste treinamento'
     )
+    nps_form = models.ForeignKey('core.NPSForm', on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Formulário NPS", help_text="Selecione a pesquisa de satisfação para este evento")
     
     link_hash = models.UUIDField(
         "Link Único", 
@@ -236,7 +237,6 @@ class Course(models.Model):
     registration_end = models.DateTimeField("Término das Inscrições", blank=True, null=True)
     expires_at = models.DateTimeField("Expiração do Certificado", blank=True, null=True)
     no_certificate = models.BooleanField("Este evento não terá certificado", default=False)
-    nps_form = models.ForeignKey('NPSForm', on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Formulário NPS", help_text="Selecione um formulário de feedback opcional para este evento.")
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
