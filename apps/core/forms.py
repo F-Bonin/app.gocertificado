@@ -1,5 +1,6 @@
 from django import forms
-from .models import Company, Instructor, Course, NPSForm, NPSQuestion, DynamicForm
+from django.forms import inlineformset_factory
+from .models import Company, Instructor, Course, NPSForm, NPSQuestion, DynamicForm, DynamicField
 from apps.certificates.models import CertificateTemplate
 
 class CompanyForm(forms.ModelForm):
@@ -179,3 +180,30 @@ class CertificateTemplateForm(forms.ModelForm):
             if not cleaned_data.get(field):
                 cleaned_data[field] = " "
         return cleaned_data
+
+
+class DynamicFormModelForm(forms.ModelForm):
+    """Formulário para o modelo DynamicForm (Entidade EAV)."""
+    class Meta:
+        model = DynamicForm
+        fields = ["name"]
+        widgets = {
+            "name": forms.TextInput(attrs={"class": "form-control", "placeholder": "Ex: Inscrição Personalizada"}),
+        }
+
+
+# Inline Formset para gerenciar campos dinâmicos (Atributos EAV) dentro do formulário de DynamicForm.
+DynamicFieldFormSet = inlineformset_factory(
+    DynamicForm,
+    DynamicField,
+    fields=['label', 'field_type', 'is_required', 'options', 'order'],
+    extra=0,
+    can_delete=True,
+    widgets={
+        'label': forms.TextInput(attrs={'class': 'form-control'}),
+        'field_type': forms.Select(attrs={'class': 'form-select'}),
+        'is_required': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        'options': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Opção 1, Opção 2...'}),
+        'order': forms.NumberInput(attrs={'class': 'form-control'}),
+    }
+)

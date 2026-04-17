@@ -1,0 +1,185 @@
+{% extends "painel/base_painel.html" %}
+
+{% block title %}
+    {% if object %}Editar{% else %}Novo{% endif %} Formulário Dinâmico | GoCertificado
+{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'core:dynamic_form_list' %}">Formulários Dinâmicos</a></li>
+            <li class="breadcrumb-item active">{% if object %}Editar{% else %}Novo{% endif %} Formulário</li>
+        </ol>
+    </nav>
+    <h2 class="h3 mb-0 text-gray-800">Configuração de Formulário Dinâmico</h2>
+    <p class="text-muted small">Adicione campos para coletar informações extras em suas inscrições ou solicitações de certificado.</p>
+</div>
+
+<form method="post">
+    {% csrf_token %}
+    
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-primary text-white py-3">
+            <h5 class="card-title mb-0">Informações Básicas</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Nome do Formulário</label>
+                        {{ form.name }}
+                        <div class="form-text small">Ex: "Dados Complementares de Matrícula"</div>
+                        {% if form.name.errors %}
+                            <div class="text-danger small">{{ form.name.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mb-4 border-0">
+        <div class="card-header bg-dark text-white py-3 d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">Campos do Formulário (Configuração EAV)</h5>
+            <button type="button" id="add-field-btn" class="btn btn-sm btn-success">
+                <i class="bi bi-plus-lg me-1"></i> Adicionar Campo
+            </button>
+        </div>
+        <div class="card-body p-0">
+            {{ formset.management_form }}
+            <div id="formset-container">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 25%">Rótulo (Label)</th>
+                                <th style="width: 20%">Tipo</th>
+                                <th style="width: 10%" class="text-center">Obrigat.</th>
+                                <th style="width: 25%">Opções (Select)</th>
+                                <th style="width: 10%">Ordem</th>
+                                <th style="width: 10%" class="text-center">Remover</th>
+                            </tr>
+                        </thead>
+                        <tbody id="formset-body">
+                            {% for field_form in formset %}
+                            <tr class="formset-row">
+                                {{ field_form.id }}
+                                <td>
+                                    {{ field_form.label }}
+                                    {% if field_form.label.errors %}<div class="text-danger small">{{ field_form.label.errors }}</div>{% endif %}
+                                </td>
+                                <td>
+                                    {{ field_form.field_type }}
+                                    {% if field_form.field_type.errors %}<div class="text-danger small">{{ field_form.field_type.errors }}</div>{% endif %}
+                                </td>
+                                <td class="text-center">
+                                    {{ field_form.is_required }}
+                                </td>
+                                <td>
+                                    {{ field_form.options }}
+                                    <div class="text-muted small" style="font-size: 0.7rem;">Separar por vírgula</div>
+                                </td>
+                                <td>
+                                    {{ field_form.order }}
+                                </td>
+                                <td class="text-center">
+                                    {% if field_form.instance.pk %}
+                                        <div class="form-check d-inline-block">
+                                            {{ field_form.DELETE }}
+                                        </div>
+                                    {% else %}
+                                        <button type="button" class="btn btn-sm btn-outline-danger remove-field-btn">
+                                            <i class="bi bi-x"></i>
+                                        </button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Template para novos campos (Hidden Empty Form) -->
+            <div id="empty-form" class="d-none">
+                <table>
+                    <tbody id="empty-row-template">
+                        <tr class="formset-row">
+                            {% for hidden in formset.empty_form.hidden_fields %}
+                                {{ hidden }}
+                            {% endfor %}
+                            <td>{{ formset.empty_form.label }}</td>
+                            <td>{{ formset.empty_form.field_type }}</td>
+                            <td class="text-center">{{ formset.empty_form.is_required }}</td>
+                            <td>
+                                {{ formset.empty_form.options }}
+                                <div class="text-muted small" style="font-size: 0.7rem;">Separar por vírgula</div>
+                            </td>
+                            <td>{{ formset.empty_form.order }}</td>
+                            <td class="text-center">
+                                <button type="button" class="btn btn-sm btn-outline-danger remove-field-btn">
+                                    <i class="bi bi-x"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-end gap-2 mb-5">
+        <a href="{% url 'core:dynamic_form_list' %}" class="btn btn-outline-secondary">Cancelar</a>
+        <button type="submit" class="btn btn-primary px-4">Salvar Formulário</button>
+    </div>
+</form>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    /**
+     * Motor Javascript para Gerenciamento de Formsets Dinâmicos (EAV).
+     * Permite adicionar e remover atributos (DynamicField) em tempo real no frontend.
+     */
+    document.addEventListener('DOMContentLoaded', function() {
+        const addBtn = document.getElementById('add-field-btn');
+        const formsetContainer = document.getElementById('formset-body');
+        const totalForms = document.getElementById('id_fields-TOTAL_FORMS');
+        const emptyFormTemplate = document.getElementById('empty-row-template').innerHTML;
+
+        // Função para Adicionar novo campo
+        addBtn.addEventListener('click', function() {
+            const currentFormCount = parseInt(totalForms.value);
+            
+            // Clonagem do template vazio e substituição dos prefixos dinâmicos (__prefix__)
+            // O regex /-(__prefix__|[\d]+)-/g garante a substituição correta do índice no Django.
+            const newFormHtml = emptyFormTemplate.replace(/__prefix__/g, currentFormCount);
+            
+            // Inserção do novo formulário na tabela
+            formsetContainer.insertAdjacentHTML('beforeend', newFormHtml);
+            
+            // Atualização do contador TOTAL_FORMS para o Django processar corretamente no backend
+            totalForms.value = currentFormCount + 1;
+        });
+
+        // Delegação de evento para remover campos recém-adicionados
+        formsetContainer.addEventListener('click', function(e) {
+            if (e.target.closest('.remove-field-btn')) {
+                const row = e.target.closest('.formset-row');
+                row.remove();
+                
+                // Recalcula o TOTAL_FORMS após remoção (importante para manter a integridade)
+                const forms = formsetContainer.getElementsByClassName('formset-row');
+                totalForms.value = forms.length;
+                
+                // Re-indexação dos campos remanescentes
+                Array.from(forms).forEach((form, index) => {
+                    form.innerHTML = form.innerHTML.replace(/fields-\d+-/g, `fields-${index}-`);
+                });
+            }
+        });
+    });
+</script>
+{% endblock %}

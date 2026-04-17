@@ -193,6 +193,13 @@ class DynamicField(models.Model):
     def __str__(self):
         return f"{self.label} ({self.get_field_type_display()})"
 
+    @property
+    def get_options_list(self):
+        """Retorna uma lista de opções limpas (sem espaços) a partir da string separada por vírgulas."""
+        if not self.options:
+            return []
+        return [opt.strip() for opt in self.options.split(',') if opt.strip()]
+
 
 class Instructor(models.Model):
     """Instrutor que ministra treinamentos."""

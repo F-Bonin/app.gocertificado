@@ -16,11 +16,12 @@ from apps.certificates.services.pdf_generator import generate_preview_pdf
 from apps.certificates.models import CertificateTemplate
 from apps.certificates.tasks import issue_certificate_task
 from apps.registrations.models import Registration
-from .models import Company, Instructor, Course, NPSForm, NPSQuestion
+from .models import Company, Instructor, Course, NPSForm, NPSQuestion, DynamicForm, DynamicField
 from .forms import (
     CompanyForm, InstructorForm, CourseForm, 
     CertificateDesignForm, CertificateTemplateForm,
-    NPSFormModelForm, NPSQuestionForm
+    NPSFormModelForm, NPSQuestionForm,
+    DynamicFormModelForm, DynamicFieldFormSet
 )
 
 
@@ -429,7 +430,7 @@ class TogglePresenceView(LoginRequiredMixin, View):
         registration.save(update_fields=['attended'])
 
         # DISPARO AUTOMÁTICO (CELERY): Se o check-in foi habilitado e o aluno já possui 
-        # uma solicitação de certificado pendente, dispara a emissão assíncrona imediatamente.
+        # uma solicitaçãp de certificado pendente, dispara a emissão assíncrona imediatamente.
         if registration.attended and registration.status == Registration.Status.PENDING and registration.is_requested:
             issue_certificate_task.delay(str(registration.id))
 
@@ -672,4 +673,98 @@ class NPSQuestionDeleteView(LoginRequiredMixin, DeleteView):
 
     def delete(self, request, *args, **kwargs):
         messages.success(self.request, "Pergunta removida.")
+        return super().delete(request, *args, **kwargs)
+
+
+class DynamicFormListView(LoginRequiredMixin, ListView):
+    """Lista os formulários dinâmicos da empresa do usuário (Proteção Multitenant)."""
+    model = DynamicForm
+    template_name = "core/dynamic_form_list.html"
+    context_object_name = "dynamic_forms"
+
+    def get_queryset(self):
+        # Regra de Ouro: Filtra apenas formulários da empresa vinculada ao perfil do usuário logado.
+        return DynamicForm.objects.filter(company=self.request.user.profile.company)
+
+
+class DynamicFormCreateView(LoginRequiredMixin, CreateView):
+    """Cria um novo formulário dinâmico e gerencia seus campos via Inline Formset."""
+    model = DynamicForm
+    form_class = DynamicFormModelForm
+    template_name = "core/dynamic_form_form.html"
+    success_url = reverse_lazy("core:dynamic_form_list")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if self.request.POST:
+            # Ao reenviar o formulário (POST), carrega o formset com os dados enviados.
+            context["formset"] = DynamicFieldFormSet(self.request.POST)
+        else:
+            # Em acessos GET, inicia um formset vazio.
+            context["formset"] = DynamicFieldFormSet()
+        return context
+
+    def form_valid(self, form):
+        context = self.get_context_data()
+        formset = context["formset"]
+
+        # Atribui a empresa do usuário logado à instância do formulário dinâmico.
+        form.instance.company = self.request.user.profile.company
+
+        if formset.is_valid():
+            # Salva o formulário pai (Entidade EAV)
+            self.object = form.save()
+            # Vincula o formset (Atributos EAV) à instância salva e salva os campos.
+            formset.instance = self.object
+            formset.save()
+            messages.success(self.request, "Formulário dinâmico criado com sucesso!")
+            return redirect(self.get_success_url())
+        else:
+            # Se o formset for inválido, renderiza novamente com erros.
+            return self.render_to_response(self.get_context_data(form=form))
+
+
+class DynamicFormUpdateView(LoginRequiredMixin, UpdateView):
+    """Edita um formulário dinâmico existente e seus campos associados."""
+    model = DynamicForm
+    form_class = DynamicFormModelForm
+    template_name = "core/dynamic_form_form.html"
+    success_url = reverse_lazy("core:dynamic_form_list")
+
+    def get_queryset(self):
+        # Garante que o usuário só edite formulários de sua própria empresa.
+        return DynamicForm.objects.filter(company=self.request.user.profile.company)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if self.request.POST:
+            context["formset"] = DynamicFieldFormSet(self.request.POST, instance=self.object)
+        else:
+            context["formset"] = DynamicFieldFormSet(instance=self.object)
+        return context
+
+    def form_valid(self, form):
+        context = self.get_context_data()
+        formset = context["formset"]
+
+        if formset.is_valid():
+            self.object = form.save()
+            formset.save()
+            messages.success(self.request, "Formulário dinâmico atualizado com sucesso!")
+            return redirect(self.get_success_url())
+        else:
+            return self.render_to_response(self.get_context_data(form=form))
+
+
+class DynamicFormDeleteView(LoginRequiredMixin, DeleteView):
+    """Exclui um formulário dinâmico (Proteção Multitenant)."""
+    model = DynamicForm
+    template_name = "core/dynamic_form_confirm_delete.html"
+    success_url = reverse_lazy("core:dynamic_form_list")
+
+    def get_queryset(self):
+        return DynamicForm.objects.filter(company=self.request.user.profile.company)
+
+    def delete(self, request, *args, **kwargs):
+        messages.success(self.request, "Formulário dinâmico removido com sucesso.")
         return super().delete(request, *args, **kwargs)

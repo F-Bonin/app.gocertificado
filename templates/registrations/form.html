@@ -163,7 +163,43 @@
                         </div>
                     </div>
 
-                    <div class="d-grid mt-4">
+                    <!-- Bloco de Campos Dinâmicos (EAV Injection via contexto) -->
+          {% if dynamic_fields %}
+          <div class="col-12 mt-4">
+              <div class="alert alert-secondary py-2 border-0 bg-light">
+                  <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-info-circle me-2"></i>Informações Adicionais</h6>
+              </div>
+          </div>
+          <div class="row g-3">
+              {% for field in dynamic_fields %}
+              <div class="col-md-6 mb-3">
+                  <label class="form-label fw-bold small text-muted">
+                      {{ field.label }} {% if field.is_required %}<span class="text-danger">*</span>{% endif %}
+                  </label>
+                  
+                  {% if field.field_type == 'select' %}
+                  <select name="dynamic_field_{{ field.id }}" class="form-select" {% if field.is_required %}required{% endif %}>
+                      <option value="">Selecione...</option>
+                      {% for option in field.get_options_list %}
+                      <option value="{{ option }}">{{ option }}</option>
+                      {% endfor %}
+                  </select>
+                  {% elif field.field_type == 'checkbox' %}
+                  <div class="form-check">
+                      <input class="form-check-input" type="checkbox" value="Sim" name="dynamic_field_{{ field.id }}" id="dyn_check_{{ field.id }}" {% if field.is_required %}required{% endif %}>
+                      <label class="form-check-label small" for="dyn_check_{{ field.id }}">
+                          Aceito os termos
+                      </label>
+                  </div>
+                  {% else %}
+                  <input type="{{ field.field_type }}" name="dynamic_field_{{ field.id }}" class="form-control" {% if field.is_required %}required{% endif %}>
+                  {% endif %}
+              </div>
+              {% endfor %}
+          </div>
+          {% endif %}
+
+          <div class="d-grid mt-4">
                         <button type="submit" class="btn btn-primary btn-lg shadow-sm">Enviar</button>
                     </div>
 

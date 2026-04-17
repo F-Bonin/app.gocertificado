@@ -28,6 +28,10 @@ from .views import (
     NPSFormDeleteView,
     NPSQuestionCreateView,
     NPSQuestionDeleteView,
+    DynamicFormListView,
+    DynamicFormCreateView,
+    DynamicFormUpdateView,
+    DynamicFormDeleteView,
 )
 
 app_name = "core"
@@ -64,6 +68,12 @@ urlpatterns = [
     path("nps/<int:pk>/excluir/", NPSFormDeleteView.as_view(), name="nps_form_delete"),
     path("nps/<int:nps_form_id>/pergunta/nova/", NPSQuestionCreateView.as_view(), name="nps_question_create"),
     path("nps/pergunta/<int:pk>/excluir/", NPSQuestionDeleteView.as_view(), name="nps_question_delete"),
+    
+    # Formulários Dinâmicos
+    path("formularios-dinamicos/", DynamicFormListView.as_view(), name="dynamic_form_list"),
+    path("formularios-dinamicos/novo/", DynamicFormCreateView.as_view(), name="dynamic_form_create"),
+    path("formularios-dinamicos/<int:pk>/editar/", DynamicFormUpdateView.as_view(), name="dynamic_form_update"),
+    path("formularios-dinamicos/<int:pk>/excluir/", DynamicFormDeleteView.as_view(), name="dynamic_form_delete"),
     
     # Utilitários
     path("treinamentos/gerador/", CourseLinkGeneratorView.as_view(), name="course_link_generator"),

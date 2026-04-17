@@ -6,8 +6,8 @@ from django.views.generic import CreateView, TemplateView
 from django.utils import timezone
 from django.http import HttpResponseForbidden, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
-from apps.core.models import Course
-from .models import Registration
+from apps.core.models import Course, DynamicField
+from .models import Registration, DynamicResponse
 from .forms import RegistrationForm
 
 
@@ -81,6 +81,21 @@ class RegistrationCreateView(CreateView):
         for field, value in form.cleaned_data.items():
             if field not in protected_fields and value:
                 setattr(reg, field, value)
+        
+        # Salvamento das Respostas Dinâmicas (EAV Injection via contexto e recuperação via POST iterativo)
+        for key, value in self.request.POST.items():
+            if key.startswith('dynamic_field_') and value:
+                try:
+                    field_id = int(key.replace('dynamic_field_', ''))
+                    field = DynamicField.objects.get(id=field_id)
+                    DynamicResponse.objects.update_or_create(
+                        registration=reg,
+                        field=field,
+                        defaults={'value': value}
+                    )
+                except (ValueError, DynamicField.DoesNotExist):
+                    # Ignora erros de conversão ou campos inexistentes (blindagem anti-forging)
+                    pass
 
         # Lógica para salvar o NPS
         if course.nps_form:
@@ -171,13 +186,22 @@ class RegistrationCreateView(CreateView):
         Sênior Fix: Recupera o Treinamento no banco de dados via slug da URL
         e injeta no contexto do template para popular os dados visuais do evento
         (Nome, Data, Carga Horária, Local).
+        Também injeta os campos dinâmicos personalizados (EAV Injection).
         """
         context = super().get_context_data(**kwargs)
-        from django.shortcuts import get_object_or_404
-        from apps.core.models import Course
+        course = get_object_or_404(Course, slug=self.kwargs['slug'])
+        context['course'] = course
         
-        # Busca o curso real pelo Slug da URL para garantir segurança
-        context['course'] = get_object_or_404(Course, slug=self.kwargs['slug'])
+        # Identifica se o formulário atual é para Inscrição ou Solicitação de Certificado
+        dynamic_form = None
+        if isinstance(self, EventRegistrationCreateView):
+            dynamic_form = course.custom_reg_form
+        else:
+            dynamic_form = course.custom_cert_form
+            
+        if dynamic_form:
+            context['dynamic_fields'] = dynamic_form.fields.all().order_by('order')
+            
         return context
 
 class EventRegistrationCreateView(RegistrationCreateView):
@@ -225,6 +249,20 @@ class EventRegistrationCreateView(RegistrationCreateView):
         inscricao.course_workload = course.hours
         inscricao.is_requested = False
         inscricao.save()
+        
+        # Salvamento das Respostas Dinâmicas (EAV Injection via contexto e recuperação via POST iterativo)
+        for key, value in self.request.POST.items():
+            if key.startswith('dynamic_field_') and value:
+                try:
+                    field_id = int(key.replace('dynamic_field_', ''))
+                    field = DynamicField.objects.get(id=field_id)
+                    DynamicResponse.objects.create(
+                        registration=inscricao,
+                        field=field,
+                        value=value
+                    )
+                except (ValueError, DynamicField.DoesNotExist):
+                    pass
 
         name_parts = inscricao.full_name.split() if inscricao.full_name else []
         first_name = name_parts[0] if name_parts else ""

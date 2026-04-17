@@ -147,7 +147,9 @@
 * [x] **Segurança e UX (Credenciamento):** Implementada blindagem da flag `no_certificate` na tela pública de credenciamento (`public_checkin.html`), ocultando o link de solicitação e exibindo um alerta visual informativo quando o evento não gera certificado.
 * [x] **Segurança e UX (Formulário de Evento):** A lógica de validação JS em `course_form.html` recebeu um bypass para ignorar o modal de falta de assinatura e o aviso de expiração quando a flag de "Evento Sem Certificado" estiver ativa.
 * [x] **Validação via ViaCEP:** Captura automática de endereço (Rua, Bairro, Cidade, UF) em formulários públicos e administrativos. Adicionado link de busca oficial dos Correios e motor JS ViaCEP customizado no `event_form.html`. [19, 20, 51]
-* [x] **Arquitetura de Formulários Dinâmicos (EAV):** Construída a base de dados para suporte a formulários dinâmicos personalizados. Implementados os modelos `DynamicForm`, `DynamicField` (Atributos) e `DynamicResponse` (Valores), e vinculados ao modelo `Course` para customização de fluxos de Inscrição e Solicitação. [NOVO]
+* [x] **Arquitetura de Formulários Dinâmicos (EAV):** Construída a base de dados para suporte a formulários dinâmicos personalizados. Implementados os modelos `DynamicForm`, `DynamicField` (Atributos) e `DynamicResponse` (Valores), e vinculados ao modelo `Course` para customização de fluxos de Inscrição e Solicitação. [17/04/2026]
+* [x] **CRUD de Formulários Dinâmicos:** Implementadas Views (CBVs), Forms (Inline Formsets) e Templates para gerenciamento de formulários dinâmicos. Adicionado suporte a manipulação de campos via Vanilla JS no frontend com re-indexação automática de prefixos do Django. Proteção Multitenant aplicada em todas as camadas. [17/04/2026]
+* [x] **Integração EAV (Público):** Formulários dinâmicos integrados aos fluxos de Inscrição Pré-Evento e Solicitação de Certificado. Implementada técnica de EAV Injection via contexto para renderização dinâmica de campos (text, email, number, date, select e checkbox) e recuperação iterativa via POST para persistência em `DynamicResponse`. [NOVO]
 
 
 **Central de Certificados e PDF:**
