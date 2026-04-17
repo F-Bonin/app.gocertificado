@@ -43,6 +43,10 @@
 * [x] Sprint 3 Concluída: Finalizada a implementação da Automação Celery baseada em Match de CPF e Check-in, incluindo atualização de UX na tela de sucesso para feedback em tempo real [20].
 * [x] Modelagem de dados do NPS (NPSForm, NPSQuestion, NPSResponse) e vínculo com modelo Course adicionados.
 * [x] **Higienização de Template:** O arquivo `templates/registrations/form.html` foi sanitizado para remover duplicação de código e tags de bloco redundantes (`{% block ... %}`), consolidando-o como uma página standalone válida. [54]
+* [x] **Higienização Definitiva (Admin):** Removidas duplicidades de campos e blocos HTML de NPS no `CourseForm` e `course_form.html` que causavam instabilidade no salvamento de eventos. [56]
+* [x] **Bugfix de Transição (Bootstrap):** Corrigida a "Race Condition" no `form.html` utilizando o listener `hidden.bs.modal` para garantir que o modal de confirmação feche completamente antes da abertura do modal NPS. [57]
+* [x] **Bypass Técnico NPS (Frontend):** Refatorada a validação do `form.html` para realizar bypass temporário do atributo `required` dos campos NPS durante a submissão do formulário principal, resolvendo conflitos de validação nativa. [58]
+* [x] **Robustez NPS (Backend):** Implementada blindagem anti-forging no processamento de respostas NPS, capturando `NPSQuestion.DoesNotExist` para evitar erros 500 em requisições malformadas ou forjadas. [59]
 * [x] **Correção Estrutural:** O campo `nps_form` no modelo `Course` foi reposicionado para logo abaixo de `certificate_template` e seus parâmetros foram atualizados para garantir a integração correta com a pesquisa de satisfação. [53]
 * [x] Backend CRUD do NPS (Forms, Views, URLs) construído e protegido via Multitenant.
 * [x] Etapa 3 do NPS: Interfaces administrativas de criação e edição de formulários e injeção do seletor no cadastro de Eventos.
@@ -135,6 +139,7 @@
 * [x] **Melhorias Técnicas (UX):** A UI da tela de Sucesso (`registration_success.html`) foi aprimorada com layout moderno (ícone de foguete) e recebeu um fallback de JavaScript para lidar com o bloqueio de `window.close()` imposto pelos navegadores modernos.
 * [x] **Correções e Melhorias Técnicas:** O método `get_context_data` foi restaurado nas Views de inscrição/solicitação para corrigir a exibição dinâmica dos dados do evento (Nome, Data, Carga Horária, Local) no frontend. [50]
 * [x] **Controle de Estado de Solicitação:** Adicionada a flag `is_requested` ao modelo `Registration` para diferenciar com precisão a inscrição pré-evento da solicitação de certificado pós-evento. O disparo da emissão automática via check-in (individual ou em massa) agora exige que esta flag seja `True`. [46, 47]
+* [x] **Formatação ISO em Forms:** Forçada a formatação ISO nos campos de data e hora do `CourseForm` para garantir exibição correta em inputs HTML5 no modo de edição [15, 55].
 * [x] **Persistência de Solicitação (Database):** Adicionado o campo booleano `certificate_requested` e o campo de data/hora `checkin_at` ao modelo `Registration` para rastrear de forma persistente se o aluno já realizou a solicitação do certificado e o momento exato do check-in.
 * [x] **Formatação ISO em Forms:** Forçada a formatação ISO nos campos de data e hora do `CourseForm` para garantir exibição correta em inputs HTML5 no modo de edição [15].
 * [x] **Segurança e UX (Páginas de Bloqueio):** O arquivo `time_locked.html` foi criado fisicamente na raiz de `templates/` para suportar as views de interrupção visual (acesso antecipado ou encerrado) com cronômetro regressivo.

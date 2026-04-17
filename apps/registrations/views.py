@@ -90,25 +90,34 @@ class RegistrationCreateView(CreateView):
             for key, value in self.request.POST.items():
                 if key.startswith('nps_question_') and value:
                     try:
+                        # Sênior Fix: Conversão segura do ID da pergunta
                         question_id = int(key.replace('nps_question_', ''))
-                        question = course.nps_form.questions.filter(id=question_id).first()
                         
-                        if question:
-                            defaults = {}
-                            if question.question_type == 'score':
-                                try:
-                                    defaults['answer_score'] = int(value)
-                                except ValueError:
-                                    pass
-                            else:
-                                defaults['answer_text'] = value
-                                
-                            NPSResponse.objects.update_or_create(
-                                registration=reg,
-                                question=question,
-                                defaults=defaults
-                            )
-                    except ValueError:
+                        # Sênior Fix (Anti-Forging): Utilizamos .get() em vez de .filter().first()
+                        # para que o sistema dispare DoesNotExist caso o usuário tente forjar
+                        # uma resposta para uma pergunta que não pertence a este formulário ou não existe.
+                        question = course.nps_form.questions.get(id=question_id)
+                        
+                        defaults = {}
+                        if question.question_type == 'score':
+                            try:
+                                defaults['answer_score'] = int(value)
+                            except ValueError:
+                                # Se o valor do score não for numérico, ignoramos o preenchimento desse campo
+                                pass
+                        else:
+                            defaults['answer_text'] = value
+                            
+                        # Persistência inteligente: cria ou atualiza a resposta vinculada ao participante
+                        NPSResponse.objects.update_or_create(
+                            registration=reg,
+                            question=question,
+                            defaults=defaults
+                        )
+                    except (ValueError, NPSQuestion.DoesNotExist):
+                        # Blindagem de Segurança: Se o ID for forjado ou inválido, apenas ignoramos.
+                        # Isso impede que o sistema retorne um erro 500 para o usuário final,
+                        # garantindo robustez em arquiteturas expostas.
                         pass
 
         # MOTOR DE REGRAS PÓS-EVENTO

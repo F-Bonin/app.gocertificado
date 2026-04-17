@@ -1,417 +1,251 @@
 {% extends 'painel/base_painel.html' %}
-
-{% block title %}
-{% if object %}Editar Evento{% else %}Novo Evento{% endif %} | GoCertificado
-{% endblock %}
-
+{% block title %}{% if object %}Editar Evento{% else %}Novo Evento{% endif %} | GoCertificado{% endblock %}
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-md-8">
-        <div class="d-flex align-items-center mb-4">
-            <a href="{% url 'core:course_list' %}" class="btn btn-outline-secondary btn-sm me-3">
-                <i class="bi bi-arrow-left"></i> Voltar
-            </a>
-            <h2 class="h4 mb-0 text-primary">
-                <i class="bi bi-journal-plus me-2"></i>
-                {% if object %}Editar Evento{% else %}Novo Evento{% endif %}
-            </h2>
-        </div>
-
-        <div class="card shadow-sm">
-            <div class="card-body p-4">
-                <form method="post" novalidate id="courseForm">
-                    {% csrf_token %}
-
-                    <!-- 1. Identificação do Evento -->
-                    <div class="mb-3">
-                        <label for="{{ form.name.id_for_label }}" class="form-label fw-bold small text-muted">
-                            {{ form.name.label }}
-                        </label>
-                        {{ form.name }}
-                        {% if form.name.errors %}
-                            <div class="text-danger small mt-1">{{ form.name.errors.0 }}</div>
-                        {% endif %}
-                    </div>
-
-                    <div class="row mb-3">
-                        <div class="col-md-4">
-                            <label for="{{ form.start_date.id_for_label }}" class="form-label fw-bold small text-muted">
-                                {{ form.start_date.label }}
-                            </label>
-                            {{ form.start_date }}
-                            {% if form.start_date.errors %}
-                                <div class="text-danger small mt-1">{{ form.start_date.errors.0 }}</div>
-                            {% endif %}
-                        </div>
-                        <div class="col-md-4">
-                            <label for="{{ form.end_date.id_for_label }}" class="form-label fw-bold small text-muted">
-                                {{ form.end_date.label }}
-                            </label>
-                            {{ form.end_date }}
-                            {% if form.end_date.errors %}
-                                <div class="text-danger small mt-1">{{ form.end_date.errors.0 }}</div>
-                            {% endif %}
-                        </div>
-                        <div class="col-md-4">
-                            <label for="{{ form.hours.id_for_label }}" class="form-label fw-bold small text-muted">
-                                {{ form.hours.label }}
-                            </label>
-                            {{ form.hours }}
-                            {% if form.hours.errors %}
-                                <div class="text-danger small mt-1">{{ form.hours.errors.0 }}</div>
-                            {% endif %}
-                        </div>
-                    </div>
-
-                    <!-- Feedback NPS -->
-                    <div class="mb-3 p-3 bg-light rounded border">
-                        <label for="{{ form.nps_form.id_for_label }}" class="form-label fw-bold small text-primary">
-                            <i class="bi bi-chat-square-heart me-1"></i> {{ form.nps_form.label }}
-                        </label>
-                        {{ form.nps_form }}
-                        <div class="form-text small text-muted">
-                            {{ form.nps_form.help_text }}
-                        </div>
-                        {% if form.nps_form.errors %}
-                            <div class="text-danger small mt-1">{{ form.nps_form.errors.0 }}</div>
-                        {% endif %}
-                    </div>
-
-                    <!-- 2. Localização e Instituição -->
-                    <div class="row mb-3">
-                        <div class="col-md-4">
-                            <label for="{{ form.cep.id_for_label }}" class="form-label fw-bold small text-muted">{{ form.cep.label }}</label>
-                            {{ form.cep }}
-                            <div class="form-text small">
-                                <a href="https://buscacepinter.correios.com.br/app/endereco/index.php" target="_blank">Não sabe o CEP?</a>
-                            </div>
-                        </div>
-                        <div class="col-md-8">
-                            <label for="{{ form.institution_name.id_for_label }}" class="form-label fw-bold small text-muted">
-                                {{ form.institution_name.label }}
-                            </label>
-                            {{ form.institution_name }}
-                        </div>
-                    </div>
-
-                    <div class="row mb-3">
-                        <div class="col-md-9">
-                            <label for="{{ form.institution_street.id_for_label }}" class="form-label fw-bold small text-muted">
-                                {{ form.institution_street.label }}
-                            </label>
-                            {{ form.institution_street }}
-                        </div>
-                        <div class="col-md-3">
-                            <label for="{{ form.institution_number.id_for_label }}" class="form-label fw-bold small text-muted">
-                                {{ form.institution_number.label }}
-                            </label>
-                            {{ form.institution_number }}
-                        </div>
-                    </div>
-
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label for="{{ form.institution_neighborhood.id_for_label }}" class="form-label fw-bold small text-muted">
-                                {{ form.institution_neighborhood.label }}
-                            </label>
-                            {{ form.institution_neighborhood }}
-                        </div>
-                        <div class="col-md-6">
-                            <label for="{{ form.institution_complement.id_for_label }}" class="form-label fw-bold small text-muted">
-                                {{ form.institution_complement.label }}
-                            </label>
-                            {{ form.institution_complement }}
-                        </div>
-                    </div>
-
-                    <div class="row mb-3">
-                        <div class="col-md-8">
-                            <label for="{{ form.city.id_for_label }}" class="form-label fw-bold small text-muted">
-                                {{ form.city.label }}
-                            </label>
-                            {{ form.city }}
-                            {% if form.city.errors %}
-                                <div class="text-danger small mt-1">{{ form.city.errors.0 }}</div>
-                            {% endif %}
-                        </div>
-                        <div class="col-md-4">
-                            <label for="{{ form.state.id_for_label }}" class="form-label fw-bold small text-muted">
-                                {{ form.state.label }}
-                            </label>
-                            {{ form.state }}
-                            {% if form.state.errors %}
-                                <div class="text-danger small mt-1">{{ form.state.errors.0 }}</div>
-                            {% endif %}
-                        </div>
-                    </div>
-
-                    <!-- 2.5 Configurações do Link de Inscrição (Pré-Evento) -->
-                    <div class="card mb-4 border-success shadow-sm">
-                        <div class="card-header bg-success text-white fw-bold d-flex align-items-center">
-                            <i class="bi bi-person-lines-fill me-2 fs-5"></i>
-                            Configurações do Link de Inscrição (Pré-Evento)
-                        </div>
-                        <div class="card-body">
-                            <p class="text-muted small mb-3">
-                                Defina o período em que o formulário de inscrição pré-evento estará disponível para os participantes.
-                            </p>
-                            <div class="form-check form-switch mb-3">
-                                <input class="form-check-input" type="checkbox" id="check_registration_open"
-                                    {% if not form.registration_start.value and not form.registration_end.value %}checked{% endif %}>
-                                <label class="form-check-label fw-bold text-dark" for="check_registration_open">
-                                    O link nunca expira (sempre disponível)
-                                </label>
-                            </div>
-                            <div id="registration_dates_container" {% if not form.registration_start.value and not form.registration_end.value %}style="display:none;"{% endif %}>
-                                <div class="p-3 bg-light rounded border border-success border-opacity-25">
-                                    <div class="row">
-                                        <div class="col-md-6 mb-3 mb-md-0">
-                                            <label for="{{ form.registration_start.id_for_label }}" class="form-label fw-bold small text-success">
-                                                Início das Inscrições
-                                            </label>
-                                            {{ form.registration_start }}
-                                            {% if form.registration_start.errors %}
-                                                <div class="text-danger small mt-1">{{ form.registration_start.errors.0 }}</div>
-                                            {% endif %}
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label for="{{ form.registration_end.id_for_label }}" class="form-label fw-bold small text-success">
-                                                Término das Inscrições
-                                            </label>
-                                            {{ form.registration_end }}
-                                            {% if form.registration_end.errors %}
-                                                <div class="text-danger small mt-1">{{ form.registration_end.errors.0 }}</div>
-                                            {% endif %}
-                                        </div>
-                                    </div>
-                                    <div class="form-text small mt-2">
-                                        <i class="bi bi-info-circle me-1"></i>
-                                        Fora deste intervalo, o link de inscrição ficará desativado.
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- NOVO BLOCO: Trava de Certificado -->
-                    <div class="card mb-4 border-danger shadow-sm">
-                        <div class="card-body bg-danger bg-opacity-10 rounded">
-                            <div class="form-check form-switch fs-5 mb-0">
-                                {{ form.no_certificate }}
-                                <label class="form-check-label fw-bold text-danger ms-2" for="{{ form.no_certificate.id_for_label }}">
-                                    ESTE EVENTO NÃO TERÁ CERTIFICADO
-                                </label>
-                            </div>
-                            <div class="form-text text-danger mt-2 small fw-semibold">
-                                <i class="bi bi-exclamation-triangle-fill me-1"></i>Ao ativar esta opção, as configurações de certificado serão ocultadas e o sistema NÃO gerará o link de solicitação de certificado.
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Wrapper dinâmico: Será ocultado se a flag no_certificate estiver ativa -->
-                    <div id="certificate_settings_wrapper">
-
-                        <!-- 3. Expiração do Link (Refatoração: Novo Card) -->
-                        <div class="card bg-light border-0 mb-4 mt-4 shadow-sm">
-                            <div class="card-header bg-white py-3 border-bottom-0 d-flex align-items-center">
-                                <i class="bi bi-clock-history me-2 text-primary fs-5"></i>
-                                <h6 class="mb-0 fw-bold">Expiração do Link de Solicitação (Certificado)</h6>
-                            </div>
-                            <div class="card-body pt-0">
-                                <p class="text-muted small mb-3">
-                                    Defina até quando os alunos poderão preencher o formulário de solicitação deste certificado.
-                                </p>
-                                <div class="form-check mb-3">
-                                    <input class="form-check-input" type="checkbox" id="check_no_expire"
-                                        {% if not form.expires_at.value %}checked{% endif %}>
-                                    <label class="form-check-label fw-bold text-dark" for="check_no_expire">
-                                        O link nunca expira (sempre disponível)
-                                    </label>
-                                </div>
-                                <div id="expire_date_container" {% if not form.expires_at.value %}style="display:none;"{% endif %}>
-                                    <div class="p-3 bg-white rounded border border-primary border-opacity-25">
-                                        <label for="{{ form.expires_at.id_for_label }}" class="form-label fw-bold small text-primary">
-                                            Data e Hora Limite para Solicitações
-                                        </label>
-                                        {{ form.expires_at }}
-                                        <div class="form-text small mt-2">
-                                            <i class="bi bi-info-circle me-1"></i>
-                                            Após esta data, o link exibirá uma mensagem de "Encerrado".
-                                        </div>
-                                        {% if form.expires_at.errors %}
-                                            <div class="text-danger small mt-1">{{ form.expires_at.errors.0 }}</div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <hr class="my-4 opacity-10">
-
-                        <!-- 4. Design do Certificado -->
-                        <div class="mb-3">
-                            <label for="{{ form.certificate_template.id_for_label }}" class="form-label fw-bold small text-muted">
-                                {{ form.certificate_template.label }}
-                            </label>
-                            {{ form.certificate_template }}
-                            <div class="form-text small text-info">
-                                <i class="bi bi-info-circle me-1"></i>
-                                {{ form.certificate_template.help_text }}
-                            </div>
-                            {% if form.certificate_template.errors %}
-                                <div class="text-danger small mt-1">{{ form.certificate_template.errors.0 }}</div>
-                            {% endif %}
-                        </div>
-
-                        <div class="mb-4">
-                            <label for="{{ form.num_signatures.id_for_label }}" class="form-label fw-bold small text-muted">
-                                {{ form.num_signatures.label }}
-                            </label>
-                            {{ form.num_signatures }}
-                        </div>
-
-                        <div class="row mb-3" id="div_sig1">
-                            <div class="col-md-12">
-                                <label for="{{ form.signature_1.id_for_label }}" class="form-label fw-bold small text-muted">
-                                    {{ form.signature_1.label }}
-                                </label>
-                                {{ form.signature_1 }}
-                            </div>
-                        </div>
-
-                        <div class="row mb-3" id="div_sig2">
-                            <div class="col-md-12">
-                                <label for="{{ form.signature_2.id_for_label }}" class="form-label fw-bold small text-muted">
-                                    {{ form.signature_2.label }}
-                                </label>
-                                {{ form.signature_2 }}
-                            </div>
-                        </div>
-
-                        <div class="row mb-3" id="div_sig3">
-                            <div class="col-md-12">
-                                <label for="{{ form.signature_3.id_for_label }}" class="form-label fw-bold small text-muted">
-                                    {{ form.signature_3.label }}
-                                </label>
-                                {{ form.signature_3 }}
-                            </div>
-                        </div>
-
-                    </div> <!-- Fim do certificate_settings_wrapper -->
-
-                    <!-- INÍCIO DO BLOCO DE SELEÇÃO DE NPS -->
-                    <div class="card bg-light border-0 mb-4 mt-4 shadow-sm">
-                        <div class="card-header bg-white py-3 border-bottom-0 d-flex align-items-center">
-                            <i class="bi bi-chat-square-text-fill me-2 text-primary fs-5"></i>
-                            <h6 class="mb-0 fw-bold">Formulário de Feedback (NPS)</h6>
-                        </div>
-                    <div class="card-body pt-0">
-                        <p class="text-muted small mb-3">
-                        Opcional: Selecione a pesquisa de satisfação que o aluno precisará responder antes de baixar o certificado.
-                        </p>
-                    {{ form.nps_form }}
-                    </div>
-                    </div>
-                    <!-- FIM DO BLOCO DE SELEÇÃO DE NPS -->
-
-                    <hr class="my-4 opacity-10">
-
-                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                        <a href="{% url 'core:course_list' %}" class="btn btn-light px-4">Cancelar</a>
-                        <button type="button" class="btn btn-primary px-5 shadow-sm" id="btn-salvar-treinamento">
-                            <i class="bi bi-check2-circle me-1"></i> Salvar Evento
-                        </button>
-                    </div>
-
-                </form>
-            </div>
-        </div>
-
-        {% if not object %}
-            <div class="alert alert-info mt-4 small border-0 shadow-sm">
-                <i class="bi bi-info-circle-fill me-2"></i>
-                Ao salvar, um <strong>Link Único</strong> de inscrição será gerado automaticamente para este evento.
-            </div>
-        {% endif %}
-
-    </div>
+<div class="col-md-8">
+<div class="d-flex align-items-center mb-4">
+<a href="{% url 'core:course_list' %}" class="btn btn-outline-secondary btn-sm me-3"><i class="bi bi-arrow-left"></i> Voltar</a>
+<h2 class="h4 mb-0 text-primary"><i class="bi bi-journal-plus me-2"></i>{% if object %}Editar Evento{% else %}Novo Evento{% endif %}</h2>
 </div>
-
+<div class="card shadow-sm">
+<div class="card-body p-4">
+<form method="post" novalidate id="courseForm">
+{% csrf_token %}
+<div class="mb-3">
+<label for="{{ form.name.id_for_label }}" class="form-label fw-bold small text-muted">{{ form.name.label }}</label>
+{{ form.name }}
+{% if form.name.errors %}<div class="text-danger small mt-1">{{ form.name.errors.0 }}</div>{% endif %}
+</div>
+<div class="row mb-3">
+<div class="col-md-4">
+<label for="{{ form.start_date.id_for_label }}" class="form-label fw-bold small text-muted">{{ form.start_date.label }}</label>
+{{ form.start_date }}
+{% if form.start_date.errors %}<div class="text-danger small mt-1">{{ form.start_date.errors.0 }}</div>{% endif %}
+</div>
+<div class="col-md-4">
+<label for="{{ form.end_date.id_for_label }}" class="form-label fw-bold small text-muted">{{ form.end_date.label }}</label>
+{{ form.end_date }}
+{% if form.end_date.errors %}<div class="text-danger small mt-1">{{ form.end_date.errors.0 }}</div>{% endif %}
+</div>
+<div class="col-md-4">
+<label for="{{ form.hours.id_for_label }}" class="form-label fw-bold small text-muted">{{ form.hours.label }}</label>
+{{ form.hours }}
+{% if form.hours.errors %}<div class="text-danger small mt-1">{{ form.hours.errors.0 }}</div>{% endif %}
+</div>
+</div>
+<!-- 2. Localização e Instituição -->
+<div class="row mb-3">
+<div class="col-md-4">
+<label for="{{ form.cep.id_for_label }}" class="form-label fw-bold small text-muted">{{ form.cep.label }}</label>
+{{ form.cep }}
+<div class="form-text small"><a href="https://buscacepinter.correios.com.br/app/endereco/index.php" target="_blank">Não sabe o CEP?</a></div>
+</div>
+<div class="col-md-8">
+<label for="{{ form.institution_name.id_for_label }}" class="form-label fw-bold small text-muted">{{ form.institution_name.label }}</label>
+{{ form.institution_name }}
+</div>
+</div>
+<div class="row mb-3">
+<div class="col-md-9">
+<label for="{{ form.institution_street.id_for_label }}" class="form-label fw-bold small text-muted">{{ form.institution_street.label }}</label>
+{{ form.institution_street }}
+</div>
+<div class="col-md-3">
+<label for="{{ form.institution_number.id_for_label }}" class="form-label fw-bold small text-muted">{{ form.institution_number.label }}</label>
+{{ form.institution_number }}
+</div>
+</div>
+<div class="row mb-3">
+<div class="col-md-6">
+<label for="{{ form.institution_neighborhood.id_for_label }}" class="form-label fw-bold small text-muted">{{ form.institution_neighborhood.label }}</label>
+{{ form.institution_neighborhood }}
+</div>
+<div class="col-md-6">
+<label for="{{ form.institution_complement.id_for_label }}" class="form-label fw-bold small text-muted">{{ form.institution_complement.label }}</label>
+{{ form.institution_complement }}
+</div>
+</div>
+<div class="row mb-3">
+<div class="col-md-8">
+<label for="{{ form.city.id_for_label }}" class="form-label fw-bold small text-muted">{{ form.city.label }}</label>
+{{ form.city }}
+{% if form.city.errors %}<div class="text-danger small mt-1">{{ form.city.errors.0 }}</div>{% endif %}
+</div>
+<div class="col-md-4">
+<label for="{{ form.state.id_for_label }}" class="form-label fw-bold small text-muted">{{ form.state.label }}</label>
+{{ form.state }}
+{% if form.state.errors %}<div class="text-danger small mt-1">{{ form.state.errors.0 }}</div>{% endif %}
+</div>
+</div>
+<!-- 2.5 Configurações do Link de Inscrição (Pré-Evento) -->
+<div class="card mb-4 border-success shadow-sm">
+<div class="card-header bg-success text-white fw-bold d-flex align-items-center">
+<i class="bi bi-person-lines-fill me-2 fs-5"></i>Configurações do Link de Inscrição (Pré-Evento)
+</div>
+<div class="card-body">
+<p class="text-muted small mb-3">Defina o período em que o formulário de inscrição pré-evento estará disponível.</p>
+<div class="form-check form-switch mb-3">
+<input class="form-check-input" type="checkbox" id="check_registration_open" {% if not form.registration_start.value and not form.registration_end.value %}checked{% endif %}>
+<label class="form-check-label fw-bold text-dark" for="check_registration_open">O link nunca expira (sempre disponível)</label>
+</div>
+<div id="registration_dates_container" {% if not form.registration_start.value and not form.registration_end.value %}style="display:none;"{% endif %}>
+<div class="p-3 bg-light rounded border border-success border-opacity-25">
+<div class="row">
+<div class="col-md-6 mb-3 mb-md-0">
+<label for="{{ form.registration_start.id_for_label }}" class="form-label fw-bold small text-success">Início das Inscrições</label>
+{{ form.registration_start }}
+{% if form.registration_start.errors %}<div class="text-danger small mt-1">{{ form.registration_start.errors.0 }}</div>{% endif %}
+</div>
+<div class="col-md-6">
+<label for="{{ form.registration_end.id_for_label }}" class="form-label fw-bold small text-success">Término das Inscrições</label>
+{{ form.registration_end }}
+{% if form.registration_end.errors %}<div class="text-danger small mt-1">{{ form.registration_end.errors.0 }}</div>{% endif %}
+</div>
+</div>
+<div class="form-text small mt-2"><i class="bi bi-info-circle me-1"></i>Fora deste intervalo, o link de inscrição ficará desativado.</div>
+</div>
+</div>
+</div>
+</div>
+<!-- NOVO BLOCO: Trava de Certificado -->
+<div class="card mb-4 border-danger shadow-sm">
+<div class="card-body bg-danger bg-opacity-10 rounded">
+<div class="form-check form-switch fs-5 mb-0">
+{{ form.no_certificate }}
+<label class="form-check-label fw-bold text-danger ms-2" for="{{ form.no_certificate.id_for_label }}">ESTE EVENTO NÃO TERÁ CERTIFICADO</label>
+</div>
+<div class="form-text text-danger mt-2 small fw-semibold"><i class="bi bi-exclamation-triangle-fill me-1"></i>Ao ativar esta opção, as configurações de certificado serão ocultadas.</div>
+</div>
+</div>
+<div id="certificate_settings_wrapper">
+<!-- 3. Expiração do Link -->
+<div class="card bg-light border-0 mb-4 mt-4 shadow-sm">
+<div class="card-header bg-white py-3 border-bottom-0 d-flex align-items-center">
+<i class="bi bi-clock-history me-2 text-primary fs-5"></i>
+<h6 class="mb-0 fw-bold">Expiração do Link de Solicitação (Certificado)</h6>
+</div>
+<div class="card-body pt-0">
+<p class="text-muted small mb-3">Defina até quando os alunos poderão preencher o formulário de solicitação deste certificado.</p>
+<div class="form-check mb-3">
+<input class="form-check-input" type="checkbox" id="check_no_expire" {% if not form.expires_at.value %}checked{% endif %}>
+<label class="form-check-label fw-bold text-dark" for="check_no_expire">O link nunca expira (sempre disponível)</label>
+</div>
+<div id="expire_date_container" {% if not form.expires_at.value %}style="display:none;"{% endif %}>
+<div class="p-3 bg-white rounded border border-primary border-opacity-25">
+<label for="{{ form.expires_at.id_for_label }}" class="form-label fw-bold small text-primary">Data e Hora Limite para Solicitações</label>
+{{ form.expires_at }}
+{% if form.expires_at.errors %}<div class="text-danger small mt-1">{{ form.expires_at.errors.0 }}</div>{% endif %}
+</div>
+</div>
+</div>
+</div>
+<hr class="my-4 opacity-10">
+<!-- 4. Design do Certificado -->
+<div class="mb-3">
+<label for="{{ form.certificate_template.id_for_label }}" class="form-label fw-bold small text-muted">{{ form.certificate_template.label }}</label>
+{{ form.certificate_template }}
+{% if form.certificate_template.errors %}<div class="text-danger small mt-1">{{ form.certificate_template.errors.0 }}</div>{% endif %}
+</div>
+<div class="mb-4">
+<label for="{{ form.num_signatures.id_for_label }}" class="form-label fw-bold small text-muted">{{ form.num_signatures.label }}</label>
+{{ form.num_signatures }}
+</div>
+<div class="row mb-3" id="div_sig1">
+<div class="col-md-12">
+<label for="{{ form.signature_1.id_for_label }}" class="form-label fw-bold small text-muted">{{ form.signature_1.label }}</label>
+{{ form.signature_1 }}
+</div>
+</div>
+<div class="row mb-3" id="div_sig2">
+<div class="col-md-12">
+<label for="{{ form.signature_2.id_for_label }}" class="form-label fw-bold small text-muted">{{ form.signature_2.label }}</label>
+{{ form.signature_2 }}
+</div>
+</div>
+<div class="row mb-3" id="div_sig3">
+<div class="col-md-12">
+<label for="{{ form.signature_3.id_for_label }}" class="form-label fw-bold small text-muted">{{ form.signature_3.label }}</label>
+{{ form.signature_3 }}
+</div>
+</div>
+</div> <!-- Fim do certificate_settings_wrapper -->
+<!-- INÍCIO DO BLOCO DE SELEÇÃO DE NPS -->
+<div class="card bg-light border-0 mb-4 mt-4 shadow-sm">
+<div class="card-header bg-white py-3 border-bottom-0 d-flex align-items-center">
+<i class="bi bi-chat-square-text-fill me-2 text-primary fs-5"></i>
+<h6 class="mb-0 fw-bold">Formulário de Feedback (NPS)</h6>
+</div>
+<div class="card-body pt-0">
+<p class="text-muted small mt-3 mb-3">Opcional: Selecione a pesquisa de satisfação que o aluno precisará responder antes de baixar o certificado.</p>
+{{ form.nps_form }}
+</div>
+</div>
+<!-- FIM DO BLOCO DE SELEÇÃO DE NPS -->
+<hr class="my-4 opacity-10">
+<div class="d-grid gap-2 d-md-flex justify-content-md-end">
+<a href="{% url 'core:course_list' %}" class="btn btn-light px-4">Cancelar</a>
+<button type="button" class="btn btn-primary px-5 shadow-sm" id="btn-salvar-treinamento">
+<i class="bi bi-check2-circle me-1"></i> Salvar Evento
+</button>
+</div>
+</form>
+</div>
+</div>
+{% if not object %}
+<div class="alert alert-info mt-4 small border-0 shadow-sm">
+<i class="bi bi-info-circle-fill me-2"></i>Ao salvar, um <strong>Link Único</strong> de inscrição será gerado automaticamente para este evento.
+</div>
+{% endif %}
+</div>
+</div>
 <!-- Modal de Confirmação de Assinatura -->
 <div class="modal fade" id="noSignatureModal" tabindex="-1" aria-labelledby="noSignatureModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-warning">
-            <div class="modal-header bg-warning text-dark">
-                <h5 class="modal-title" id="noSignatureModalLabel"><i class="bi bi-exclamation-triangle-fill me-2"></i> Atenção: Nenhuma Assinatura</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-            </div>
-            <div class="modal-body text-center py-4">
-                <p class="mb-0 fs-5">Você não selecionou nenhuma assinatura para este treinamento.</p>
-                <p class="text-muted mt-2">O certificado será gerado <strong>sem assinaturas</strong> no rodapé.</p>
-            </div>
-            <div class="modal-footer justify-content-center">
-                <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Cancelar e Voltar</button>
-                <button type="button" class="btn btn-warning px-4" id="btn-confirm-submit">Prosseguir sem Assinatura</button>
-            </div>
-        </div>
-    </div>
+<div class="modal-dialog modal-dialog-centered">
+<div class="modal-content border-warning">
+<div class="modal-header bg-warning text-dark">
+<h5 class="modal-title" id="noSignatureModalLabel"><i class="bi bi-exclamation-triangle-fill me-2"></i> Atenção: Nenhuma Assinatura</h5>
+<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
 </div>
-
+<div class="modal-body text-center py-4">
+<p class="mb-0 fs-5">Você não selecionou nenhuma assinatura para este treinamento.</p>
+<p class="text-muted mt-2">O certificado será gerado <strong>sem assinaturas</strong> no rodapé.</p>
+</div>
+<div class="modal-footer justify-content-center">
+<button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Cancelar e Voltar</button>
+<button type="button" class="btn btn-warning px-4" id="btn-confirm-submit">Prosseguir sem Assinatura</button>
+</div>
+</div>
+</div>
+</div>
 {% endblock %}
-
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-
-    // --- ViaCEP ---
     const cepInput = document.getElementById('id_course_cep');
     if (cepInput) {
         cepInput.addEventListener('blur', function() {
             const cep = this.value.replace(/\D/g, '');
             if (cep.length !== 8) return;
-
             const streetInput = document.getElementById('id_course_street');
             const neighborhoodInput = document.getElementById('id_course_neighborhood');
             const cityInput = document.getElementById('id_course_city');
             const stateInput = document.getElementById('id_course_state');
             const numberInput = document.getElementById('id_institution_number');
-
-            streetInput.value = '...';
-            neighborhoodInput.value = '...';
-            cityInput.value = '...';
-            stateInput.value = '...';
-
             fetch(`https://viacep.com.br/ws/${cep}/json/`)
                 .then(response => response.json())
                 .then(data => {
-                    if (data.erro) {
-                        alert('CEP não encontrado.');
-                        streetInput.value = '';
-                        neighborhoodInput.value = '';
-                        cityInput.value = '';
-                        stateInput.value = '';
-                    } else {
+                    if (!data.erro) {
                         streetInput.value = data.logradouro;
                         neighborhoodInput.value = data.bairro;
                         cityInput.value = data.localidade;
                         stateInput.value = data.uf;
                         numberInput.focus();
                     }
-                })
-                .catch(error => {
-                    console.error('Erro ao buscar CEP:', error);
-                    streetInput.value = '';
-                    neighborhoodInput.value = '';
-                    cityInput.value = '';
-                    stateInput.value = '';
                 });
         });
     }
-
-    // --- 1. BARREIRA DE DATAS ---
     const startDate = document.getElementById('id_start_date');
     const endDate = document.getElementById('id_end_date');
-
     if (startDate && endDate) {
         if (startDate.value) endDate.min = startDate.value;
         startDate.addEventListener('change', function() {
@@ -419,159 +253,77 @@ document.addEventListener('DOMContentLoaded', function() {
             if (endDate.value && endDate.value < this.value) endDate.value = '';
         });
     }
-
-    /**
-     * Lógica de Expiração de Link
-     */
     const checkNoExpire = document.getElementById('check_no_expire');
     const expireContainer = document.getElementById('expire_date_container');
     const expireInput = document.querySelector('[name="expires_at"]');
-
     if (checkNoExpire && expireContainer && expireInput) {
         checkNoExpire.addEventListener('change', function() {
             if (this.checked) {
-                expireContainer.style.display = 'none';
-                expireInput.value = '';
-                expireInput.required = false;
+                expireContainer.style.display = 'none'; expireInput.value = ''; expireInput.required = false;
             } else {
-                expireContainer.style.display = 'block';
-                expireInput.required = true;
+                expireContainer.style.display = 'block'; expireInput.required = true;
             }
         });
     }
-
-    /**
-     * Lógica de Inscrição Pré-Evento (JS)
-     */
     const checkRegOpen = document.getElementById('check_registration_open');
     const regContainer = document.getElementById('registration_dates_container');
     const regStartInput = document.querySelector('[name="registration_start"]');
     const regEndInput = document.querySelector('[name="registration_end"]');
-
     if (checkRegOpen && regContainer && regStartInput && regEndInput) {
         checkRegOpen.addEventListener('change', function() {
             if (this.checked) {
-                regContainer.style.display = 'none';
-                regStartInput.value = '';
-                regEndInput.value = '';
-                regStartInput.required = false;
-                regEndInput.required = false;
+                regContainer.style.display = 'none'; regStartInput.value = ''; regEndInput.value = ''; regStartInput.required = false; regEndInput.required = false;
             } else {
-                regContainer.style.display = 'block';
-                regStartInput.required = true;
-                regEndInput.required = true;
+                regContainer.style.display = 'block'; regStartInput.required = true; regEndInput.required = true;
             }
         });
     }
-
-    /**
-     * NOVO: Lógica da Trava Anti-Certificado (JS)
-     */
     const noCertToggle = document.getElementById('check_no_certificate');
     const certWrapper = document.getElementById('certificate_settings_wrapper');
-
     if (noCertToggle && certWrapper) {
         function toggleCertSettings() {
-            if (noCertToggle.checked) {
-                certWrapper.style.display = 'none';
-            } else {
-                certWrapper.style.display = 'block';
-            }
+            certWrapper.style.display = noCertToggle.checked ? 'none' : 'block';
         }
         noCertToggle.addEventListener('change', toggleCertSettings);
-        toggleCertSettings(); // Executa ao carregar
+        toggleCertSettings();
     }
-
-    // --- 2. TOGGLE DE ASSINATURAS ---
     const numSignatures = document.getElementById('id_num_signatures');
     const sig2 = document.querySelector('[name="signature_2"]');
     const sig3 = document.querySelector('[name="signature_3"]');
-
     function toggleSignatures() {
         if (!numSignatures) return;
         const val = parseInt(numSignatures.value) || 1;
-
-        const sig2Container = sig2 ? (sig2.closest('.form-group') || sig2.parentElement) : null;
-        const sig3Container = sig3 ? (sig3.closest('.form-group') || sig3.parentElement) : null;
-
+        const sig2Container = sig2 ? (sig2.closest('.row') || sig2.parentElement) : null;
+        const sig3Container = sig3 ? (sig3.closest('.row') || sig3.parentElement) : null;
         if (val === 1) {
             if (sig2Container) sig2Container.style.display = 'none';
             if (sig3Container) sig3Container.style.display = 'none';
-            if (sig2) sig2.selectedIndex = 0;
-            if (sig3) sig3.selectedIndex = 0;
         } else if (val === 2) {
             if (sig2Container) sig2Container.style.display = '';
             if (sig3Container) sig3Container.style.display = 'none';
-            if (sig3) sig3.selectedIndex = 0;
         } else if (val >= 3) {
             if (sig2Container) sig2Container.style.display = '';
             if (sig3Container) sig3Container.style.display = '';
         }
     }
-
     if (numSignatures) {
         numSignatures.addEventListener('change', toggleSignatures);
         toggleSignatures();
     }
-
-    // --- 3. BOTÃO DE SALVAR BLINDADO (CONTROLE TOTAL DO JS) ---
     const btnSalvar = document.getElementById('btn-salvar-treinamento');
     if (btnSalvar) {
         btnSalvar.addEventListener('click', function() {
             const form = this.closest('form');
-            const sig1 = document.querySelector('[name="signature_1"]');
             const noCertToggle = document.getElementById('check_no_certificate');
             const isNoCert = noCertToggle && noCertToggle.checked;
-
-            // Sênior Fix: Se o evento não tem certificado, ignoramos a validação de data de expiração
-            if (!isNoCert) {
-                if (checkNoExpire && !checkNoExpire.checked && !expireInput.value) {
-                    alert('Por favor, informe a data e hora de expiração ou marque "O link nunca expira".');
-                    if(expireInput) expireInput.focus();
-                    return;
-                }
+            if (!isNoCert && checkNoExpire && !checkNoExpire.checked && !expireInput.value) {
+                alert('Por favor, informe a data e hora de expiração ou marque "O link nunca expira".');
+                if(expireInput) expireInput.focus(); return;
             }
-
-            // Aciona validações HTML5 nativas nos campos visíveis (Ex: Nome do Evento)
-            if (!form.checkValidity()) {
-                form.reportValidity();
-                return;
-            }
-
-            // Sênior Fix: Se o evento não tem certificado, ignoramos o Modal de Assinaturas e salvamos direto
-            if (!isNoCert) {
-                let isSignatureEmpty = true;
-                if (sig1 && sig1.options.length > 0) {
-                    const selectedValue = sig1.options[sig1.selectedIndex].value;
-                    if (selectedValue !== '') {
-                        isSignatureEmpty = false;
-                    }
-                }
-
-                if (isSignatureEmpty) {
-                    const modalEl = document.getElementById('noSignatureModal');
-                    if (modalEl && typeof bootstrap !== 'undefined') {
-                        const modal = new bootstrap.Modal(modalEl);
-                        modal.show();
-                        document.getElementById('btn-confirm-submit').onclick = function() {
-                            modal.hide();
-                            form.submit();
-                        };
-                    } else {
-                        if (confirm("Você não escolheu NENHUMA assinatura. O certificado sairá sem assinaturas no rodapé. Deseja prosseguir?")) {
-                            form.submit();
-                        }
-                    }
-                } else {
-                    form.submit(); // Tudo preenchido corretamente
-                }
-            } else {
-                // Evento SEM certificado: bypass nas regras e submissão direta
-                form.submit();
-            }
+            if (!form.checkValidity()) { form.reportValidity(); return; }
+            form.submit();
         });
     }
-
 });
 </script>
 {% endblock %}

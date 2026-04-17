@@ -2,7 +2,6 @@ from django import forms
 from .models import Company, Instructor, Course, NPSForm, NPSQuestion
 from apps.certificates.models import CertificateTemplate
 
-
 class CompanyForm(forms.ModelForm):
     class Meta:
         model = Company
@@ -13,7 +12,6 @@ class CompanyForm(forms.ModelForm):
             "website": forms.URLInput(attrs={"class": "form-control", "placeholder": "https://..."}),
             "email": forms.EmailInput(attrs={"class": "form-control", "placeholder": "contato@empresa.com"}),
         }
-
 
 class InstructorForm(forms.ModelForm):
     class Meta:
@@ -28,7 +26,6 @@ class InstructorForm(forms.ModelForm):
             "active": forms.CheckboxInput(attrs={"class": "form-check-input"}),
         }
 
-
 class CourseForm(forms.ModelForm):
     num_signatures = forms.ChoiceField(
         choices=[('1', '1 Assinatura'), ('2', '2 Assinaturas'), ('3', '3 Assinaturas')],
@@ -42,7 +39,7 @@ class CourseForm(forms.ModelForm):
         fields = [
             "name", "start_date", "end_date", "hours",
             "registration_start", "registration_end",
-            "expires_at", "no_certificate", "nps_form",
+            "expires_at", "no_certificate",
             "cep", "institution_name", "institution_street", "institution_number",
             "institution_neighborhood", "institution_complement",
             "city", "state",
@@ -52,13 +49,12 @@ class CourseForm(forms.ModelForm):
         ]
         widgets = {
             "name": forms.TextInput(attrs={"class": "form-control"}),
-            "start_date": forms.DateInput(attrs={"class": "form-control", "type": "date"}),
-            "end_date": forms.DateInput(attrs={"class": "form-control", "type": "date"}),
-            "registration_start": forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
-            "registration_end": forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
-            "expires_at": forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
+            "start_date": forms.DateInput(format='%Y-%m-%d', attrs={"class": "form-control", "type": "date"}),
+            "end_date": forms.DateInput(format='%Y-%m-%d', attrs={"class": "form-control", "type": "date"}),
+            "registration_start": forms.DateTimeInput(format='%Y-%m-%dT%H:%M', attrs={'type': 'datetime-local', 'class': 'form-control'}),
+            "registration_end": forms.DateTimeInput(format='%Y-%m-%dT%H:%M', attrs={'type': 'datetime-local', 'class': 'form-control'}),
+            "expires_at": forms.DateTimeInput(format='%Y-%m-%dT%H:%M', attrs={'type': 'datetime-local', 'class': 'form-control'}),
             "no_certificate": forms.CheckboxInput(attrs={"class": "form-check-input", "id": "check_no_certificate"}),
-            "nps_form": forms.Select(attrs={"class": "form-select"}),
             "cep": forms.TextInput(attrs={"class": "form-control", "placeholder": "00000-000", "id": "id_course_cep"}),
             "city": forms.TextInput(attrs={"class": "form-control", "id": "id_course_city", "readonly": True}),
             "state": forms.TextInput(attrs={"class": "form-control", "id": "id_course_state", "readonly": True}),
@@ -74,12 +70,9 @@ class CourseForm(forms.ModelForm):
             "certificate_template": forms.Select(attrs={"class": "form-select"}),
             "nps_form": forms.Select(attrs={"class": "form-select"}),
         }
-
     def __init__(self, *args, **kwargs):
         company = kwargs.pop("company", None)
         super().__init__(*args, **kwargs)
-        
-        # Define initial num_signatures if editing
         if self.instance.pk:
             if self.instance.signature_3:
                 self.initial['num_signatures'] = '3'
@@ -93,7 +86,6 @@ class CourseForm(forms.ModelForm):
             self.fields["signature_1"].queryset = instructor_qs
             self.fields["signature_2"].queryset = instructor_qs
             self.fields["signature_3"].queryset = instructor_qs
-
             self.fields["certificate_template"].queryset = CertificateTemplate.objects.filter(company=company)
             self.fields["certificate_template"].empty_label = "Modelo Padrão do Sistema"
             self.fields["certificate_template"].help_text = "Se não selecionar nenhum, o sistema usará o Modelo Padrão nativo."
@@ -105,13 +97,10 @@ class CourseForm(forms.ModelForm):
         cleaned_data = super().clean()
         start_date = cleaned_data.get("start_date")
         end_date = cleaned_data.get("end_date")
-
         if start_date and end_date:
             if end_date < start_date:
                 self.add_error("end_date", "A data de término não pode ser anterior à data de início.")
-
         return cleaned_data
-
 
 class NPSFormModelForm(forms.ModelForm):
     class Meta:
@@ -122,7 +111,6 @@ class NPSFormModelForm(forms.ModelForm):
             "is_mandatory": forms.CheckboxInput(attrs={"class": "form-check-input"}),
         }
 
-
 class NPSQuestionForm(forms.ModelForm):
     class Meta:
         model = NPSQuestion
@@ -132,7 +120,6 @@ class NPSQuestionForm(forms.ModelForm):
             "question_type": forms.Select(attrs={"class": "form-select"}),
             "order": forms.NumberInput(attrs={"class": "form-control"}),
         }
-
 
 class CertificateDesignForm(forms.ModelForm):
     class Meta:
@@ -150,12 +137,11 @@ class CertificateDesignForm(forms.ModelForm):
             'custom_text_6': forms.TextInput(attrs={'class': 'form-control'}),
         }
 
-
 class CertificateTemplateForm(forms.ModelForm):
     class Meta:
         model = CertificateTemplate
         fields = [
-            'name', 'background_image', 'title', 
+            'name', 'background_image', 'title',
             'text_1', 'text_2', 'text_3', 'text_4', 'text_5', 'text_6'
         ]
         widgets = {
@@ -169,9 +155,9 @@ class CertificateTemplateForm(forms.ModelForm):
             'text_5': forms.TextInput(attrs={'class': 'form-control'}),
             'text_6': forms.TextInput(attrs={'class': 'form-control'}),
         }
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Hack de Sênior: Torna os textos do certificado verdadeiramente opcionais
         campos_opcionais = ['title', 'text_1', 'text_2', 'text_3', 'text_4', 'text_5', 'text_6']
         for campo in campos_opcionais:
             if campo in self.fields:
@@ -179,8 +165,6 @@ class CertificateTemplateForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
-        # Injeta espaços vazios para campos em branco para evitar erro de banco (campo obrigatório)
-        # sem a necessidade de migrações
         for field in ['title', 'text_1', 'text_2', 'text_3', 'text_4', 'text_5', 'text_6']:
             if not cleaned_data.get(field):
                 cleaned_data[field] = " "
