@@ -129,6 +129,71 @@ class NPSQuestion(models.Model):
         return self.text
 
 
+class DynamicForm(models.Model):
+    """
+    Representa um formulário dinâmico que pode ser associado a cursos.
+    Arquitetura EAV (Entity-Attribute-Value): Este é o contêiner (Entidade).
+    Permite que cada empresa crie formulários personalizados para inscrição ou solicitação de certificado.
+    """
+    company = models.ForeignKey(
+        Company, 
+        on_delete=models.CASCADE, 
+        related_name='dynamic_forms', 
+        verbose_name="Empresa"
+    )
+    name = models.CharField("Nome do Formulário", max_length=200)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Formulário Dinâmico"
+        verbose_name_plural = "Formulários Dinâmicos"
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return self.name
+
+
+class DynamicField(models.Model):
+    """
+    Representa um campo individual dentro de um formulário dinâmico.
+    Arquitetura EAV: Este representa o Atributo.
+    Define o tipo de dado, rótulo e obrigatoriedade de cada campo do formulário.
+    """
+    FIELD_TYPES = [
+        ('text', 'Texto Curto'),
+        ('email', 'E-mail'),
+        ('number', 'Número'),
+        ('date', 'Data'),
+        ('select', 'Seleção (Dropdown)'),
+        ('checkbox', 'Caixa de Seleção'),
+    ]
+    form = models.ForeignKey(
+        DynamicForm, 
+        on_delete=models.CASCADE, 
+        related_name='fields', 
+        verbose_name="Formulário"
+    )
+    label = models.CharField("Rótulo do Campo", max_length=200)
+    field_type = models.CharField("Tipo do Campo", max_length=20, choices=FIELD_TYPES)
+    is_required = models.BooleanField("Obrigatório?", default=False)
+    options = models.CharField(
+        "Opções", 
+        max_length=500, 
+        blank=True, 
+        null=True, 
+        help_text="Valores separados por vírgula para campos select"
+    )
+    order = models.PositiveIntegerField("Ordem", default=0)
+
+    class Meta:
+        verbose_name = "Campo Dinâmico"
+        verbose_name_plural = "Campos Dinâmicos"
+        ordering = ['order', 'id']
+
+    def __str__(self):
+        return f"{self.label} ({self.get_field_type_display()})"
+
+
 class Instructor(models.Model):
     """Instrutor que ministra treinamentos."""
     company = models.ForeignKey(
@@ -225,6 +290,23 @@ class Course(models.Model):
     )
     nps_form = models.ForeignKey('core.NPSForm', on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Formulário NPS", help_text="Selecione a pesquisa de satisfação para este evento")
     
+    custom_reg_form = models.ForeignKey(
+        'DynamicForm', 
+        null=True, 
+        blank=True, 
+        on_delete=models.SET_NULL, 
+        related_name='reg_courses', 
+        verbose_name='Formulário de Inscrição Personalizado'
+    )
+    custom_cert_form = models.ForeignKey(
+        'DynamicForm', 
+        null=True, 
+        blank=True, 
+        on_delete=models.SET_NULL, 
+        related_name='cert_courses', 
+        verbose_name='Formulário de Solicitação Personalizado'
+    )
+
     link_hash = models.UUIDField(
         "Link Único", 
         default=None, 
@@ -262,9 +344,9 @@ class Course(models.Model):
     def is_expired(self):
         """Verifica se a solicitação de certificado já expirou baseado na data atual."""
         from django.utils import timezone
-        if not self.certificate_end:
+        if not self.expires_at:
             return False
-        return timezone.now() > self.certificate_end
+        return timezone.now() > self.expires_at
 
     def get_registration_url(self):
         """Retorna a URL limpa de inscrição utilizando o novo padrão de Slug."""

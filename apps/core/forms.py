@@ -1,5 +1,5 @@
 from django import forms
-from .models import Company, Instructor, Course, NPSForm, NPSQuestion
+from .models import Company, Instructor, Course, NPSForm, NPSQuestion, DynamicForm
 from apps.certificates.models import CertificateTemplate
 
 class CompanyForm(forms.ModelForm):
@@ -45,7 +45,9 @@ class CourseForm(forms.ModelForm):
             "city", "state",
             "signature_1", "signature_2", "signature_3",
             "certificate_template",
-            "nps_form"
+            "nps_form",
+            "custom_reg_form",
+            "custom_cert_form"
         ]
         widgets = {
             "name": forms.TextInput(attrs={"class": "form-control"}),
@@ -69,6 +71,8 @@ class CourseForm(forms.ModelForm):
             "signature_3": forms.Select(attrs={"class": "form-select"}),
             "certificate_template": forms.Select(attrs={"class": "form-select"}),
             "nps_form": forms.Select(attrs={"class": "form-select"}),
+            "custom_reg_form": forms.Select(attrs={"class": "form-select"}),
+            "custom_cert_form": forms.Select(attrs={"class": "form-select"}),
         }
     def __init__(self, *args, **kwargs):
         company = kwargs.pop("company", None)
@@ -92,6 +96,12 @@ class CourseForm(forms.ModelForm):
             
             self.fields["nps_form"].queryset = NPSForm.objects.filter(company=company)
             self.fields["nps_form"].empty_label = "Nenhum (Sem feedback)"
+
+            self.fields["custom_reg_form"].queryset = DynamicForm.objects.filter(company=company)
+            self.fields["custom_reg_form"].empty_label = "Nenhum (Formulário Padrão)"
+            
+            self.fields["custom_cert_form"].queryset = DynamicForm.objects.filter(company=company)
+            self.fields["custom_cert_form"].empty_label = "Nenhum (Formulário Padrão)"
 
     def clean(self):
         cleaned_data = super().clean()

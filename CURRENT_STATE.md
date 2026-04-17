@@ -147,6 +147,8 @@
 * [x] **Segurança e UX (Credenciamento):** Implementada blindagem da flag `no_certificate` na tela pública de credenciamento (`public_checkin.html`), ocultando o link de solicitação e exibindo um alerta visual informativo quando o evento não gera certificado.
 * [x] **Segurança e UX (Formulário de Evento):** A lógica de validação JS em `course_form.html` recebeu um bypass para ignorar o modal de falta de assinatura e o aviso de expiração quando a flag de "Evento Sem Certificado" estiver ativa.
 * [x] **Validação via ViaCEP:** Captura automática de endereço (Rua, Bairro, Cidade, UF) em formulários públicos e administrativos. Adicionado link de busca oficial dos Correios e motor JS ViaCEP customizado no `event_form.html`. [19, 20, 51]
+* [x] **Arquitetura de Formulários Dinâmicos (EAV):** Construída a base de dados para suporte a formulários dinâmicos personalizados. Implementados os modelos `DynamicForm`, `DynamicField` (Atributos) e `DynamicResponse` (Valores), e vinculados ao modelo `Course` para customização de fluxos de Inscrição e Solicitação. [NOVO]
+
 
 **Central de Certificados e PDF:**
 * [x] Geração profissional com ReportLab (A4 Paisagem) [14, 21].

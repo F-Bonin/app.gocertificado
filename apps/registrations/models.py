@@ -146,3 +146,30 @@ class NPSResponse(models.Model):
 
     def __str__(self):
         return f"Resposta de {self.registration.full_name} para {self.question.text[:30]}"
+
+
+class DynamicResponse(models.Model):
+    """
+    Armazena as respostas para campos de formulários dinâmicos.
+    Arquitetura EAV: Este representa o Valor.
+    Relaciona uma inscrição específica (Entidade) a um campo dinâmico (Atributo) e seu valor correspondente.
+    """
+    registration = models.ForeignKey(
+        'Registration', 
+        on_delete=models.CASCADE, 
+        related_name='dynamic_responses',
+        verbose_name="Inscrição"
+    )
+    field = models.ForeignKey(
+        'core.DynamicField', 
+        on_delete=models.CASCADE,
+        verbose_name="Campo"
+    )
+    value = models.TextField("Valor", blank=True, null=True)
+
+    class Meta:
+        verbose_name = "Resposta Dinâmica"
+        verbose_name_plural = "Respostas Dinâmicas"
+
+    def __str__(self):
+        return f"Resposta de {self.registration.full_name} para {self.field.label}"
