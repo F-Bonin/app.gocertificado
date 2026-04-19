@@ -107,20 +107,29 @@ class RegistrationForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
+        # Extração de contexto para controle de obrigatoriedade dinâmica
         self.course = kwargs.pop('course', None)
+        self.is_cert_request = kwargs.pop('is_cert_request', False)
         super().__init__(*args, **kwargs)
 
-        # Sênior Fix: Se o curso tiver um formulário personalizado (EAV), afrouxamos a obrigatoriedade 
-        # dos campos nativos do Django Form, EXCETO a Identidade Core (Nome, CPF, E-mail e Data de Nascimento).
-        # Isso garante que o formulário exija os pilares de segurança mesmo em fluxos customizados.
-        if self.course and (self.course.custom_reg_form or self.course.custom_cert_form):
-            for field_name, field in self.fields.items():
-                if field_name not in ['full_name', 'cpf', 'email', 'birth_date']:
-                    field.required = False
+        if self.course:
+            # Identifica se o formulário em uso é customizado baseado no contexto (Inscrição vs Certificado)
+            custom_form = self.course.custom_cert_form if self.is_cert_request else self.course.custom_reg_form
+            
+            if custom_form:
+                # Se for CUSTOMIZADO: Afrouxamos todos os campos EXCETO a Identidade Core (Segurança)
+                for field_name, field in self.fields.items():
+                    if field_name not in ['full_name', 'cpf', 'email', 'birth_date']:
+                        field.required = False
+            else:
+                # Se for PADRÃO: Garantimos que os campos essenciais do modelo original sejam obrigatórios
+                self.fields['birth_date'].required = True
+                self.fields['whatsapp'].required = True
+                self.fields['rg'].required = True
 
     def clean_cpf(self):
-        cpf = self.cleaned_data.get("cpf", "")
-        digits = re.sub(r"\D", "", cpf)
+        cpf_val = self.cleaned_data.get("cpf") or ""
+        digits = re.sub(r"\D", "", cpf_val)
         if len(digits) != 11:
             raise forms.ValidationError("CPF inválido. Informe os 11 dígitos.")
         # Validação de dígitos verificadores
@@ -134,9 +143,10 @@ class RegistrationForm(forms.ModelForm):
         return f"{digits[:3]}.{digits[3:6]}.{digits[6:9]}-{digits[9:]}"
 
     def clean_whatsapp(self):
-        wpp = re.sub(r"\D", "", self.cleaned_data.get("whatsapp", ""))
+        val = self.cleaned_data.get("whatsapp") or ""
+        wpp = re.sub(r"\D", "", val)
+        if not wpp:
+            return ""
         if len(wpp) < 10 or len(wpp) > 11:
-            raise forms.ValidationError(
-                "WhatsApp inválido. Informe DDD + número (10 ou 11 dígitos)."
-            )
+            raise forms.ValidationError("WhatsApp inválido. Informe DDD + número (10 ou 11 dígitos).")
         return wpp

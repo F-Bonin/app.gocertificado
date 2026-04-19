@@ -37,8 +37,15 @@
                 <!-- Card de Status e Cronômetro Reativo -->
                 <div class="alert alert-info shadow-sm mb-4">
                     <p class="mb-1 fw-bold text-center">
-                        {# Separação dos filtros de data e hora para evitar bug de escape no Django #}
-                        Início: {{ course.registration_start|date:"d/m/Y" }} às {{ course.registration_start|date:"H:i" }}{% if course.registration_end %} | Encerramento: {{ course.registration_end|date:"d/m/Y" }} às {{ course.registration_end|date:"H:i" }}{% endif %}
+                        {% if course.registration_start and course.registration_end %}
+                            Início: {{ course.registration_start|date:"d/m/Y" }} às {{ course.registration_start|date:"H:i" }} | Encerramento: {{ course.registration_end|date:"d/m/Y" }} às {{ course.registration_end|date:"H:i" }}
+                        {% elif course.registration_start %}
+                            Início: {{ course.registration_start|date:"d/m/Y" }} às {{ course.registration_start|date:"H:i" }}
+                        {% elif course.registration_end %}
+                            Encerramento: {{ course.registration_end|date:"d/m/Y" }} às {{ course.registration_end|date:"H:i" }}
+                        {% else %}
+                            Link de inscrição vitalício
+                        {% endif %}
                     </p>
                     <div id="timer_display" class="fs-4 fw-bold text-danger text-center mt-2"></div>
                 </div>
@@ -375,6 +382,33 @@
             }
         });
     </script>
+    {% if form.duplicate_error %}
+    <!-- Modal de Interrupção: Inscrição Duplicada -->
+    <div class="modal fade" id="duplicateCpfModal" tabindex="-1" aria-labelledby="duplicateCpfModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-warning border-2 shadow-lg">
+                <div class="modal-header bg-warning bg-opacity-10 py-3">
+                    <h5 class="modal-title fw-bold text-dark" id="duplicateCpfModalLabel">
+                        <i class="bi bi-exclamation-triangle-fill text-warning me-2"></i> Inscrição Duplicada
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4 text-center">
+                    <p class="fs-5 text-secondary mb-0">{{ form.duplicate_error }}</p>
+                </div>
+                <div class="modal-footer justify-content-center border-top-0 pb-4">
+                    <button type="button" class="btn btn-secondary px-4 fw-bold" data-bs-dismiss="modal">Entendi</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            var duplicateModal = new bootstrap.Modal(document.getElementById('duplicateCpfModal'));
+            duplicateModal.show();
+        });
+    </script>
+    {% endif %}
 </body>
 </html>
 

@@ -47,10 +47,18 @@ class RegistrationCreateView(CreateView):
         return initial
 
     def get_form_kwargs(self):
-        """Injeta o objeto curso nos argumentos do formulário."""
+        """Injeta o objeto curso e o tipo de solicitação nos argumentos do formulário."""
         kwargs = super().get_form_kwargs()
         kwargs['course'] = get_object_or_404(Course, slug=self.kwargs['slug'])
+        kwargs['is_cert_request'] = True
         return kwargs
+
+    def get_template_names(self):
+        """Define dinamicamente o template baseado na presença de formulário customizado."""
+        course = get_object_or_404(Course, slug=self.kwargs['slug'])
+        if course.custom_cert_form:
+            return ["registrations/form_custom.html"]
+        return ["registrations/form.html"]
 
     def form_valid(self, form):
         course = get_object_or_404(Course, slug=self.kwargs['slug'])
@@ -249,11 +257,37 @@ class EventRegistrationCreateView(RegistrationCreateView):
 
         return super(RegistrationCreateView, self).dispatch(request, *args, **kwargs)
 
+    def get_form_kwargs(self):
+        """Injeta o objeto curso e sinaliza que NÃO é uma solicitação de certificado."""
+        kwargs = super(RegistrationCreateView, self).get_form_kwargs()
+        kwargs['course'] = get_object_or_404(Course, slug=self.kwargs['slug'])
+        kwargs['is_cert_request'] = False
+        return kwargs
+
+    def get_template_names(self):
+        """Define dinamicamente o template baseado na presença de formulário customizado de inscrição."""
+        course = get_object_or_404(Course, slug=self.kwargs['slug'])
+        if course.custom_reg_form:
+            return ["registrations/event_form_custom.html"]
+        return ["registrations/event_form.html"]
+
     def form_valid(self, form):
         course = get_object_or_404(Course, slug=self.kwargs['slug'])
         
-        if Registration.objects.filter(cpf=form.instance.cpf, course=course).exists():
-            form.add_error('cpf', 'Este CPF já está inscrito nesta turma/data deste evento.')
+        cpf_input = form.cleaned_data.get('cpf')
+        if Registration.objects.filter(cpf=cpf_input, course=course).exists():
+            full_name = form.cleaned_data.get('full_name') or ''
+            first_name = full_name.split()[0] if full_name else "Participante"
+            course_date_str = course.start_date.strftime('%d/%m/%Y') if course.start_date else ""
+            
+            # Sênior Fix: Desacoplamento da Mensagem Contextual
+            # Em vez de injetar a mensagem longa diretamente no erro do campo (que polui a UI),
+            # passamos um erro curto para o Django e injetamos a mensagem completa em uma flag.
+            # Esta flag 'duplicate_error' servirá de gatilho para a abertura automática do 
+            # Modal Extravagante no frontend, melhorando drasticamente a UX de interrupção.
+            msg = f"{first_name}, você já se inscreveu para o evento {course.name} que será realizado em {course_date_str}. Caso esteja com dúvidas ou precise de mais informações, por favor, entre em contato com o responsável pelo evento. Obrigado."
+            form.add_error('cpf', 'CPF já cadastrado neste evento.')
+            form.duplicate_error = msg
             return self.form_invalid(form)
 
         inscricao = form.save(commit=False)

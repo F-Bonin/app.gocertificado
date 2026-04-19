@@ -33,14 +33,16 @@ class Registration(models.Model):
     )
     custom_gender = models.CharField("Qual?", max_length=50, blank=True, null=True)
     profession = models.CharField("Profissão", max_length=100, blank=True, null=True)
-    birth_date = models.DateField("Data de nascimento")
+    birth_date = models.DateField("Data de nascimento", blank=True, null=True)
     email = models.EmailField("E-mail")
     whatsapp = models.CharField(
         "WhatsApp",
         max_length=20,
+        blank=True, 
+        null=True,
         help_text="Somente números com DDD. Ex.: 11999999999"
     )
-    rg = models.CharField("RG", max_length=20)
+    rg = models.CharField("RG", max_length=20, blank=True, null=True)
     cpf = models.CharField("CPF", max_length=14)
 
     # Endereço
