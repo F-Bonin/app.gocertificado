@@ -20,15 +20,27 @@ class RegistrationCreateView(CreateView):
 
     def dispatch(self, request, *args, **kwargs):
         """
-        Blindagem: Verifica se o curso já expirou antes de permitir o acesso à View.
+        Blindagem: Verifica se o período de solicitação de certificado é válido.
+        Roteamento Temporal Bidirecional (Início e Término).
         """
         course = get_object_or_404(Course, slug=self.kwargs['slug'])
+        now = timezone.now()
 
-        if course.expires_at and timezone.now() > course.expires_at:
+        # 1. Validação de Início (Se definido)
+        if course.certificate_start and now < course.certificate_start:
+            context = {
+                "action_type": "solicitação de certificado",
+                "lock_state": "early",
+                "target_date": course.certificate_start
+            }
+            return render(request, "time_locked.html", context, status=403)
+
+        # 2. Validação de Término (Se definido)
+        if course.certificate_end and now > course.certificate_end:
             context = {
                 "action_type": "solicitação de certificado",
                 "lock_state": "late",
-                "target_date": course.expires_at
+                "target_date": course.certificate_end
             }
             return render(request, "time_locked.html", context, status=403)
 

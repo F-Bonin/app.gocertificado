@@ -1,4 +1,6 @@
+import datetime
 from django import forms
+from django.utils import timezone
 from django.forms import inlineformset_factory
 from .models import Company, Instructor, Course, NPSForm, NPSQuestion, DynamicForm, DynamicField
 from apps.certificates.models import CertificateTemplate
@@ -40,7 +42,7 @@ class CourseForm(forms.ModelForm):
         fields = [
             "name", "start_date", "end_date", "hours",
             "registration_start", "registration_end",
-            "expires_at", "no_certificate",
+            "certificate_start", "certificate_end", "no_certificate",
             "cep", "institution_name", "institution_street", "institution_number",
             "institution_neighborhood", "institution_complement",
             "city", "state",
@@ -56,7 +58,8 @@ class CourseForm(forms.ModelForm):
             "end_date": forms.DateInput(format='%Y-%m-%d', attrs={"class": "form-control", "type": "date"}),
             "registration_start": forms.DateTimeInput(format='%Y-%m-%dT%H:%M', attrs={'type': 'datetime-local', 'class': 'form-control'}),
             "registration_end": forms.DateTimeInput(format='%Y-%m-%dT%H:%M', attrs={'type': 'datetime-local', 'class': 'form-control'}),
-            "expires_at": forms.DateTimeInput(format='%Y-%m-%dT%H:%M', attrs={'type': 'datetime-local', 'class': 'form-control'}),
+            "certificate_start": forms.DateTimeInput(format='%Y-%m-%dT%H:%M', attrs={'type': 'datetime-local', 'class': 'form-control'}),
+            "certificate_end": forms.DateTimeInput(format='%Y-%m-%dT%H:%M', attrs={'type': 'datetime-local', 'class': 'form-control'}),
             "no_certificate": forms.CheckboxInput(attrs={"class": "form-check-input", "id": "check_no_certificate"}),
             "cep": forms.TextInput(attrs={"class": "form-control", "placeholder": "00000-000", "id": "id_course_cep"}),
             "city": forms.TextInput(attrs={"class": "form-control", "id": "id_course_city", "readonly": True}),
@@ -78,6 +81,21 @@ class CourseForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         company = kwargs.pop("company", None)
         super().__init__(*args, **kwargs)
+
+        # Autofill inteligente para novos eventos
+        if not self.instance.pk:
+            now = timezone.now()
+            today = now.date()
+            tomorrow = today + datetime.timedelta(days=1)
+            tomorrow_end = timezone.make_aware(datetime.datetime.combine(tomorrow, datetime.time(23, 59)))
+            
+            self.initial.setdefault('start_date', today)
+            self.initial.setdefault('end_date', today)
+            self.initial.setdefault('registration_start', now)
+            self.initial.setdefault('registration_end', tomorrow_end)
+            self.initial.setdefault('certificate_start', now)
+            self.initial.setdefault('certificate_end', tomorrow_end)
+
         if self.instance.pk:
             if self.instance.signature_3:
                 self.initial['num_signatures'] = '3'

@@ -122,10 +122,15 @@ class RegistrationForm(forms.ModelForm):
                     if field_name not in ['full_name', 'cpf', 'email', 'birth_date']:
                         field.required = False
             else:
-                # Se for PADRÃO: Garantimos que os campos essenciais do modelo original sejam obrigatórios
-                self.fields['birth_date'].required = True
-                self.fields['whatsapp'].required = True
-                self.fields['rg'].required = True
+                # Formulário Padrão: Todos os dados pessoais e endereço são estritamente obrigatórios
+                mandatory_fields = [
+                    'full_name', 'cpf', 'email', 'birth_date', 'gender', 
+                    'profession', 'whatsapp', 'rg', 'cep', 'street', 
+                    'number', 'complement', 'neighborhood', 'city', 'state'
+                ]
+                for field in mandatory_fields:
+                    if field in self.fields:
+                        self.fields[field].required = True
 
     def clean_cpf(self):
         cpf_val = self.cleaned_data.get("cpf") or ""

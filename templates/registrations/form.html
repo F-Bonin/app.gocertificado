@@ -24,11 +24,15 @@
                 <p class="text-muted">Preencha os campos do formulário para solicitar seu certificado.</p>
             </div>
 
-            <!-- Card de Status e Cronômetro (CORRIGIDO PARA EXPIRES_AT) -->
+            <!-- Card de Status e Cronômetro (Bidirecional) -->
             <div class="alert alert-info shadow-sm mb-4">
                 <p class="mb-1 fw-bold text-center">
-                    {% if course.expires_at %}
-                        Prazo Limite: {{ course.expires_at|date:"d/m/Y \à\s H:i" }}
+                    {% if course.certificate_start and course.certificate_end %}
+                        Início: {{ course.certificate_start|date:"d/m/Y" }} às {{ course.certificate_start|date:"H:i" }} | Encerramento: {{ course.certificate_end|date:"d/m/Y" }} às {{ course.certificate_end|date:"H:i" }}
+                    {% elif course.certificate_start %}
+                        Início: {{ course.certificate_start|date:"d/m/Y" }} às {{ course.certificate_start|date:"H:i" }}
+                    {% elif course.certificate_end %}
+                        Encerramento: {{ course.certificate_end|date:"d/m/Y" }} às {{ course.certificate_end|date:"H:i" }}
                     {% else %}
                         Link de solicitação vitalício
                     {% endif %}
@@ -384,19 +388,33 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     {% endif %}
 
-    // Cronômetro Corrigido para "expires_at"
-    const endStr = "{{ course.expires_at|date:'c'|default:'' }}";
+    // Roteamento Temporal Bidirecional (Início e Término)
+    const startStr = "{{ course.certificate_start|date:'c'|default:'' }}";
+    const endStr = "{{ course.certificate_end|date:'c'|default:'' }}";
+    const certificateStart = startStr ? new Date(startStr) : null;
     const certificateEnd = endStr ? new Date(endStr) : null;
     const timerDisplay = document.getElementById('timer_display');
     const formWrapper = document.getElementById('certificate_form_wrapper');
 
     function updateCountdown() {
         const now = new Date();
+        
+        // 1. Caso de Acesso Antecipado (Abre em)
+        if (certificateStart && now < certificateStart) {
+            const diff = certificateStart - now;
+            timerDisplay.innerText = "Abre em: " + formatDiff(diff);
+            if (formWrapper) formWrapper.style.display = 'none';
+            return;
+        }
+
+        // 2. Caso de Link Vitalício (Disponível)
         if (!certificateEnd) {
             timerDisplay.innerText = "Disponível por tempo indeterminado";
             if (formWrapper) formWrapper.style.display = 'block';
             return;
         }
+
+        // 3. Caso de Término
         if (now > certificateEnd) {
             timerDisplay.innerText = "Encerrado";
             if (formWrapper) formWrapper.style.display = 'none';

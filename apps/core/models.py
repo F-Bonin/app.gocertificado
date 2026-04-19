@@ -335,7 +335,8 @@ class Course(models.Model):
     checkin_hash = models.UUIDField("Hash de Credenciamento", null=True, blank=True, unique=True)
     registration_start = models.DateTimeField("Início das Inscrições", blank=True, null=True)
     registration_end = models.DateTimeField("Término das Inscrições", blank=True, null=True)
-    expires_at = models.DateTimeField("Expiração do Certificado", blank=True, null=True)
+    certificate_start = models.DateTimeField("Início da Solicitação", blank=True, null=True)
+    certificate_end = models.DateTimeField("Término da Solicitação", blank=True, null=True)
     no_certificate = models.BooleanField("Este evento não terá certificado", default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -362,9 +363,9 @@ class Course(models.Model):
     def is_expired(self):
         """Verifica se a solicitação de certificado já expirou baseado na data atual."""
         from django.utils import timezone
-        if not self.expires_at:
+        if not self.certificate_end:
             return False
-        return timezone.now() > self.expires_at
+        return timezone.now() > self.certificate_end
 
     def get_registration_url(self):
         """Retorna a URL limpa de inscrição utilizando o novo padrão de Slug."""
