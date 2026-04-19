@@ -20,6 +20,7 @@
                 <thead class="bg-light">
                     <tr>
                         <th class="ps-4">Nome do Formulário</th>
+                        <th>Tipo</th>
                         <th>Qtd. de Campos</th>
                         <th>Criado em</th>
                         <th class="text-end pe-4">Ações</th>
@@ -30,6 +31,15 @@
                     <tr>
                         <td class="ps-4">
                             <span class="fw-bold text-primary">{{ dynamic_form.name }}</span>
+                        </td>
+                        <td>
+                            {% if dynamic_form.form_type == 'REG' %}
+                                <span class="badge bg-success">Inscrição</span>
+                            {% elif dynamic_form.form_type == 'CERT' %}
+                                <span class="badge bg-primary">Certificado</span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ dynamic_form.get_form_type_display }}</span>
+                            {% endif %}
                         </td>
                         <td>
                             <span class="badge bg-info text-dark">

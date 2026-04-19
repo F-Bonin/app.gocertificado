@@ -135,6 +135,11 @@ class DynamicForm(models.Model):
     Arquitetura EAV (Entity-Attribute-Value): Este é o contêiner (Entidade).
     Permite que cada empresa crie formulários personalizados para inscrição ou solicitação de certificado.
     """
+    TYPE_CHOICES = [
+        ('REG', 'Inscrição (Pré-Evento)'),
+        ('CERT', 'Solicitação de Certificado'),
+    ]
+    
     company = models.ForeignKey(
         Company, 
         on_delete=models.CASCADE, 
@@ -142,6 +147,12 @@ class DynamicForm(models.Model):
         verbose_name="Empresa"
     )
     name = models.CharField("Nome do Formulário", max_length=200)
+    form_type = models.CharField(
+        max_length=10, 
+        choices=TYPE_CHOICES, 
+        default='REG', 
+        verbose_name='Tipo de Formulário'
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

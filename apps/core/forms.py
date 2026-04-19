@@ -98,11 +98,11 @@ class CourseForm(forms.ModelForm):
             self.fields["nps_form"].queryset = NPSForm.objects.filter(company=company)
             self.fields["nps_form"].empty_label = "Nenhum (Sem feedback)"
 
-            self.fields["custom_reg_form"].queryset = DynamicForm.objects.filter(company=company)
-            self.fields["custom_reg_form"].empty_label = "Nenhum (Formulário Padrão)"
+            self.fields["custom_reg_form"].queryset = DynamicForm.objects.filter(company=company, form_type='REG')
+            self.fields["custom_reg_form"].empty_label = "Modelo Padrão do Sistema"
             
-            self.fields["custom_cert_form"].queryset = DynamicForm.objects.filter(company=company)
-            self.fields["custom_cert_form"].empty_label = "Nenhum (Formulário Padrão)"
+            self.fields["custom_cert_form"].queryset = DynamicForm.objects.filter(company=company, form_type='CERT')
+            self.fields["custom_cert_form"].empty_label = "Modelo Padrão do Sistema"
 
     def clean(self):
         cleaned_data = super().clean()
@@ -186,9 +186,10 @@ class DynamicFormModelForm(forms.ModelForm):
     """Formulário para o modelo DynamicForm (Entidade EAV)."""
     class Meta:
         model = DynamicForm
-        fields = ["name"]
+        fields = ["name", "form_type"]
         widgets = {
             "name": forms.TextInput(attrs={"class": "form-control", "placeholder": "Ex: Inscrição Personalizada"}),
+            "form_type": forms.RadioSelect(attrs={'class': 'form-check-input'}),
         }
 
 
@@ -204,6 +205,6 @@ DynamicFieldFormSet = inlineformset_factory(
         'field_type': forms.Select(attrs={'class': 'form-select'}),
         'is_required': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         'options': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Opção 1, Opção 2...'}),
-        'order': forms.NumberInput(attrs={'class': 'form-control'}),
+        'order': forms.NumberInput(attrs={'readonly': True, 'class': 'form-control bg-light'}),
     }
 )

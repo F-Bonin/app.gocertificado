@@ -35,6 +35,24 @@
                         {% endif %}
                     </div>
                 </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold d-block">Tipo de Formulário</label>
+                        <div class="mt-2">
+                            {% for radio in form.form_type %}
+                            <div class="form-check form-check-inline">
+                                {{ radio.tag }}
+                                <label class="form-check-label" for="{{ radio.id_for_label }}">
+                                    {{ radio.choice_label }}
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% if form.form_type.errors %}
+                            <div class="text-danger small">{{ form.form_type.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -62,6 +80,32 @@
                             </tr>
                         </thead>
                         <tbody id="formset-body">
+                            <!-- Identidade Core: Campos obrigatórios do sistema (Fixos) -->
+                            <tr class="fixed-row bg-light bg-opacity-50">
+                                <td><input type="text" class="form-control" value="Nome Completo" disabled></td>
+                                <td><select class="form-select" disabled><option>Texto Curto</option></select></td>
+                                <td class="text-center"><input type="checkbox" class="form-check-input" checked disabled></td>
+                                <td><input type="text" class="form-control" disabled></td>
+                                <td><input type="number" class="form-control" value="1" disabled></td>
+                                <td class="text-center"><span class="badge bg-secondary">Campo obrigatório</span></td>
+                            </tr>
+                            <tr class="fixed-row bg-light bg-opacity-50">
+                                <td><input type="text" class="form-control" value="CPF" disabled></td>
+                                <td><select class="form-select" disabled><option>Texto Curto</option></select></td>
+                                <td class="text-center"><input type="checkbox" class="form-check-input" checked disabled></td>
+                                <td><input type="text" class="form-control" disabled></td>
+                                <td><input type="number" class="form-control" value="2" disabled></td>
+                                <td class="text-center"><span class="badge bg-secondary">Campo obrigatório</span></td>
+                            </tr>
+                            <tr class="fixed-row bg-light bg-opacity-50">
+                                <td><input type="text" class="form-control" value="E-mail" disabled></td>
+                                <td><select class="form-select" disabled><option>E-mail</option></select></td>
+                                <td class="text-center"><input type="checkbox" class="form-check-input" checked disabled></td>
+                                <td><input type="text" class="form-control" disabled></td>
+                                <td><input type="number" class="form-control" value="3" disabled></td>
+                                <td class="text-center"><span class="badge bg-secondary">Campo obrigatório</span></td>
+                            </tr>
+
                             {% for field_form in formset %}
                             <tr class="formset-row">
                                 {{ field_form.id }}
@@ -149,19 +193,40 @@
         const totalForms = document.getElementById('id_fields-TOTAL_FORMS');
         const emptyFormTemplate = document.getElementById('empty-row-template').innerHTML;
 
+        /**
+         * Recalcula a ordem dos campos dinâmicos.
+         * O deslocamento de +4 garante que os primeiros 3 índices (1, 2, 3) 
+         * sejam reservados para a Identidade Core (Nome, CPF, E-mail), 
+         * evitando conflitos na numeração do sistema EAV.
+         */
+        function recalculateOrders() {
+            const dynamicRows = document.querySelectorAll('.formset-row');
+            dynamicRows.forEach((row, index) => {
+                const orderInput = row.querySelector('input[name$="-order"]');
+                if (orderInput) {
+                    orderInput.value = index + 4;
+                }
+            });
+        }
+
+        // Chamada inicial para organizar os campos em modo de edição
+        recalculateOrders();
+
         // Função para Adicionar novo campo
         addBtn.addEventListener('click', function() {
             const currentFormCount = parseInt(totalForms.value);
             
             // Clonagem do template vazio e substituição dos prefixos dinâmicos (__prefix__)
-            // O regex /-(__prefix__|[\d]+)-/g garante a substituição correta do índice no Django.
             const newFormHtml = emptyFormTemplate.replace(/__prefix__/g, currentFormCount);
             
             // Inserção do novo formulário na tabela
             formsetContainer.insertAdjacentHTML('beforeend', newFormHtml);
             
-            // Atualização do contador TOTAL_FORMS para o Django processar corretamente no backend
+            // Atualização do contador TOTAL_FORMS
             totalForms.value = currentFormCount + 1;
+
+            // Recalcula ordens após adição
+            recalculateOrders();
         });
 
         // Delegação de evento para remover campos recém-adicionados
@@ -170,7 +235,7 @@
                 const row = e.target.closest('.formset-row');
                 row.remove();
                 
-                // Recalcula o TOTAL_FORMS após remoção (importante para manter a integridade)
+                // Recalcula o TOTAL_FORMS após remoção
                 const forms = formsetContainer.getElementsByClassName('formset-row');
                 totalForms.value = forms.length;
                 
@@ -178,6 +243,9 @@
                 Array.from(forms).forEach((form, index) => {
                     form.innerHTML = form.innerHTML.replace(/fields-\d+-/g, `fields-${index}-`);
                 });
+
+                // Recalcula ordens após remoção e re-indexação
+                recalculateOrders();
             }
         });
     });

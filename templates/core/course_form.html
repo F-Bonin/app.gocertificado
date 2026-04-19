@@ -105,6 +105,12 @@
 <div class="form-text small mt-2"><i class="bi bi-info-circle me-1"></i>Fora deste intervalo, o link de inscrição ficará desativado.</div>
 </div>
 </div>
+
+<div class="mt-4 pt-3 border-top border-success border-opacity-10">
+    <label for="{{ form.custom_reg_form.id_for_label }}" class="form-label fw-bold small text-success">Formulário de Inscrição Personalizado</label>
+    {{ form.custom_reg_form }}
+    <div class="form-text small">Ao deixar como "Modelo Padrão do Sistema", será utilizado o formulário nativo otimizado.</div>
+</div>
 </div>
 </div>
 <!-- NOVO BLOCO: Trava de Certificado -->
@@ -136,6 +142,12 @@
 {{ form.expires_at }}
 {% if form.expires_at.errors %}<div class="text-danger small mt-1">{{ form.expires_at.errors.0 }}</div>{% endif %}
 </div>
+</div>
+
+<div class="mt-4 pt-3 border-top border-primary border-opacity-10">
+    <label for="{{ form.custom_cert_form.id_for_label }}" class="form-label fw-bold small text-primary">Formulário de Solicitação de Certificado</label>
+    {{ form.custom_cert_form }}
+    <div class="form-text small">Ao deixar como "Modelo Padrão do Sistema", será utilizado o formulário nativo otimizado.</div>
 </div>
 </div>
 </div>
