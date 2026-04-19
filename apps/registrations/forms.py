@@ -107,7 +107,16 @@ class RegistrationForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
+        self.course = kwargs.pop('course', None)
         super().__init__(*args, **kwargs)
+
+        # Sênior Fix: Se o curso tiver um formulário personalizado (EAV), afrouxamos a obrigatoriedade 
+        # dos campos nativos do Django Form, EXCETO a Identidade Core (Nome, CPF, E-mail e Data de Nascimento).
+        # Isso garante que o formulário exija os pilares de segurança mesmo em fluxos customizados.
+        if self.course and (self.course.custom_reg_form or self.course.custom_cert_form):
+            for field_name, field in self.fields.items():
+                if field_name not in ['full_name', 'cpf', 'email', 'birth_date']:
+                    field.required = False
 
     def clean_cpf(self):
         cpf = self.cleaned_data.get("cpf", "")

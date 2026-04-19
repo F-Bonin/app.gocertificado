@@ -153,7 +153,9 @@
 * [x] **Conexão EAV-Evento:** Conectada a injeção restrita de formulários dinâmicos à interface de criação de eventos. Os seletores agora filtram automaticamente formulários por contexto (REG vs CERT) e garantem o isolamento multitenancy, permitindo o uso opcional do modelo padrão ou personalizado. [NOVO]
 * [x] **Integração EAV (Público):** Formulários dinâmicos integrados aos fluxos de Inscrição Pré-Evento e Solicitação de Certificado. Implementada técnica de EAV Injection via contexto para renderização dinâmica de campos (text, email, number, date, select e checkbox) e recuperação iterativa via POST para persistência em `DynamicResponse`. [17/04/2026]
 
-* [x] **Trava de Identidade Core (UX/EAV):** Implementada barreira visual no Form Builder do EAV, fixando Nome, CPF e E-mail como campos obrigatórios inalteráveis (posições 1, 2 e 3). Adicionado motor Javascript para recálculo automático de ordem (`index + 4`) em campos dinâmicos, garantindo a integridade da Identidade Core. [NOVO]
+* [x] **Trava de Identidade Core (UX/EAV):** Implementada barreira visual no Form Builder do EAV, fixando Nome, CPF, E-mail e Data de Nascimento como campos obrigatórios inalteráveis (posições 1 a 4). Adicionado motor Javascript para recálculo automático de ordem (`index + 5`) em campos dinâmicos, garantindo a integridade da Identidade Core e blindagem visual completa no motor do construtor. [NOVO]
+* [x] **Segurança Anti-Spoofing (2FA):** A Data de Nascimento foi elevada a pilar obrigatório e fator de validação de identidade. O sistema agora bloqueia solicitações se a data informada não coincidir com o cadastro original. O campo 'e-mail' foi liberado para atualizações pelos alunos, permitindo a correção de falhas de comunicação. [NOVO]
+
 
 
 

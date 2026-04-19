@@ -46,6 +46,12 @@ class RegistrationCreateView(CreateView):
         })
         return initial
 
+    def get_form_kwargs(self):
+        """Injeta o objeto curso nos argumentos do formulário."""
+        kwargs = super().get_form_kwargs()
+        kwargs['course'] = get_object_or_404(Course, slug=self.kwargs['slug'])
+        return kwargs
+
     def form_valid(self, form):
         course = get_object_or_404(Course, slug=self.kwargs['slug'])
         cpf = form.cleaned_data.get('cpf')
@@ -76,7 +82,15 @@ class RegistrationCreateView(CreateView):
             form.add_error('full_name', 'O nome informado não corresponde ao participante cadastrado com este CPF. Por motivos de segurança, a solicitação foi bloqueada. Revise os dados ou contate o responsável do evento.')
             return self.form_invalid(form)
 
+        # Sênior Fix: Validação de 2º Fator (Data de Nascimento)
+        # Se o registro original possui data de nascimento, ela deve bater com a informada.
+        input_birth_date = form.cleaned_data.get('birth_date')
+        if reg.birth_date and input_birth_date and reg.birth_date != input_birth_date:
+            form.add_error('birth_date', 'A data de nascimento informada não confere com o cadastro original. Por motivos de segurança, a solicitação foi bloqueada.')
+            return self.form_invalid(form)
+
         # Atualiza apenas dados secundários de contato/endereço. Blinda a identidade core.
+        # Sênior Fix: Liberado o campo 'email' para permitir que o aluno corrija erros de digitação do pré-evento.
         protected_fields = ['full_name', 'cpf', 'rg', 'birth_date']
         for field, value in form.cleaned_data.items():
             if field not in protected_fields and value:
