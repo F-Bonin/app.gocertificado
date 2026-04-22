@@ -258,9 +258,9 @@ class Course(models.Model):
     state = models.CharField("Estado (UF)", max_length=2)
     hours = models.PositiveIntegerField("Carga horária (horas)")
     
-    # Dados da Instituição
+    # Dados do Local
     cep = models.CharField('CEP', max_length=9, blank=True, null=True)
-    institution_name = models.CharField("Nome da Instituição", max_length=200, null=True, blank=True)
+    institution_name = models.CharField("Nome do Local", max_length=200, null=True, blank=True)
     institution_street = models.CharField("Rua/Avenida", max_length=200, null=True, blank=True)
     institution_number = models.CharField("Número", max_length=50, null=True, blank=True)
     institution_neighborhood = models.CharField("Bairro", max_length=100, null=True, blank=True)
@@ -314,7 +314,7 @@ class Course(models.Model):
         blank=True, 
         on_delete=models.SET_NULL, 
         related_name='reg_courses', 
-        verbose_name='Formulário de Inscrição Personalizado'
+        verbose_name='Formulário de Inscrição'
     )
     custom_cert_form = models.ForeignKey(
         'DynamicForm', 
@@ -322,7 +322,7 @@ class Course(models.Model):
         blank=True, 
         on_delete=models.SET_NULL, 
         related_name='cert_courses', 
-        verbose_name='Formulário de Solicitação Personalizado'
+        verbose_name='Formulário de Solicitação de Certificado'
     )
 
     link_hash = models.UUIDField(
@@ -374,3 +374,169 @@ class Course(models.Model):
             return ""
         # Sênior Fix: Apontando obrigatoriamente para o formulário de Inscrição (Pré-evento)
         return reverse("registrations:event_form", kwargs={"slug": self.slug})
+
+
+class RecurringEvent(models.Model):
+    """Modelo para Eventos Recorrentes (Multi-sessões)."""
+    EVENT_TYPES = [
+        ('CUSTOM', 'Personalizado (Apenas Lista de Presença, Sem Certificado)'),
+        ('SCHEDULED', 'Programado (Com emissão de Certificado Geral)')
+    ]
+
+    company = models.ForeignKey(
+        Company, 
+        on_delete=models.CASCADE, 
+        related_name="recurring_events",
+        verbose_name="Empresa"
+    )
+    name = models.CharField("Nome do evento recorrente", max_length=300)
+    slug = models.SlugField("Slug", max_length=350, unique=True, blank=True, null=True)
+    event_type = models.CharField(
+        "Tipo de Evento", 
+        max_length=20, 
+        choices=EVENT_TYPES, 
+        default='SCHEDULED'
+    )
+    hours = models.PositiveIntegerField("Carga horária total (horas)")
+    
+    signature_1 = models.ForeignKey(
+        Instructor, 
+        related_name='recurring_sig1', 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        verbose_name="Assinatura 1"
+    )
+    signature_2 = models.ForeignKey(
+        Instructor, 
+        related_name='recurring_sig2', 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        verbose_name="Assinatura 2"
+    )
+    signature_3 = models.ForeignKey(
+        Instructor, 
+        related_name='recurring_sig3', 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        verbose_name="Assinatura 3"
+    )
+    
+    certificate_template = models.ForeignKey(
+        'certificates.CertificateTemplate',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name="Modelo de Certificado"
+    )
+    nps_form = models.ForeignKey(
+        'core.NPSForm', 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        verbose_name="Formulário NPS"
+    )
+    
+    custom_reg_form = models.ForeignKey(
+        'DynamicForm', 
+        null=True, 
+        blank=True, 
+        on_delete=models.SET_NULL, 
+        related_name='recurring_reg_forms', 
+        verbose_name='Formulário de Inscrição'
+    )
+    custom_cert_form = models.ForeignKey(
+        'DynamicForm', 
+        null=True, 
+        blank=True, 
+        on_delete=models.SET_NULL, 
+        related_name='recurring_cert_forms', 
+        verbose_name='Formulário de Solicitação de Certificado'
+    )
+
+    registration_start = models.DateTimeField("Início das Inscrições", blank=True, null=True)
+    registration_end = models.DateTimeField("Término das Inscrições", blank=True, null=True)
+    certificate_start = models.DateTimeField("Início da Solicitação", blank=True, null=True)
+    certificate_end = models.DateTimeField("Término da Solicitação", blank=True, null=True)
+    no_certificate = models.BooleanField("Este evento não terá certificado", default=False)
+    global_passkey = models.CharField("Chave de Acesso Global", max_length=50, blank=True, null=True, help_text="Se definida, esta senha será exigida para todas as solicitações de certificado deste evento.")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Evento Recorrente"
+        verbose_name_plural = "Eventos Recorrentes"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return self.name
+
+    def save(self, *args, **kwargs):
+        # Trava Arquitetural: Eventos "Personalizados" são restritos à lista de presença.
+        # O sistema liga o Kill-Switch de certificados automaticamente.
+        if self.event_type == 'CUSTOM':
+            self.no_certificate = True
+            
+        # Geração do slug dinâmico único herdado do comportamento do Course
+        if not self.slug:
+            from django.utils.text import slugify
+            import uuid
+            self.slug = f"{slugify(self.name)}-{str(uuid.uuid4())[:4]}"
+            
+        super().save(*args, **kwargs)
+
+
+class EventSession(models.Model):
+    """Sessão ou Encontro individual de um Evento Recorrente."""
+    recurring_event = models.ForeignKey(
+        RecurringEvent, 
+        on_delete=models.CASCADE, 
+        related_name='sessions',
+        verbose_name="Evento Recorrente"
+    )
+    theme = models.TextField("Tema")
+    content = models.TextField("Conteúdo", blank=True, null=True)
+    date = models.DateField("Data do Encontro")
+    start_time = models.TimeField("Hora de Início")
+    end_time = models.TimeField("Hora de Término")
+    hours = models.PositiveIntegerField("Carga horária do encontro", default=0)
+    session_passkey = models.CharField("Chave de Acesso", max_length=50, blank=True, null=True)
+    
+    # Endereço do encontro
+    cep = models.CharField('CEP', max_length=9, blank=True, null=True)
+    institution_name = models.CharField("Nome do Local", max_length=200, null=True, blank=True)
+    institution_street = models.CharField("Rua/Avenida", max_length=200, null=True, blank=True)
+    institution_number = models.CharField("Número", max_length=50, null=True, blank=True)
+    institution_neighborhood = models.CharField("Bairro", max_length=100, null=True, blank=True)
+    institution_complement = models.CharField("Complemento", max_length=100, null=True, blank=True)
+    
+    location_type = models.CharField(
+        "Onde fica o endereço?", 
+        max_length=20, 
+        choices=[('condominio', '🏢 Condomínio (apartamento ou casa em condomínio)'), ('casa', '🏠 Casa (fora de condomínio)')], 
+        default='casa'
+    )
+    condominium_name = models.CharField("Nome do Condomínio", max_length=200, blank=True, null=True)
+    address_block = models.CharField("Bloco", max_length=50, blank=True, null=True)
+    address_floor = models.CharField("Número/Letra do Andar", max_length=50, blank=True, null=True)
+    address_apt = models.CharField("Número do Apartamento/Casa", max_length=50, blank=True, null=True)
+    country = models.CharField("País", max_length=100, default="Brasil", blank=True, null=True)
+    
+    city = models.CharField("Cidade", max_length=100)
+    state = models.CharField("Estado (UF)", max_length=2)
+    
+    checkin_hash = models.UUIDField("Hash de Credenciamento", unique=True, blank=True, null=True)
+
+    class Meta:
+        verbose_name = "Encontro"
+        verbose_name_plural = "Encontros"
+        ordering = ["date", "start_time"]
+
+    def __str__(self):
+        return f"{self.theme} — {self.date}"
+
+    def save(self, *args, **kwargs):
+        if not self.checkin_hash:
+            self.checkin_hash = uuid.uuid4()
+        super().save(*args, **kwargs)

@@ -99,7 +99,7 @@ class RegistrationForm(forms.ModelForm):
             "neighborhood": "Bairro",
             "city": "Cidade",
             "state": "Estado",
-            "institution_name": "Nome da Instituição",
+            "institution_name": "Nome do Local",
             "institution_street": "Rua/Avenida",
             "institution_number": "Número",
             "institution_neighborhood": "Bairro",

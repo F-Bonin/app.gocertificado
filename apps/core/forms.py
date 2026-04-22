@@ -2,7 +2,7 @@ import datetime
 from django import forms
 from django.utils import timezone
 from django.forms import inlineformset_factory
-from .models import Company, Instructor, Course, NPSForm, NPSQuestion, DynamicForm, DynamicField
+from .models import Company, Instructor, Course, NPSForm, NPSQuestion, DynamicForm, DynamicField, RecurringEvent, EventSession
 from apps.certificates.models import CertificateTemplate
 
 class CompanyForm(forms.ModelForm):
@@ -78,10 +78,11 @@ class CourseForm(forms.ModelForm):
             "custom_reg_form": forms.Select(attrs={"class": "form-select"}),
             "custom_cert_form": forms.Select(attrs={"class": "form-select"}),
         }
+
     def __init__(self, *args, **kwargs):
         company = kwargs.pop("company", None)
         super().__init__(*args, **kwargs)
-
+        
         # Autofill inteligente para novos eventos
         if not self.instance.pk:
             now = timezone.now()
@@ -225,4 +226,170 @@ DynamicFieldFormSet = inlineformset_factory(
         'options': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Opção 1, Opção 2...'}),
         'order': forms.NumberInput(attrs={'readonly': True, 'class': 'form-control bg-light'}),
     }
+)
+
+class RecurringEventForm(forms.ModelForm):
+    """Formulário para o modelo RecurringEvent (Eventos Recorrentes)."""
+    num_signatures = forms.ChoiceField(
+        choices=[('1', '1 Assinatura'), ('2', '2 Assinaturas'), ('3', '3 Assinaturas')],
+        label="Quantidade de Assinaturas",
+        initial='1',
+        required=False,
+        widget=forms.Select(attrs={"class": "form-select"})
+    )
+
+    class Meta:
+        model = RecurringEvent
+        exclude = ['company', 'slug', 'no_certificate', 'created_at']
+        widgets = {
+            "name": forms.TextInput(attrs={"class": "form-control"}),
+            "event_type": forms.RadioSelect(attrs={'class': 'form-check-input'}),
+            "hours": forms.NumberInput(attrs={"class": "form-control"}),
+            "global_passkey": forms.TextInput(attrs={"class": "form-control", "placeholder": "Digite a senha do evento..."}),
+            "registration_start": forms.DateTimeInput(format='%Y-%m-%dT%H:%M', attrs={'type': 'datetime-local', 'class': 'form-control'}),
+            "registration_end": forms.DateTimeInput(format='%Y-%m-%dT%H:%M', attrs={'type': 'datetime-local', 'class': 'form-control'}),
+            "certificate_start": forms.DateTimeInput(format='%Y-%m-%dT%H:%M', attrs={'type': 'datetime-local', 'class': 'form-control'}),
+            "certificate_end": forms.DateTimeInput(format='%Y-%m-%dT%H:%M', attrs={'type': 'datetime-local', 'class': 'form-control'}),
+            "signature_1": forms.Select(attrs={"class": "form-select"}),
+            "signature_2": forms.Select(attrs={"class": "form-select"}),
+            "signature_3": forms.Select(attrs={"class": "form-select"}),
+            "certificate_template": forms.Select(attrs={"class": "form-select"}),
+            "nps_form": forms.Select(attrs={"class": "form-select"}),
+            "custom_reg_form": forms.Select(attrs={"class": "form-select"}),
+            "custom_cert_form": forms.Select(attrs={"class": "form-select"}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        company = kwargs.pop("company", None)
+        super().__init__(*args, **kwargs)
+        
+        # Datas não obrigatórias para suportar links vitalícios via UI
+        self.fields['registration_start'].required = False
+        self.fields['registration_end'].required = False
+        self.fields['certificate_start'].required = False
+        self.fields['certificate_end'].required = False
+
+        self.fields['hours'].required = False
+        self.fields['hours'].widget.attrs['readonly'] = True
+        self.fields['hours'].help_text = "Calculado automaticamente com base na soma dos encontros."
+
+        # Autofill inteligente para novos eventos recorrentes (D+1)
+        if not self.instance.pk:
+            now = timezone.now()
+            today = now.date()
+            tomorrow = today + datetime.timedelta(days=1)
+            tomorrow_end = timezone.make_aware(datetime.datetime.combine(tomorrow, datetime.time(23, 59)))
+
+            self.initial.setdefault('registration_start', now)
+            self.initial.setdefault('registration_end', tomorrow_end)
+            self.initial.setdefault('certificate_start', now)
+            self.initial.setdefault('certificate_end', tomorrow_end)
+
+        if self.instance.pk:
+            if self.instance.signature_3:
+                self.initial['num_signatures'] = '3'
+            elif self.instance.signature_2:
+                self.initial['num_signatures'] = '2'
+            else:
+                self.initial['num_signatures'] = '1'
+
+        if company:
+            instructor_qs = Instructor.objects.filter(company=company, active=True)
+            self.fields["signature_1"].queryset = instructor_qs
+            self.fields["signature_2"].queryset = instructor_qs
+            self.fields["signature_3"].queryset = instructor_qs
+            self.fields["certificate_template"].queryset = CertificateTemplate.objects.filter(company=company)
+            self.fields["certificate_template"].empty_label = "Modelo Padrão do Sistema"
+
+            self.fields["nps_form"].queryset = NPSForm.objects.filter(company=company)
+            self.fields["nps_form"].empty_label = "Nenhum (Sem feedback)"
+
+            self.fields["custom_reg_form"].queryset = DynamicForm.objects.filter(company=company, form_type='REG')
+            self.fields["custom_reg_form"].empty_label = "Modelo Padrão do Sistema"
+
+            self.fields["custom_cert_form"].queryset = DynamicForm.objects.filter(company=company, form_type='CERT')
+            self.fields["custom_cert_form"].empty_label = "Modelo Padrão do Sistema"
+
+    def clean(self):
+        cleaned_data = super().clean()
+        if not cleaned_data.get('hours'):
+            cleaned_data['hours'] = 0
+        return cleaned_data
+
+class EventSessionForm(forms.ModelForm):
+    """Formulário para encontros individuais (EventSession)."""
+    class Meta:
+        model = EventSession
+        fields = [
+            'theme', 'content', 'date', 'start_time', 'end_time', 'hours', 
+            'location_type', 'condominium_name', 'cep', 
+            'institution_name', 'institution_street', 'institution_number', 
+            'address_block', 'address_floor', 'address_apt', 'institution_neighborhood', 
+            'institution_complement', 'city', 'state', 'country'
+        ]
+        widgets = {
+            'theme': forms.TextInput(attrs={'class': 'form-control'}),
+            'content': forms.Textarea(attrs={'rows': 2, 'class': 'form-control'}),
+            'date': forms.DateInput(format='%Y-%m-%d', attrs={'type': 'date', 'class': 'form-control'}),
+            'start_time': forms.TimeInput(format='%H:%M', attrs={'type': 'time', 'class': 'form-control'}),
+            'end_time': forms.TimeInput(format='%H:%M', attrs={'type': 'time', 'class': 'form-control'}),
+            'hours': forms.NumberInput(attrs={'class': 'form-control', 'readonly': True}),
+            'location_type': forms.RadioSelect(attrs={'class': 'form-check-input location-type-radio'}),
+            'condominium_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'cep': forms.TextInput(attrs={'class': 'form-control'}),
+            'institution_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'institution_street': forms.TextInput(attrs={'class': 'form-control', 'readonly': True}),
+            'institution_number': forms.TextInput(attrs={'class': 'form-control'}),
+            'address_block': forms.TextInput(attrs={'class': 'form-control'}),
+            'address_floor': forms.TextInput(attrs={'class': 'form-control'}),
+            'address_apt': forms.TextInput(attrs={'class': 'form-control'}),
+            'institution_neighborhood': forms.TextInput(attrs={'class': 'form-control', 'readonly': True}),
+            'institution_complement': forms.TextInput(attrs={'class': 'form-control'}),
+            'city': forms.TextInput(attrs={'class': 'form-control', 'readonly': True}),
+            'state': forms.TextInput(attrs={'class': 'form-control', 'readonly': True}),
+            'country': forms.TextInput(attrs={'class': 'form-control'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Define os campos estritamente obrigatórios para o Encontro
+        mandatory_fields = [
+            'theme', 'date', 'start_time', 'end_time', 'cep', 'institution_name', 
+            'institution_street', 'institution_number', 'institution_neighborhood', 
+            'city', 'state', 'country'
+        ]
+        for field in mandatory_fields:
+            if field in self.fields:
+                self.fields[field].required = True
+                self.fields[field].label = f"{self.fields[field].label} *"
+                
+        # Opcionais dependentes da UI, mas que recebem asterisco condicional no label
+        self.fields['condominium_name'].label = "Nome do Condomínio *"
+        self.fields['address_block'].label = "Bloco *"
+        self.fields['address_floor'].label = "Número/Letra do Andar *"
+        self.fields['address_apt'].label = "Número do Apartamento/Casa *"
+
+    def clean(self):
+        cleaned_data = super().clean()
+        
+        # Trava de segurança para garantir que hours nunca seja None/vazio
+        if not cleaned_data.get('hours'):
+            cleaned_data['hours'] = 0
+            
+        loc_type = cleaned_data.get('location_type')
+        
+        if loc_type == 'condominio':
+            for field in ['condominium_name', 'address_block', 'address_floor', 'address_apt']:
+                if not cleaned_data.get(field):
+                    self.add_error(field, 'Este campo é obrigatório para endereços em Condomínio.')
+        
+        return cleaned_data
+
+# Formset para sessões do evento recorrente
+EventSessionFormSet = forms.inlineformset_factory(
+    RecurringEvent,
+    EventSession,
+    form=EventSessionForm,
+    extra=0,
+    can_delete=True
 )

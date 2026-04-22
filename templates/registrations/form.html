@@ -48,7 +48,7 @@
                     <div class="mb-4 bg-light p-3 rounded">
                         <p class="mb-1"><strong>Treinamento:</strong> <span class="text-muted">{{ course.name }}</span></p>
                         <p class="mb-1"><strong>Data do Treinamento:</strong> <span class="text-muted">{{ course.start_date|date:"d/m/Y" }}{% if course.end_date %} a {{ course.end_date|date:"d/m/Y" }}{% endif %}</span></p>
-                        <p class="mb-1"><strong>Nome da Instituição:</strong> <span class="text-muted">{{ course.institution_name|default:"Não informada" }}</span></p>
+                        <p class="mb-1"><strong>Nome do Local:</strong> <span class="text-muted">{{ course.institution_name|default:"Não informada" }}</span></p>
                         <p class="mb-1"><strong>Cidade/Estado:</strong> <span class="text-muted">{{ course.city }} / {{ course.state }}</span></p>
                         <p class="mb-0"><strong>Carga Horária:</strong> <span class="text-muted">{{ course.hours }}h</span></p>
                     </div>

@@ -16,8 +16,8 @@ class LinkGeneratorForm(forms.Form):
     )
     course_workload = forms.IntegerField(label="Carga Horária (horas)", min_value=1)
     
-    # Novos campos de instituição
-    institution_name = forms.CharField(label="Nome da Instituição", max_length=200, required=False)
+    # Novos campos de local
+    institution_name = forms.CharField(label="Nome do Local", max_length=200, required=False)
     institution_street = forms.CharField(label="Rua/Avenida", max_length=200, required=False)
     institution_number = forms.CharField(label="Número", max_length=50, required=False)
     institution_neighborhood = forms.CharField(label="Bairro", max_length=100, required=False)

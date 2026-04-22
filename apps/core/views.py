@@ -768,3 +768,125 @@ class DynamicFormDeleteView(LoginRequiredMixin, DeleteView):
     def delete(self, request, *args, **kwargs):
         messages.success(self.request, "Formulário dinâmico removido com sucesso.")
         return super().delete(request, *args, **kwargs)
+
+
+from .models import RecurringEvent, EventSession
+from .forms import RecurringEventForm, EventSessionFormSet
+
+class RecurringEventListView(LoginRequiredMixin, ListView):
+    """Lista eventos recorrentes da empresa do usuário."""
+    model = RecurringEvent
+    template_name = "core/recurring_event_list.html"
+    context_object_name = "events"
+
+    def get_queryset(self):
+        return RecurringEvent.objects.filter(
+            company=self.request.user.profile.company
+        ).order_by("-created_at")
+
+
+class RecurringEventCreateView(LoginRequiredMixin, CreateView):
+    """Cria um novo evento recorrente e gerencia suas sessões via Inline Formset."""
+    model = RecurringEvent
+    form_class = RecurringEventForm
+    template_name = "core/recurring_event_form.html"
+    success_url = reverse_lazy("core:recurring_event_list")
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["company"] = self.request.user.profile.company
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if self.request.POST:
+            context["formset"] = EventSessionFormSet(self.request.POST)
+        else:
+            context["formset"] = EventSessionFormSet()
+        return context
+
+    def post(self, request, *args, **kwargs):
+        self.object = None
+        form = self.get_form()
+        context = self.get_context_data()
+        formset = context['formset']
+        if form.is_valid() and formset.is_valid():
+            return self.form_valid(form, formset)
+        else:
+            return self.form_invalid(form, formset)
+
+    def form_valid(self, form, formset):
+        from django.contrib import messages
+        self.object = form.save(commit=False)
+        self.object.company = self.request.user.profile.company
+        self.object.save()
+        formset.instance = self.object
+        formset.save()
+        messages.success(self.request, "Evento Recorrente criado com sucesso!")
+        return redirect('core:recurring_event_list')
+
+    def form_invalid(self, form, formset):
+        from django.contrib import messages
+        messages.error(self.request, "Erro ao salvar o evento. Verifique os formulários e garanta que todos os campos obrigatórios foram preenchidos.")
+        return self.render_to_response(self.get_context_data(form=form, formset=formset))
+
+
+class RecurringEventUpdateView(LoginRequiredMixin, UpdateView):
+    """Edita um evento recorrente existente e gerencia suas sessões associadas."""
+    model = RecurringEvent
+    form_class = RecurringEventForm
+    template_name = "core/recurring_event_form.html"
+    success_url = reverse_lazy("core:recurring_event_list")
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["company"] = self.request.user.profile.company
+        return kwargs
+
+    def get_queryset(self):
+        # Proteção Multitenant: Garante acesso apenas aos eventos da empresa logada.
+        return RecurringEvent.objects.filter(company=self.request.user.profile.company)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if self.request.POST:
+            context["formset"] = EventSessionFormSet(self.request.POST, instance=self.object)
+        else:
+            context["formset"] = EventSessionFormSet(instance=self.object)
+        return context
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        form = self.get_form()
+        context = self.get_context_data()
+        formset = context['formset']
+        if form.is_valid() and formset.is_valid():
+            return self.form_valid(form, formset)
+        else:
+            return self.form_invalid(form, formset)
+
+    def form_valid(self, form, formset):
+        from django.contrib import messages
+        self.object = form.save()
+        formset.save()
+        messages.success(self.request, "Evento Recorrente atualizado com sucesso!")
+        return redirect('core:recurring_event_list')
+
+    def form_invalid(self, form, formset):
+        from django.contrib import messages
+        messages.error(self.request, "Erro ao salvar o evento. Verifique os formulários e garanta que todos os campos obrigatórios foram preenchidos.")
+        return self.render_to_response(self.get_context_data(form=form, formset=formset))
+
+
+class RecurringEventDeleteView(LoginRequiredMixin, DeleteView):
+    """Exclui um evento recorrente (Proteção Multitenant)."""
+    model = RecurringEvent
+    template_name = "core/recurring_event_confirm_delete.html"
+    success_url = reverse_lazy("core:recurring_event_list")
+
+    def get_queryset(self):
+        return RecurringEvent.objects.filter(company=self.request.user.profile.company)
+
+    def delete(self, request, *args, **kwargs):
+        messages.success(self.request, "Evento recorrente removido com sucesso.")
+        return super().delete(request, *args, **kwargs)

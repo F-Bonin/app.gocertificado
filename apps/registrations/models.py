@@ -4,7 +4,7 @@ Modelo de solicitação de certificado do participante.
 """
 import uuid
 from django.db import models
-from apps.core.models import Instructor, Course
+from apps.core.models import Instructor, Course, RecurringEvent, EventSession
 
 
 class Registration(models.Model):
@@ -54,8 +54,8 @@ class Registration(models.Model):
     city = models.CharField("Cidade", max_length=100, blank=True, null=True)
     state = models.CharField("UF", max_length=2, blank=True, null=True)
 
-    # Dados da Instituição
-    institution_name = models.CharField("Nome da Instituição", max_length=200, null=True, blank=True)
+    # Dados do Local
+    institution_name = models.CharField("Nome do Local", max_length=200, null=True, blank=True)
     institution_street = models.CharField("Rua/Avenida", max_length=200, null=True, blank=True)
     institution_number = models.CharField("Número", max_length=50, null=True, blank=True)
     institution_neighborhood = models.CharField("Bairro", max_length=100, null=True, blank=True)
@@ -74,6 +74,15 @@ class Registration(models.Model):
         null=True, 
         blank=True,
         verbose_name="Treinamento"
+    )
+
+    recurring_event = models.ForeignKey(
+        'core.RecurringEvent', 
+        on_delete=models.CASCADE, 
+        related_name='registrations', 
+        null=True, 
+        blank=True, 
+        verbose_name="Evento Recorrente"
     )
 
     # Vínculo com instrutor (definido pelo responsável via painel)
@@ -98,6 +107,15 @@ class Registration(models.Model):
 
     def __str__(self):
         return f"{self.full_name} — {self.course_name}"
+
+    @property
+    def event_name_display(self):
+        """Retorna o nome do evento associado (Course ou RecurringEvent) ou o legado."""
+        if self.course:
+            return self.course.name
+        if self.recurring_event:
+            return self.recurring_event.name
+        return self.course_name
 
     @property
     def whatsapp_formatted(self) -> str:
@@ -175,3 +193,29 @@ class DynamicResponse(models.Model):
 
     def __str__(self):
         return f"Resposta de {self.registration.full_name} para {self.field.label}"
+
+
+class SessionPresence(models.Model):
+    """Registro de presença de um participante em um encontro específico."""
+    registration = models.ForeignKey(
+        Registration, 
+        on_delete=models.CASCADE, 
+        related_name='session_presences',
+        verbose_name="Inscrição"
+    )
+    session = models.ForeignKey(
+        'core.EventSession', 
+        on_delete=models.CASCADE, 
+        related_name='presences',
+        verbose_name="Encontro"
+    )
+    attended = models.BooleanField("Presente", default=False)
+    checkin_at = models.DateTimeField("Data/Hora do Check-in", null=True, blank=True)
+
+    class Meta:
+        verbose_name = "Presença no Encontro"
+        verbose_name_plural = "Presenças nos Encontros"
+        unique_together = ('registration', 'session')
+
+    def __str__(self):
+        return f"{self.registration.full_name} — {self.session.theme}"

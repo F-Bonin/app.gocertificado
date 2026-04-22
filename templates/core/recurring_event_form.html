@@ -1,0 +1,723 @@
+{% extends 'painel/base_painel.html' %}
+
+{% block title %}{% if object %}Editar Evento Recorrente{% else %}Novo Evento Recorrente{% endif %} | GoCertificado{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="d-flex align-items-center mb-4">
+            <a href="{% url 'core:recurring_event_list' %}" class="btn btn-outline-secondary btn-sm me-3">
+                <i class="bi bi-arrow-left"></i> Voltar
+            </a>
+            <h2 class="h4 mb-0 text-primary">
+                <i class="bi bi-calendar-range me-2"></i>
+                {% if object %}Editar Evento Recorrente{% else %}Novo Evento Recorrente{% endif %}
+            </h2>
+        </div>
+
+        <form method="post" id="recurringEventForm" class="needs-validation" novalidate>
+            {% csrf_token %}
+            {{ formset.management_form }}
+
+            {% if form.errors or formset.errors %}
+                <div class="alert alert-danger shadow-sm mt-3 mb-4 border-danger border-opacity-25">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i><strong>Ops! O servidor rejeitou o salvamento.</strong><br>
+                    Motivos identificados no Backend:
+                    <hr>
+                    <ul class="mb-0 text-start">
+                    {% for field, errors in form.errors.items %}
+                        <li><strong>Geral ({{ field }}):</strong> {{ errors|striptags }}</li>
+                    {% endfor %}
+                    {% for form_err in formset.errors %}
+                        {% for field, errors in form_err.items %}
+                            <li><strong>Encontro {{ forloop.parentloop.counter }} ({{ field }}):</strong> {{ errors|striptags }}</li>
+                        {% endfor %}
+                    {% endfor %}
+                    {% if formset.non_form_errors %}
+                        <li><strong>Erros de Estrutura:</strong> {{ formset.non_form_errors|striptags }}</li>
+                    {% endif %}
+                    </ul>
+                </div>
+            {% endif %}
+            
+            <!-- Formulário Pai: RecurringEvent -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white py-3 border-bottom-0">
+                    <h5 class="card-title mb-0 fw-bold text-secondary">Configurações Gerais</h5>
+                </div>
+                <div class="card-body p-4 pt-0">
+                    <div class="row mb-3">
+                        <div class="col-md-9">
+                            <label class="form-label fw-bold small text-muted">{{ form.name.label }}</label>
+                            {{ form.name }}
+                            {% if form.name.errors %}<div class="text-danger small mt-1">{{ form.name.errors.0 }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold small text-muted">{{ form.hours.label }}</label>
+                            {{ form.hours }}
+                            <div class="form-text small text-primary fw-bold">Calculado automaticamente</div>
+                        </div>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <label class="form-label fw-bold small text-muted">{{ form.event_type.label }}</label>
+                            <div class="p-3 bg-light rounded border">
+                                {% for radio in form.event_type %}
+                                    <div class="form-check mb-2">
+                                        {{ radio.tag }}
+                                        <label class="form-check-label fw-semibold" for="{{ radio.id_for_label }}">
+                                            {{ radio.choice_label }}
+                                        </label>
+                                    </div>
+                                {% endfor %}
+                                <div id="custom-event-alert" class="alert alert-warning mb-0 mt-2 small" style="display: none;">
+                                    <i class="bi bi-info-circle-fill me-2"></i>
+                                    Como você escolheu <strong>Personalizado</strong>, a emissão de certificados está desativada. Este evento servirá como um Diário de Classe.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Configurações do Link de Inscrição -->
+                    <div class="card mb-4 border-success shadow-sm">
+                        <div class="card-header bg-success text-white fw-bold d-flex align-items-center">
+                            <i class="bi bi-person-lines-fill me-2 fs-5"></i>Configurações do Link de Inscrição (Pré-Evento)
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted small mb-3">Defina o período em que o formulário de inscrição pré-evento estará disponível.</p>
+                            
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" id="check_registration_open" {% if not form.registration_start.value and not form.registration_end.value %}checked{% endif %}>
+                                <label class="form-check-label fw-bold text-dark" for="check_registration_open">O link nunca expira (sempre disponível)</label>
+                            </div>
+
+                            <div id="registration_dates_container" {% if not form.registration_start.value and not form.registration_end.value %}style="display:none;"{% endif %}>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="{{ form.registration_start.id_for_label }}" class="form-label fw-bold small text-success">Início das Inscrições</label>
+                                        {{ form.registration_start }}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="{{ form.registration_end.id_for_label }}" class="form-label fw-bold small text-success">Término das Inscrições</label>
+                                        {{ form.registration_end }}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mt-3 pt-3 border-top border-success border-opacity-10">
+                                <label for="{{ form.custom_reg_form.id_for_label }}" class="form-label fw-bold small text-success">Formulário de Inscrição</label>
+                                {{ form.custom_reg_form }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="certificate-settings-section">
+                        <div class="card bg-light border-primary border-opacity-25 mb-4 shadow-sm">
+                            <div class="card-header bg-white py-3 border-bottom-0 d-flex align-items-center">
+                                <i class="bi bi-clock-history me-2 text-primary fs-5"></i>
+                                <h6 class="mb-0 fw-bold">Expiração do Link de Solicitação (Certificado)</h6>
+                            </div>
+                            <div class="card-body pt-0">
+                                <p class="text-muted small mb-3">Defina o período em que os alunos poderão preencher o formulário de solicitação deste certificado.</p>
+                                
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="check_no_expire" {% if not form.certificate_start.value and not form.certificate_end.value %}checked{% endif %}>
+                                    <label class="form-check-label fw-bold text-dark" for="check_no_expire">O link nunca expira (sempre disponível)</label>
+                                </div>
+
+                                <div id="certificate_dates_container" {% if not form.certificate_start.value and not form.certificate_end.value %}style="display:none;"{% endif %}>
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <label for="{{ form.certificate_start.id_for_label }}" class="form-label fw-bold small text-primary">Início das Solicitações</label>
+                                            {{ form.certificate_start }}
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="{{ form.certificate_end.id_for_label }}" class="form-label fw-bold small text-primary">Término das Solicitações</label>
+                                            {{ form.certificate_end }}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mt-3 pt-3 border-top border-primary border-opacity-10">
+                                    <label for="{{ form.custom_cert_form.id_for_label }}" class="form-label fw-bold small text-primary">Formulário de Solicitação de Certificado</label>
+                                    {{ form.custom_cert_form }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Chave de Acesso Global (Segurança) -->
+                        <div class="card mb-4 border-warning shadow-sm">
+                            <div class="card-header bg-warning bg-opacity-10 border-bottom py-3">
+                                <h6 class="mb-0 text-dark fw-bold"><i class="bi bi-key-fill text-warning me-2"></i>Chave de Acesso (Senha)</h6>
+                            </div>
+                            <div class="card-body p-4">
+                                <div class="form-check form-switch fs-5 mb-3">
+                                    <input class="form-check-input" type="checkbox" id="toggle-global-passkey" {% if form.global_passkey.value %}checked{% endif %}>
+                                    <label class="form-check-label fw-bold text-dark fs-6 ms-2 mt-1" for="toggle-global-passkey">Definir senha para emissão do certificado</label>
+                                </div>
+                                <div id="global-passkey-container" style="{% if not form.global_passkey.value %}display: none;{% endif %}">
+                                    {{ form.global_passkey }}
+                                    {% if form.global_passkey.errors %}<div class="text-danger small mt-1">{{ form.global_passkey.errors.0 }}</div>{% endif %}
+                                </div>
+                                <div class="form-text small mt-3">
+                                    <i class="bi bi-info-circle-fill me-1 text-warning"></i> Ao ativar, o participante precisará digitar esta senha no link/formulário de solicitação de certificado. Sem ela o certificado não será gerado e enviado. <strong class="text-dark">Não esqueça de comunicar esta senha ao participante do evento!</strong>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="my-4 opacity-10">
+                        <h6 class="fw-bold mb-3 text-primary"><i class="bi bi-patch-check me-2"></i>Design e Assinaturas</h6>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small text-muted">{{ form.certificate_template.label }}</label>
+                                {{ form.certificate_template }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small text-muted">{{ form.nps_form.label }}</label>
+                                {{ form.nps_form }}
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold small text-muted">{{ form.signature_1.label }}</label>
+                                {{ form.signature_1 }}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold small text-muted">{{ form.signature_2.label }}</label>
+                                {{ form.signature_2 }}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold small text-muted">{{ form.signature_3.label }}</label>
+                                {{ form.signature_3 }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FormSet: EventSession (Encontros) -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0 fw-bold text-secondary">Encontros / Sessões</h5>
+                    <button type="button" class="btn btn-sm btn-success" id="add-session">
+                        <i class="bi bi-plus-lg me-1"></i> Adicionar Encontro
+                    </button>
+                </div>
+                <div class="card-body p-4">
+                    <div id="session-formset-container">
+                        {% for field_form in formset %}
+                            <div class="session-form-card card bg-light border-0 mb-5 shadow-sm row-encontro" data-index="{{ forloop.counter0 }}">
+                                <div class="card-header bg-secondary bg-opacity-10 d-flex justify-content-between align-items-center">
+                                    <span class="fw-bold text-secondary">Sessão #<span class="session-number">{{ forloop.counter }}</span></span>
+                                    {% if formset.can_delete %}
+                                        <div class="form-check mb-0">
+                                            {{ field_form.DELETE }}
+                                            <label class="form-check-label text-danger small fw-bold" for="{{ field_form.DELETE.id_for_label }}">Remover Encontro</label>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="card-body p-4">
+                                    {% for hidden in field_form.hidden_fields %}
+                                        {{ hidden }}
+                                    {% endfor %}
+
+                                    {% if field_form.errors %}
+                                        <div class="alert alert-danger p-2 small mb-3">
+                                            <i class="bi bi-exclamation-circle me-1"></i> Erros nesta sessão. Verifique os campos abaixo.
+                                        </div>
+                                    {% endif %}
+                                    
+                                    <!-- Informações Básicas -->
+                                    <div class="row mb-4">
+                                        <div class="col-md-6">
+                                            <label class="form-label small fw-bold text-muted">{{ field_form.theme.label }}</label>
+                                            {{ field_form.theme }}
+                                            {% if field_form.theme.errors %}<div class="text-danger tiny">{{ field_form.theme.errors.0 }}</div>{% endif %}
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label small fw-bold text-muted">{{ field_form.date.label }}</label>
+                                            {{ field_form.date }}
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label small fw-bold text-muted">{{ field_form.start_time.label }}</label>
+                                            {{ field_form.start_time }}
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label small fw-bold text-muted">{{ field_form.end_time.label }}</label>
+                                            {{ field_form.end_time }}
+                                        </div>
+                                    </div>
+
+                                    <div class="row mb-4">
+                                        <div class="col-md-10">
+                                            <label class="form-label small fw-bold text-muted">{{ field_form.content.label }}</label>
+                                            {{ field_form.content }}
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label small fw-bold text-muted">{{ field_form.hours.label }}</label>
+                                            {{ field_form.hours }}
+                                        </div>
+                                    </div>
+
+                                    <!-- Localização do Encontro -->
+                                    <div class="p-4 bg-white rounded border border-secondary border-opacity-10 shadow-sm">
+                                        <div class="d-flex align-items-center mb-4">
+                                            <i class="bi bi-geo-alt text-primary fs-4 me-2"></i>
+                                            <h6 class="mb-0 fw-bold">Localização do Encontro</h6>
+                                        </div>
+
+                                        <div class="row g-3 mt-2">
+                                            <div class="col-md-12 mb-2">
+                                                <label class="form-label fw-bold small text-muted">{{ field_form.institution_name.label }}</label>
+                                                {{ field_form.institution_name }}
+                                            </div>
+                                            <div class="col-md-12 mb-3">
+                                                <label class="form-label fw-bold small text-primary mb-2">Onde fica o endereço?</label>
+                                                <div class="d-flex flex-wrap gap-4 px-3 py-2 bg-light rounded border border-secondary border-opacity-25">
+                                                    {% for radio in field_form.location_type %}
+                                                        <div class="form-check mb-0">
+                                                            {{ radio.tag }}
+                                                            <label class="form-check-label fw-semibold text-secondary mt-1" for="{{ radio.id_for_label }}">{{ radio.choice_label }}</label>
+                                                        </div>
+                                                    {% endfor %}
+                                                </div>
+                                            </div>
+                                            <div class="col-md-12 mb-2 condominio-only" {% if field_form.location_type.value != 'condominio' %}style="display: none;"{% endif %}>
+                                                <label class="form-label fw-bold small text-muted">{{ field_form.condominium_name.label }}</label>
+                                                {{ field_form.condominium_name }}
+                                            </div>
+                                            <div class="col-md-3 mb-2">
+                                                <label class="form-label fw-bold small text-muted">{{ field_form.cep.label }}</label>
+                                                {{ field_form.cep }}
+                                                <div class="form-text small mt-1"><a href="https://buscacepinter.correios.com.br/app/endereco/index.php" target="_blank" class="text-decoration-none text-primary"><i class="bi bi-search me-1"></i>Não sabe seu CEP?</a></div>
+                                            </div>
+                                            <div class="col-md-7 mb-2">
+                                                <label class="form-label fw-bold small text-muted">{{ field_form.institution_street.label }}</label>
+                                                {{ field_form.institution_street }}
+                                            </div>
+                                            <div class="col-md-2 mb-2">
+                                                <label class="form-label fw-bold small text-muted">{{ field_form.institution_number.label }}</label>
+                                                {{ field_form.institution_number }}
+                                            </div>
+                                            <div class="col-md-12 mb-2 casa-only" {% if field_form.location_type.value == 'condominio' %}style="display: none;"{% endif %}>
+                                                <label class="form-label fw-bold small text-muted">{{ field_form.institution_complement.label }}</label>
+                                                {{ field_form.institution_complement }}
+                                            </div>
+                                            <div class="col-md-4 mb-2 condominio-only" {% if field_form.location_type.value != 'condominio' %}style="display: none;"{% endif %}>
+                                                <label class="form-label fw-bold small text-muted">{{ field_form.address_block.label }}</label>
+                                                {{ field_form.address_block }}
+                                            </div>
+                                            <div class="col-md-4 mb-2 condominio-only" {% if field_form.location_type.value != 'condominio' %}style="display: none;"{% endif %}>
+                                                <label class="form-label fw-bold small text-muted">{{ field_form.address_floor.label }}</label>
+                                                {{ field_form.address_floor }}
+                                            </div>
+                                            <div class="col-md-4 mb-2 condominio-only" {% if field_form.location_type.value != 'condominio' %}style="display: none;"{% endif %}>
+                                                <label class="form-label fw-bold small text-muted">{{ field_form.address_apt.label }}</label>
+                                                {{ field_form.address_apt }}
+                                            </div>
+                                            <div class="col-md-4 mb-2">
+                                                <label class="form-label fw-bold small text-muted">{{ field_form.institution_neighborhood.label }}</label>
+                                                {{ field_form.institution_neighborhood }}
+                                            </div>
+                                            <div class="col-md-4 mb-2">
+                                                <label class="form-label fw-bold small text-muted">{{ field_form.city.label }}</label>
+                                                {{ field_form.city }}
+                                            </div>
+                                            <div class="col-md-2 mb-2">
+                                                <label class="form-label fw-bold small text-muted">{{ field_form.state.label }}</label>
+                                                {{ field_form.state }}
+                                            </div>
+                                            <div class="col-md-2 mb-2">
+                                                <label class="form-label fw-bold small text-muted">{{ field_form.country.label }}</label>
+                                                {{ field_form.country }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end mb-5">
+                <a href="{% url 'core:recurring_event_list' %}" class="btn btn-light px-4">Cancelar</a>
+                <button type="submit" class="btn btn-primary px-5 shadow-sm">
+                    <i class="bi bi-check2-circle me-1"></i> Salvar Evento Recorrente
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Template para novas sessões -->
+<template id="session-template">
+    <div class="session-form-card card bg-light border-0 mb-5 shadow-sm row-encontro" data-index="__prefix__">
+        <div class="card-header bg-secondary bg-opacity-10 d-flex justify-content-between align-items-center">
+            <span class="fw-bold text-secondary">Sessão #<span class="session-number">__number__</span></span>
+            <button type="button" class="btn btn-sm btn-outline-danger remove-session-btn">
+                <i class="bi bi-trash me-1"></i> Remover Encontro
+            </button>
+        </div>
+        <div class="card-body p-4">
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <label class="form-label small fw-bold text-muted">{{ formset.empty_form.theme.label }}</label>
+                    {{ formset.empty_form.theme }}
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold text-muted">{{ formset.empty_form.date.label }}</label>
+                    {{ formset.empty_form.date }}
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold text-muted">{{ formset.empty_form.start_time.label }}</label>
+                    {{ formset.empty_form.start_time }}
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold text-muted">{{ formset.empty_form.end_time.label }}</label>
+                    {{ formset.empty_form.end_time }}
+                </div>
+            </div>
+
+            <div class="row mb-4">
+                <div class="col-md-10">
+                    <label class="form-label small fw-bold text-muted">{{ formset.empty_form.content.label }}</label>
+                    {{ formset.empty_form.content }}
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold text-muted">{{ formset.empty_form.hours.label }}</label>
+                    {{ formset.empty_form.hours }}
+                </div>
+            </div>
+
+            <!-- Localização do Encontro - Template -->
+            <div class="p-4 bg-white rounded border border-secondary border-opacity-10 shadow-sm">
+                <div class="d-flex align-items-center mb-4">
+                    <i class="bi bi-geo-alt text-primary fs-4 me-2"></i>
+                    <h6 class="mb-0 fw-bold">Localização do Encontro</h6>
+                </div>
+
+                <div class="row g-3 mt-2">
+                    <!-- Linha 1: Local e Tipo -->
+                    <div class="col-md-12 mb-2">
+                        <label class="form-label fw-bold small text-muted">{{ formset.empty_form.institution_name.label }}</label>
+                        {{ formset.empty_form.institution_name }}
+                    </div>
+                    <div class="col-md-12 mb-3">
+                        <label class="form-label fw-bold small text-primary mb-2">Onde fica o endereço?</label>
+                        <div class="d-flex flex-wrap gap-4 px-3 py-2 bg-light rounded border border-secondary border-opacity-25">
+                            {% for radio in formset.empty_form.location_type %}
+                                <div class="form-check mb-0">
+                                    {{ radio.tag }}
+                                    <label class="form-check-label fw-semibold text-secondary mt-1" for="{{ radio.id_for_label }}">{{ radio.choice_label }}</label>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <!-- Linha 2: Condominio Only -->
+                    <div class="col-md-12 mb-2 condominio-only" style="display: none;">
+                        <label class="form-label fw-bold small text-muted">{{ formset.empty_form.condominium_name.label }}</label>
+                        {{ formset.empty_form.condominium_name }}
+                    </div>
+                    <!-- Linha 3: CEP, Rua, Número -->
+                    <div class="col-md-3 mb-2">
+                        <label class="form-label fw-bold small text-muted">{{ formset.empty_form.cep.label }}</label>
+                        {{ formset.empty_form.cep }}
+                        <div class="form-text small mt-1"><a href="https://buscacepinter.correios.com.br/app/endereco/index.php" target="_blank" class="text-decoration-none text-primary"><i class="bi bi-search me-1"></i>Não sabe seu CEP?</a></div>
+                    </div>
+                    <div class="col-md-7 mb-2">
+                        <label class="form-label fw-bold small text-muted">{{ formset.empty_form.institution_street.label }}</label>
+                        {{ formset.empty_form.institution_street }}
+                    </div>
+                    <div class="col-md-2 mb-2">
+                        <label class="form-label fw-bold small text-muted">{{ formset.empty_form.institution_number.label }}</label>
+                        {{ formset.empty_form.institution_number }}
+                    </div>
+                    <!-- Linha 4: Complemento (Casa) ou Bloco/Andar/Apt (Condomínio) -->
+                    <div class="col-md-12 mb-2 casa-only">
+                        <label class="form-label fw-bold small text-muted">{{ formset.empty_form.institution_complement.label }}</label>
+                        {{ formset.empty_form.institution_complement }}
+                    </div>
+                    <div class="col-md-4 mb-2 condominio-only" style="display: none;">
+                        <label class="form-label fw-bold small text-muted">{{ formset.empty_form.address_block.label }}</label>
+                        {{ formset.empty_form.address_block }}
+                    </div>
+                    <div class="col-md-4 mb-2 condominio-only" style="display: none;">
+                        <label class="form-label fw-bold small text-muted">{{ formset.empty_form.address_floor.label }}</label>
+                        {{ formset.empty_form.address_floor }}
+                    </div>
+                    <div class="col-md-4 mb-2 condominio-only" style="display: none;">
+                        <label class="form-label fw-bold small text-muted">{{ formset.empty_form.address_apt.label }}</label>
+                        {{ formset.empty_form.address_apt }}
+                    </div>
+                    <!-- Linha 5: Bairro, Cidade, Estado, País -->
+                    <div class="col-md-4 mb-2">
+                        <label class="form-label fw-bold small text-muted">{{ formset.empty_form.institution_neighborhood.label }}</label>
+                        {{ formset.empty_form.institution_neighborhood }}
+                    </div>
+                    <div class="col-md-4 mb-2">
+                        <label class="form-label fw-bold small text-muted">{{ formset.empty_form.city.label }}</label>
+                        {{ formset.empty_form.city }}
+                    </div>
+                    <div class="col-md-2 mb-2">
+                        <label class="form-label fw-bold small text-muted">{{ formset.empty_form.state.label }}</label>
+                        {{ formset.empty_form.state }}
+                    </div>
+                    <div class="col-md-2 mb-2">
+                        <label class="form-label fw-bold small text-muted">{{ formset.empty_form.country.label }}</label>
+                        {{ formset.empty_form.country }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    
+    // --- 0. Chave de Acesso Global ---
+    const toggleGlobalPasskey = document.getElementById('toggle-global-passkey');
+    const passkeyContainer = document.getElementById('global-passkey-container');
+    const passkeyInput = document.querySelector('[name="global_passkey"]');
+    if(toggleGlobalPasskey) {
+        toggleGlobalPasskey.addEventListener('change', function() {
+            passkeyContainer.style.display = this.checked ? 'block' : 'none';
+            if(!this.checked && passkeyInput) passkeyInput.value = '';
+        });
+    }
+
+    // --- 1. Event Delegation para Componentes Dinâmicos ---
+    // Gerencia tanto as linhas existentes quanto as criadas via Javascript
+    document.addEventListener('change', function(e) {
+        
+        // Lógica do Tipo de Localização (Condomínio vs Casa/Rua)
+        if (e.target.classList.contains('location-type-radio')) {
+            const row = e.target.closest('.row-encontro');
+            const isCondominio = e.target.value === 'condominio';
+            
+            // Alterna visibilidade
+            row.querySelectorAll('.condominio-only').forEach(el => el.style.display = isCondominio ? 'block' : 'none');
+            row.querySelectorAll('.casa-only').forEach(el => el.style.display = isCondominio ? 'none' : 'block');
+            
+            // Alterna Obrigatoriedade (Para evitar o Silent Failure)
+            const condFields = ['condominium_name', 'address_block', 'address_floor', 'address_apt'];
+            if (isCondominio) {
+                condFields.forEach(field => {
+                    const input = row.querySelector(`[name$="-${field}"]`);
+                    if(input) input.required = true;
+                });
+            } else {
+                condFields.forEach(field => {
+                    const input = row.querySelector(`[name$="-${field}"]`);
+                    if(input) { input.required = false; input.value = ''; }
+                });
+            }
+        }
+    });
+
+    // Validação explícita de Frontend
+    const courseForm = document.getElementById('recurringEventForm');
+    if (courseForm) {
+        courseForm.addEventListener('submit', function(event) {
+            if (!courseForm.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+                
+                let invalidFields = [];
+                courseForm.querySelectorAll(':invalid').forEach(input => {
+                    let labelContainer = input.closest('div');
+                    let label = labelContainer ? labelContainer.querySelector('label') : null;
+                    let fieldName = label ? label.innerText.replace('*', '').trim() : "Campo obrigatório";
+                    if (fieldName && !invalidFields.includes(fieldName)) {
+                        invalidFields.push("- " + fieldName);
+                    }
+                });
+                
+                alert("Não foi possível salvar o evento.\n\nOs seguintes campos obrigatórios não foram preenchidos:\n" + invalidFields.join('\n') + "\n\nVerifique as abas e corrija as marcações em vermelho.");
+            }
+            courseForm.classList.add('was-validated');
+        }, false);
+    }
+
+    // --- 2. Reatividade do tipo de evento (PROGRAMADO vs PERSONALIZADO) ---
+    const eventTypeRadios = document.querySelectorAll('input[name="event_type"]');
+    const certSection = document.getElementById('certificate-settings-section');
+    const customAlert = document.getElementById('custom-event-alert');
+
+    function toggleCertSection() {
+        const checkedRadio = document.querySelector('input[name="event_type"]:checked');
+        if (!checkedRadio) return;
+        
+        const selectedType = checkedRadio.value;
+        if (selectedType === 'CUSTOM') {
+            certSection.style.display = 'none';
+            customAlert.style.display = 'block';
+        } else {
+            certSection.style.display = 'block';
+            customAlert.style.display = 'none';
+        }
+    }
+
+    eventTypeRadios.forEach(radio => radio.addEventListener('change', toggleCertSection));
+    toggleCertSection();
+
+    // --- 3. Motor de Carga Horária Reativa ---
+    function calculateRowHours(row) {
+        const startTimeInput = row.querySelector('input[name$="-start_time"]');
+        const endTimeInput = row.querySelector('input[name$="-end_time"]');
+        const hoursInput = row.querySelector('input[name$="-hours"]');
+
+        if (!startTimeInput || !endTimeInput || !hoursInput) return;
+
+        if (!startTimeInput.value || !endTimeInput.value) {
+            hoursInput.value = 0;
+            updateTotalHours();
+            return;
+        }
+
+        const start = new Date(`1970-01-01T${startTimeInput.value}:00`);
+        const end = new Date(`1970-01-01T${endTimeInput.value}:00`);
+
+        let diff = (end - start) / (1000 * 60 * 60);
+        if (diff < 0) diff = 0;
+
+        hoursInput.value = Math.round(diff);
+        updateTotalHours();
+    }
+
+    function updateTotalHours() {
+        const allHourInputs = document.querySelectorAll('.session-form-card:not([style*="display: none"]) input[name$="-hours"]');
+        const mainHoursInput = document.getElementById('id_hours');
+        let total = 0;
+
+        allHourInputs.forEach(input => {
+            const row = input.closest('.session-form-card');
+            const deleteInput = row.querySelector('input[name$="-DELETE"]');
+            if (!deleteInput || !deleteInput.checked) {
+                total += parseInt(input.value) || 0;
+            }
+        });
+
+        if(mainHoursInput) mainHoursInput.value = total;
+    }
+
+    // --- 4. Gerenciamento Dinâmico de Sessões (FormSet) ---
+    const container = document.getElementById('session-formset-container');
+    const addButton = document.getElementById('add-session');
+    const totalFormsInput = document.querySelector('input[name$="-TOTAL_FORMS"]');
+    const template = document.getElementById('session-template').innerHTML;
+
+    if (addButton) {
+        addButton.addEventListener('click', function() {
+            const index = parseInt(totalFormsInput.value);
+            const number = index + 1;
+            const today = new Date().toISOString().split('T')[0];
+            
+            let newHtml = template.replace(/__prefix__/g, index).replace(/__number__/g, number);
+            
+            const div = document.createElement('div');
+            div.innerHTML = newHtml;
+            const newRow = div.firstElementChild;
+            
+            // Autofill padrão
+            const dateInput = newRow.querySelector('input[name$="-date"]');
+            const startInput = newRow.querySelector('input[name$="-start_time"]');
+            const endInput = newRow.querySelector('input[name$="-end_time"]');
+            const countryInput = newRow.querySelector('input[name$="-country"]');
+
+            if(dateInput) dateInput.value = today;
+            if(startInput) startInput.value = "20:00";
+            if(endInput) endInput.value = "22:00";
+            if(countryInput) countryInput.value = "Brasil";
+            
+            container.appendChild(newRow);
+
+            // Atualiza a integridade do Management Form do Django
+            if(totalFormsInput) {
+                totalFormsInput.value = index + 1;
+            }
+
+            calculateRowHours(newRow);
+        });
+    }
+
+    // Delegação de eventos para cálculo de horas e remoção de novas linhas
+    container.addEventListener('input', function(e) {
+        if (e.target.name && (e.target.name.includes('-start_time') || e.target.name.includes('-end_time'))) {
+            calculateRowHours(e.target.closest('.session-form-card'));
+        }
+    });
+
+    container.addEventListener('click', function(e) {
+        const btn = e.target.closest('.remove-session-btn');
+        if (btn) {
+            const row = btn.closest('.session-form-card');
+            row.remove();
+            
+            // Nota: Para novas linhas (não salvas), decrementamos o total forms.
+            // Para linhas existentes, o Django usa o checkbox DELETE.
+            totalFormsInput.value = parseInt(totalFormsInput.value) - 1;
+            updateTotalHours();
+        }
+    });
+
+    // --- 5. Integração ViaCEP (Event Delegation) ---
+    container.addEventListener('blur', function(e) {
+        if (e.target.name && e.target.name.includes('-cep')) {
+            const cepInput = e.target;
+            const cep = cepInput.value.replace(/\D/g, '');
+            
+            if (cep.length !== 8) return;
+
+            const card = cepInput.closest('.session-form-card');
+            const prefix = cepInput.name.substring(0, cepInput.name.lastIndexOf('-'));
+            
+            const streetInput = card.querySelector(`[name="${prefix}-institution_street"]`);
+            const neighborhoodInput = card.querySelector(`[name="${prefix}-institution_neighborhood"]`);
+            const cityInput = card.querySelector(`[name="${prefix}-city"]`);
+            const stateInput = card.querySelector(`[name="${prefix}-state"]`);
+            const numberInput = card.querySelector(`[name="${prefix}-institution_number"]`);
+
+            fetch(`https://viacep.com.br/ws/${cep}/json/`)
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.erro) {
+                        if(streetInput) streetInput.value = data.logradouro;
+                        if(neighborhoodInput) neighborhoodInput.value = data.bairro;
+                        if(cityInput) cityInput.value = data.localidade;
+                        if(stateInput) stateInput.value = data.uf;
+                        if(numberInput) numberInput.focus();
+                    }
+                })
+                .catch(error => console.error('Erro ViaCEP:', error));
+        }
+    }, true);
+
+    // --- 6. Links Vitalícios ---
+    const setupSwitch = (switchId, containerId, startName, endName) => {
+        const sw = document.getElementById(switchId);
+        const ct = document.getElementById(containerId);
+        if (sw && ct) {
+            sw.addEventListener('change', function() {
+                ct.style.display = this.checked ? 'none' : 'block';
+                if (this.checked) {
+                    document.querySelector(`[name="${startName}"]`).value = '';
+                    document.querySelector(`[name="${endName}"]`).value = '';
+                }
+            });
+        }
+    };
+    setupSwitch('check_registration_open', 'registration_dates_container', 'registration_start', 'registration_end');
+    setupSwitch('check_no_expire', 'certificate_dates_container', 'certificate_start', 'certificate_end');
+
+    // Inicialização
+    document.querySelectorAll('.session-form-card').forEach(row => calculateRowHours(row));
+});
+</script>
+{% endblock %}

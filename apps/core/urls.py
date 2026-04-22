@@ -32,12 +32,20 @@ from .views import (
     DynamicFormCreateView,
     DynamicFormUpdateView,
     DynamicFormDeleteView,
+    RecurringEventListView,
+    RecurringEventCreateView,
+    RecurringEventUpdateView,
+    RecurringEventDeleteView,
 )
 
 app_name = "core"
 
 urlpatterns = [
     path("", CompanyUpdateView.as_view(), name="company_edit"),
+    path("eventos-recorrentes/", RecurringEventListView.as_view(), name="recurring_event_list"),
+    path("eventos-recorrentes/novo/", RecurringEventCreateView.as_view(), name="recurring_event_create"),
+    path("eventos-recorrentes/<int:pk>/editar/", RecurringEventUpdateView.as_view(), name="recurring_event_update"),
+    path("eventos-recorrentes/<int:pk>/excluir/", RecurringEventDeleteView.as_view(), name="recurring_event_delete"),
     path("empresa/modelo-certificado/", CertificateDesignView.as_view(), name="certificate_design"),
     path("empresa/modelo-certificado/preview/", CertificatePreviewView.as_view(), name="certificate_preview"),
     path("empresa/modelo-certificado/<int:pk>/excluir/", CertificateTemplateDeleteView.as_view(), name="template_delete"),
