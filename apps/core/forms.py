@@ -245,6 +245,7 @@ class RecurringEventForm(forms.ModelForm):
             "name": forms.TextInput(attrs={"class": "form-control"}),
             "event_type": forms.RadioSelect(attrs={'class': 'form-check-input'}),
             "hours": forms.NumberInput(attrs={"class": "form-control"}),
+            "min_frequency": forms.NumberInput(attrs={"class": "form-control", "min": 1, "max": 100}),
             "global_passkey": forms.TextInput(attrs={"class": "form-control", "placeholder": "Digite a senha do evento..."}),
             "registration_start": forms.DateTimeInput(format='%Y-%m-%dT%H:%M', attrs={'type': 'datetime-local', 'class': 'form-control'}),
             "registration_end": forms.DateTimeInput(format='%Y-%m-%dT%H:%M', attrs={'type': 'datetime-local', 'class': 'form-control'}),

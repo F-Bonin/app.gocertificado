@@ -1,0 +1,352 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solicitação de Certificado | GoCertificado</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; }
+        .form-container { max-width: 800px; margin: 50px auto; }
+        .card { border: none; border-radius: 15px; box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15); }
+        .section-title { border-bottom: 2px solid #e9ecef; padding-bottom: 10px; margin-bottom: 20px; font-weight: 600; color: #495057; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="form-container">
+        <div class="card p-4 p-md-5">
+            <div class="text-center mb-4">
+                <img src="{% static 'images/logo.png' %}" alt="Logo da Empresa" class="mb-3" style="max-height: 80px; object-fit: contain; width: auto;">
+                <h2 class="fw-bold">Solicitação de Certificado</h2>
+                <p class="text-muted">Formulário Personalizado</p>
+            </div>
+
+            <!-- Card de Status e Cronômetro (Bidirecional) -->
+            <div class="alert alert-info shadow-sm mb-4">
+                <p class="mb-1 fw-bold text-center">
+                    {% if event.certificate_start and event.certificate_end %}
+                        Início: {{ event.certificate_start|date:"d/m/Y" }} às {{ event.certificate_start|date:"H:i" }} | Encerramento: {{ event.certificate_end|date:"d/m/Y" }} às {{ event.certificate_end|date:"H:i" }}
+                    {% elif event.certificate_start %}
+                        Início: {{ event.certificate_start|date:"d/m/Y" }} às {{ event.certificate_start|date:"H:i" }}
+                    {% elif event.certificate_end %}
+                        Encerramento: {{ event.certificate_end|date:"d/m/Y" }} às {{ event.certificate_end|date:"H:i" }}
+                    {% else %}
+                        Link de solicitação vitalício
+                    {% endif %}
+                </p>
+                <div id="timer_display" class="fs-4 fw-bold text-danger text-center mt-2"></div>
+            </div>
+
+            <div id="certificate_form_wrapper">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    
+                    <div class="section-title">Dados do Evento</div>
+                    <div class="mb-4 bg-light p-3 rounded">
+                        <p class="mb-1"><strong>Evento:</strong> <span class="text-muted">{{ event.name }}</span></p>
+                        <p class="mb-1"><strong>Encontros:</strong> <span class="text-muted">{{ event.sessions.count }} sessões programadas</span></p>
+                        <p class="mb-1"><strong>Frequência Mín. Exigida:</strong> <span class="text-muted">{{ event.min_frequency }}% para certificação</span></p>
+                        <p class="mb-0"><strong>Carga Horária Total:</strong> <span class="text-muted">{{ event.hours }}h</span></p>
+                    </div>
+
+                    {# Campos ocultos para integridade do POST do Django Form #}
+                    <div style="display: none;">
+                        {# Hack: Desativando requireds manuais para campos não utilizados no recorrente #}
+                        <input type="hidden" name="course_name" value="{{ event.name }}">
+                        <input type="hidden" name="course_workload" value="{{ event.hours }}">
+                    </div>
+
+                    <div class="section-title">Dados Pessoais</div>
+                    
+                    <!-- Identidade Core: 4 Pilares Inalteráveis (Exibição Obrigatória) -->
+                    <div class="row g-3 mb-4">
+                        <div class="col-12">
+                            <label for="{{ form.full_name.id_for_label }}" class="form-label fw-bold small text-primary">{{ form.full_name.label }}*</label>
+                            {{ form.full_name }}
+                            {% if form.full_name.errors %}<div class="text-danger small">{{ form.full_name.errors.0 }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            <label for="{{ form.cpf.id_for_label }}" class="form-label fw-bold small text-primary">{{ form.cpf.label }}*</label>
+                            {{ form.cpf }}
+                            {% if form.cpf.errors %}<div class="text-danger small">{{ form.cpf.errors.0 }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            <label for="{{ form.email.id_for_label }}" class="form-label fw-bold small text-primary">{{ form.email.label }}*</label>
+                            {{ form.email }}
+                            {% if form.email.errors %}<div class="text-danger small">{{ form.email.errors.0 }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            <label for="{{ form.birth_date.id_for_label }}" class="form-label fw-bold small text-primary">{{ form.birth_date.label }}*</label>
+                            {{ form.birth_date }}
+                            {% if form.birth_date.errors %}<div class="text-danger small">{{ form.birth_date.errors.0 }}</div>{% endif %}
+                        </div>
+                    </div>
+
+                    {% if event.global_passkey %}
+                    <div class="col-12 mb-4 bg-warning bg-opacity-10 p-3 rounded border border-warning border-opacity-50 shadow-sm">
+                        <label for="global_passkey" class="form-label fw-bold text-dark fs-5"><i class="bi bi-key-fill text-warning me-2"></i>Senha de Acesso do Evento*</label>
+                        <input type="text" name="global_passkey" id="global_passkey" class="form-control form-control-lg border-warning" required placeholder="Digite a senha fornecida pelo instrutor">
+                        {% if form.non_field_errors %}
+                            <div class="text-danger mt-2 fw-bold"><i class="bi bi-exclamation-circle me-1"></i>{{ form.non_field_errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+
+                    <!-- Bloco de Campos Dinâmicos (EAV Injection via contexto) -->
+                    {% if dynamic_fields %}
+                    <div class="col-12 mt-4">
+                        <div class="alert alert-secondary py-2 border-0 bg-light">
+                            <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-info-circle me-2"></i>Informações Adicionais</h6>
+                        </div>
+                    </div>
+                    <div class="row g-3">
+                        {% for field in dynamic_fields %}
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold small text-muted">
+                                {{ field.label }} {% if field.is_required %}<span class="text-danger">*</span>{% endif %}
+                            </label>
+                            
+                            {% if field.field_type == 'select' %}
+                            <select name="dynamic_field_{{ field.id }}" class="form-select" {% if field.is_required %}required{% endif %}>
+                                <option value="">Selecione...</option>
+                                {% for option in field.get_options_list %}
+                                <option value="{{ option }}">{{ option }}</option>
+                                {% endfor %}
+                            </select>
+                            {% elif field.field_type == 'checkbox' %}
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="Sim" name="dynamic_field_{{ field.id }}" id="dyn_check_{{ field.id }}" {% if field.is_required %}required{% endif %}>
+                                <label class="form-check-label small" for="dyn_check_{{ field.id }}">
+                                    Aceito os termos
+                                </label>
+                            </div>
+                            {% else %}
+                            <input type="{{ field.field_type }}" name="dynamic_field_{{ field.id }}" class="form-control" {% if field.is_required %}required{% endif %}>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <div class="d-grid mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg shadow-sm">Enviar Solicitação</button>
+                    </div>
+
+                    <!-- MODAL NPS -->
+                    {% if event.nps_form %}
+                    <div class="modal fade" id="npsModal" tabindex="-1" aria-labelledby="npsModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+                        <div class="modal-dialog modal-dialog-centered modal-lg">
+                            <div class="modal-content border-0 shadow-lg">
+                                <div class="modal-header bg-primary text-white">
+                                    <h5 class="modal-title fw-bold"><i class="bi bi-chat-square-text-fill me-2"></i>Pesquisa de Satisfação</h5>
+                                </div>
+                                <div class="modal-body p-4">
+                                    <p class="fs-5 mb-4"><strong id="nps-nome-display"></strong>, antes de liberar seu certificado, conte-nos sua experiência:</p>
+                                    
+                                    {% for q in event.nps_form.questions.all|dictsort:"order" %}
+                                        <div class="mb-4 p-3 bg-light rounded border shadow-sm">
+                                            <label class="fw-bold mb-3 d-block text-dark">{{ q.text }}</label>
+                                            {% if q.question_type == 'score' %}
+                                                <div class="d-flex justify-content-between flex-wrap gap-2 px-2">
+                                                    {% for i in "0123456789"|make_list %}
+                                                        <div class="form-check form-check-inline m-0">
+                                                            <input class="form-check-input" style="transform: scale(1.3);" type="radio" name="nps_question_{{ q.id }}" id="q_{{ q.id }}_{{ i }}" value="{{ i }}" {% if event.nps_form.is_mandatory %}required{% endif %}>
+                                                            <label class="form-check-label fw-bold mt-1" for="q_{{ q.id }}_{{ i }}">{{ i }}</label>
+                                                        </div>
+                                                    {% endfor %}
+                                                    <div class="form-check form-check-inline m-0">
+                                                        <input class="form-check-input" style="transform: scale(1.3);" type="radio" name="nps_question_{{ q.id }}" id="q_{{ q.id }}_10" value="10" {% if event.nps_form.is_mandatory %}required{% endif %}>
+                                                        <label class="form-check-label fw-bold mt-1" for="q_{{ q.id }}_10">10</label>
+                                                    </div>
+                                                </div>
+                                                <div class="d-flex justify-content-between mt-3 px-2 small text-muted fw-bold">
+                                                    <span>0 - Muito Ruim</span><span>10 - Excelente</span>
+                                                </div>
+                                            {% else %}
+                                                <textarea class="form-control" name="nps_question_{{ q.id }}" rows="3" placeholder="Sua resposta sincera..." {% if event.nps_form.is_mandatory %}required{% endif %}></textarea>
+                                            {% endif %}
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                                <div class="modal-footer justify-content-center border-top-0 pb-4">
+                                    {% if not event.nps_form.is_mandatory %}
+                                        <button type="button" id="btn-nps-skip" class="btn btn-outline-secondary px-4 fw-bold">Não quero opinar</button>
+                                    {% endif %}
+                                    <button type="button" id="btn-nps-submit" class="btn btn-success px-5 shadow-sm fw-bold"><i class="bi bi-send-check-fill me-2"></i>Enviar Respostas e Certificado</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </form> 
+            </div> 
+        </div> 
+    </div> 
+</div> 
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Modal de Confirmação de Dados -->
+<div class="modal fade" id="confirmDataModal" tabindex="-1" aria-labelledby="confirmDataModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title fw-bold" id="confirmDataModalLabel">Atenção! Confirme seus dados:</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-2 fs-5">Antes de concluirmos o envio dos seus dados, confirme:</p>
+                <div class="p-3 bg-light rounded border-start border-4 border-warning mb-3">
+                    <p class="mb-1">Seu nome: <strong id="modal-nome-display"></strong></p>
+                    <p class="mb-0">CPF: <strong id="modal-cpf-display"></strong></p>
+                </div>
+                <p class="fw-bold fs-5 text-center mb-0">Estão corretos?</p>
+            </div>
+            <div class="modal-footer justify-content-center border-top-0 pb-4">
+                <button type="button" class="btn btn-outline-danger px-4" data-bs-dismiss="modal">Não! Quero alterar.</button>
+                <button type="button" id="btn-confirm-yes" class="btn btn-success px-4 shadow-sm">Sim! Estão corretos!</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('#certificate_form_wrapper form');
+    const confirmModalElement = document.getElementById('confirmDataModal');
+    const confirmModal = new bootstrap.Modal(confirmModalElement);
+    
+    const btnConfirmYes = document.getElementById('btn-confirm-yes');
+    const inputFullName = document.getElementById('id_full_name');
+    const inputCpf = document.getElementById('id_cpf');
+    const displayNome = document.getElementById('modal-nome-display');
+    const displayCpf = document.getElementById('modal-cpf-display');
+
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const npsFields = document.querySelectorAll('[name^="nps_question_"]');
+        npsFields.forEach(field => {
+            if (field.hasAttribute('required')) {
+                field.dataset.wasRequired = 'true';
+                field.removeAttribute('required');
+            }
+        });
+        const isValid = form.checkValidity();
+        npsFields.forEach(field => {
+            if (field.dataset.wasRequired === 'true') {
+                field.setAttribute('required', 'required');
+                delete field.dataset.wasRequired;
+            }
+        });
+
+        if (isValid) {
+            displayNome.innerText = inputFullName.value;
+            displayCpf.innerText = inputCpf.value;
+            confirmModal.show();
+        } else {
+            form.reportValidity();
+        }
+    });
+
+    btnConfirmYes.addEventListener('click', function() {
+        const hasNps = {% if event.nps_form %}true{% else %}false{% endif %};
+        if (hasNps) {
+            confirmModalElement.addEventListener('hidden.bs.modal', function onHidden() {
+                const firstName = inputFullName.value.trim().split(" ")[0];
+                document.getElementById('nps-nome-display').innerText = firstName;
+                const npsModalElement = document.getElementById('npsModal');
+                const npsModal = new bootstrap.Modal(npsModalElement, {
+                    backdrop: 'static',
+                    keyboard: false
+                });
+                npsModal.show();
+                confirmModalElement.removeEventListener('hidden.bs.modal', onHidden);
+            });
+            confirmModal.hide();
+        } else {
+            this.disabled = true;
+            this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Enviando...';
+            confirmModal.hide();
+            form.submit();
+        }
+    });
+
+    {% if event.nps_form %}
+        const btnNpsSubmit = document.getElementById('btn-nps-submit');
+        if (btnNpsSubmit) {
+            btnNpsSubmit.addEventListener('click', function() {
+                if (!form.checkValidity()) { form.reportValidity(); return; }
+                this.disabled = true;
+                this.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Processando...';
+                form.submit();
+            });
+        }
+        const btnNpsSkip = document.getElementById('btn-nps-skip');
+        if (btnNpsSkip) {
+            btnNpsSkip.addEventListener('click', function() {
+                document.querySelectorAll('[name^="nps_question_"]').forEach(input => input.removeAttribute('required'));
+                this.disabled = true;
+                this.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Processando...';
+                form.submit();
+            });
+        }
+    {% endif %}
+
+    // Roteamento Temporal Bidirecional (Início e Término)
+    const startStr = "{{ event.certificate_start|date:'c'|default:'' }}";
+    const endStr = "{{ event.certificate_end|date:'c'|default:'' }}";
+    const certificateStart = startStr ? new Date(startStr) : null;
+    const certificateEnd = endStr ? new Date(endStr) : null;
+    const timerDisplay = document.getElementById('timer_display');
+    const formWrapper = document.getElementById('certificate_form_wrapper');
+
+    function updateCountdown() {
+        const now = new Date();
+        
+        // 1. Caso de Acesso Antecipado (Abre em)
+        if (certificateStart && now < certificateStart) {
+            const diff = certificateStart - now;
+            timerDisplay.innerText = "Abre em: " + formatDiff(diff);
+            if (formWrapper) formWrapper.style.display = 'none';
+            return;
+        }
+
+        // 2. Caso de Link Vitalício (Disponível)
+        if (!certificateEnd) {
+            timerDisplay.innerText = "Disponível por tempo indeterminado";
+            if (formWrapper) formWrapper.style.display = 'block';
+            return;
+        }
+
+        // 3. Caso de Término
+        if (now > certificateEnd) {
+            timerDisplay.innerText = "Encerrado";
+            if (formWrapper) formWrapper.style.display = 'none';
+        } else {
+            const diff = certificateEnd - now;
+            timerDisplay.innerText = "Expira em: " + formatDiff(diff);
+            if (formWrapper) formWrapper.style.display = 'block';
+        }
+    }
+
+    function formatDiff(ms) {
+        if (isNaN(ms) || ms < 0) return "00:00:00";
+        const totalSeconds = Math.floor(ms / 1000);
+        const days = Math.floor(totalSeconds / 86400);
+        const hours = Math.floor((totalSeconds % 86400) / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+        let result = "";
+        if (days > 0) result += days + (days === 1 ? " dia " : " dias ");
+        result += String(hours).padStart(2, '0') + ":" + String(minutes).padStart(2, '0') + ":" + String(seconds).padStart(2, '0');
+        return result;
+    }
+    setInterval(updateCountdown, 1000);
+    updateCountdown();
+});
+</script>
+</body>
+</html>

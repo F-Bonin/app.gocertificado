@@ -109,6 +109,20 @@ class Registration(models.Model):
         return f"{self.full_name} — {self.course_name}"
 
     @property
+    def has_met_attendance(self) -> bool:
+        """Verifica se o aluno atingiu a presença (100% Padrão ou % Mínima Recorrente)"""
+        if self.course:
+            return self.attended
+        if self.recurring_event:
+            event = self.recurring_event
+            if event.event_type != 'SCHEDULED' or event.no_certificate:
+                return False
+            attended_hours = sum(p.session.hours for p in self.session_presences.filter(attended=True))
+            required_hours = (event.hours * event.min_frequency) / 100.0
+            return attended_hours >= required_hours
+        return False
+
+    @property
     def event_name_display(self):
         """Retorna o nome do evento associado (Course ou RecurringEvent) ou o legado."""
         if self.course:

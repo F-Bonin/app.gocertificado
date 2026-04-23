@@ -47,15 +47,23 @@
                 </div>
                 <div class="card-body p-4 pt-0">
                     <div class="row mb-3">
-                        <div class="col-md-9">
+                        <div class="col-md-8">
                             <label class="form-label fw-bold small text-muted">{{ form.name.label }}</label>
                             {{ form.name }}
                             {% if form.name.errors %}<div class="text-danger small mt-1">{{ form.name.errors.0 }}</div>{% endif %}
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <label class="form-label fw-bold small text-muted">{{ form.hours.label }}</label>
                             {{ form.hours }}
-                            <div class="form-text small text-primary fw-bold">Calculado automaticamente</div>
+                            <div class="form-text small text-primary fw-bold">Automático</div>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label fw-bold small text-muted">Frequência Mín.</label>
+                            <div class="input-group">
+                                {{ form.min_frequency }}
+                                <span class="input-group-text bg-light text-muted">%</span>
+                            </div>
+                            {% if form.min_frequency.errors %}<div class="text-danger small mt-1">{{ form.min_frequency.errors.0 }}</div>{% endif %}
                         </div>
                     </div>
 

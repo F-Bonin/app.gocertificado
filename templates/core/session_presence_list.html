@@ -1,0 +1,419 @@
+{% extends "painel/base_painel.html" %}
+{% load static %}
+
+{% block title %}Lista de Presença - {{ session.theme }}{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* Estilos para tela (Screen) */
+    .print-only {
+        display: none !important;
+    }
+
+    .signature-line {
+        border-bottom: 1px solid #000;
+        width: 100%;
+        height: 25px;
+        display: block;
+    }
+
+    /* Configuração de Impressão */
+    @media print {
+        @page {
+            margin: 1cm;
+            size: A4 landscape;
+        }
+
+        /* Correção para evitar bordas duplicadas e quebra de layout em células ocultas/exibidas */
+        th.print-only, td.print-only {
+            display: table-cell !important;
+            vertical-align: middle !important;
+        }
+
+        .signature-line {
+            border: none !important;
+            border-bottom: 1px solid #000 !important;
+            width: 90% !important;
+            margin: 1.5rem auto 0.5rem auto !important;
+            display: block !important;
+            height: auto !important;
+        }
+
+        /* Classe utilitária para impedir quebra de linha na impressão */
+        .nowrap-print {
+            white-space: nowrap !important;
+        }
+
+        /* Esconder elementos desnecessários na impressão */
+        .no-print, 
+        #sidebar-wrapper, 
+        .navbar, 
+        .footer, 
+        .btn,
+        .alert,
+        .breadcrumb {
+            display: none !important;
+        }
+
+        /* Ajustar o conteúdo principal para ocupar a tela toda */
+        #page-content-wrapper {
+            margin-left: 0 !important;
+            width: 100% !important;
+            padding: 0 !important;
+        }
+
+        .main-content {
+            padding: 0 !important;
+        }
+
+        /* Mostrar elementos exclusivos de impressão */
+        .print-only {
+            display: block !important;
+        }
+
+        /* Remover sombras e bordas cinzas para economizar tinta */
+        .card {
+            box-shadow: none !important;
+            border: none !important;
+        }
+
+        /* Regras agressivas para a tabela na impressão */
+        .table {
+            width: 100% !important;
+            border-collapse: collapse !important;
+            border: 1px solid #000 !important;
+        }
+
+        .table th, 
+        .table td {
+            border: 1px solid #000 !important;
+            padding: 8px !important;
+            vertical-align: middle !important;
+        }
+
+        .table thead {
+            display: table-header-group !important;
+        }
+
+        .table tr {
+            page-break-inside: avoid !important;
+        }
+
+        body {
+            background-color: #fff !important;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Cabeçalho de Navegação (No Print) -->
+    <nav aria-label="breadcrumb" class="no-print mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'core:recurring_event_list' %}">Eventos Recorrentes</a></li>
+            <li class="breadcrumb-item active">Presença: {{ session.theme }}</li>
+        </ol>
+    </nav>
+
+    <div id="print-area" class="card p-4">
+        <!-- Cabeçalho da Lista (Print & Screen) -->
+        <div class="d-flex justify-content-between align-items-start mb-4">
+            <div>
+                <h2 class="fw-bold text-primary">{{ course.name }} <br><span class="fs-5 text-secondary">{{ session.theme }}</span></h2>
+                <p class="text-muted mb-1">
+                    <i class="bi bi-calendar-event me-2"></i><strong>Data:</strong> {{ session.date|date:"d/m/Y" }} das {{ session.start_time|time:"H:i" }} às {{ session.end_time|time:"H:i" }}
+                </p>
+                <p class="text-muted mb-0">
+                    <i class="bi bi-geo-alt me-2"></i><strong>Local:</strong> {{ session.institution_name }}
+                </p>
+            </div>
+            <div class="no-print d-flex gap-2">
+                <input type="text" id="link-recepcao" style="position: absolute; left: -9999px;" 
+                       value="{{ request.scheme }}://{{ request.get_host }}{% url 'registrations:public_session_checkin' session.checkin_hash %}">
+                
+                <button onclick="copyCheckinLink()" class="btn btn-primary shadow-sm" id="btnCopyLink">
+                    <i class="bi bi-link-45deg me-1"></i> Copiar Link Credenciamento
+                </button>
+                <form action="{% url 'core:reset_session_checkin_hash' session.id %}" method="post" onsubmit="return confirm('Revogar acesso atual? Isso invalidará o link enviado para a recepção e gerará um novo.');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline-danger shadow-sm" title="Revogar/Resetar Link">
+                        <i class="bi bi-shield-lock"></i>
+                    </button>
+                </form>
+                <button onclick="window.print()" class="btn btn-secondary shadow-sm">
+                    <i class="bi bi-printer me-2"></i>Imprimir Lista Física
+                </button>
+            </div>
+            <!-- Logo apenas na impressão -->
+            <div class="print-only">
+                {% if request.user.profile.company.logo %}
+                    <img src="{{ request.user.profile.company.logo.url }}" alt="Logo" style="max-height: 80px;">
+                {% else %}
+                    <h4 class="fw-bold">{{ request.user.profile.company.name }}</h4>
+                {% endif %}
+            </div>
+        </div>
+
+        <hr class="mb-4">
+
+        <!-- Barra de Ações em Massa (Espelhada do Público) -->
+        <div class="d-flex flex-wrap align-items-center justify-content-between mb-4 no-print p-3 bg-white rounded shadow-sm border" style="border-left: 5px solid #0d6efd !important;">
+            <div class="d-flex align-items-center mb-0">
+                <div class="form-check mb-0 me-3">
+                    <input class="form-check-input border-primary shadow-sm" type="checkbox" id="master-checkbox" style="width: 1.8rem; height: 1.8rem; cursor: pointer; margin-top: 0.2rem;">
+                </div>
+                <div class="d-flex flex-column">
+                    <label class="form-check-label fw-bold text-primary mb-0" for="master-checkbox" style="cursor: pointer; font-size: 1.2rem; line-height: 1.2;">
+                        Check-in em Massa
+                    </label>
+                    <span class="text-muted fw-semibold" style="font-size: 0.85rem;">
+                        <i class="bi bi-check2-all me-1"></i>Presença para Todos
+                    </span>
+                </div>
+                <div class="ms-4 ps-4 border-start d-none d-sm-block">
+                    <span class="badge bg-primary bg-opacity-10 text-primary border border-primary px-3 py-2 rounded-pill fs-6 shadow-sm" id="selected-count">0 selecionados</span>
+                </div>
+            </div>
+            <div class="d-flex gap-2 mt-3 mt-md-0">
+                <button onclick="printList('digital')" class="btn btn-light border fw-bold text-secondary btn-sm"><i class="bi bi-file-earmark-text me-1"></i>Lista Digital</button>
+                <button onclick="printList('physical')" class="btn btn-light border fw-bold text-secondary btn-sm"><i class="bi bi-printer me-1"></i>Lista Física</button>
+            </div>
+        </div>
+
+        <!-- Tabela de Participantes -->
+        <div class="table-responsive">
+            <table class="table table-hover align-middle border">
+                <thead class="table-light">
+                    <tr>
+                        <th width="50" class="ps-4">#</th>
+                        <th>Participante / Profissão</th>
+                        <th>E-mail / WhatsApp</th>
+                        <th class="text-end pe-4 col-status no-print">Status (Check-in)</th>
+                        <th class="col-signature print-only" width="250">Assinatura</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for reg in registrations %}
+                    <tr>
+                        <td class="text-muted ps-4">{{ forloop.counter }}</td>
+                        <td>
+                            <div class="fw-bold text-dark">{{ reg.full_name }}</div>
+                            <small class="text-muted font-monospace">{{ reg.cpf }}</small>
+                            <span class="text-muted small mx-1">•</span>
+                            <small class="text-muted">{% if reg.profession %}{{ reg.profession|upper }}{% else %}Não informada{% endif %}</small>
+                        </td>
+                        <td>
+                            <div>{{ reg.email }}</div>
+                            <small class="text-muted">{{ reg.whatsapp }}</small>
+                        </td>
+                        <td class="text-end pe-4 col-status no-print">
+                            <div class="form-check form-switch d-inline-block fs-5 mb-1">
+                                <!-- Hack Sênior: Usando a URL pública para garantir disparo do Celery -->
+                                <input class="form-check-input presence-toggle" type="checkbox" role="switch"
+                                       id="switch-{{ reg.id }}"
+                                       data-url="{% url 'core:toggle_session_presence' session.id reg.id %}"
+                                       {% if reg.current_presence.0.attended %}checked{% endif %}>
+                            </div>
+                            <br>
+                            <span class="badge status-badge {% if reg.current_presence.0.attended %}bg-success{% else %}bg-secondary{% endif %}">
+                                {% if reg.current_presence.0.attended %}✓ PRESENTE{% else %}⏱ AGUARDANDO{% endif %}
+                            </span>
+                            <span class="checkin-time-text d-block text-muted mt-1" style="font-size: 0.70rem; font-weight: 500;">
+                                {% if reg.current_presence.0.checkin_at %}{{ reg.current_presence.0.checkin_at|date:"d/m/y H:i" }}h{% endif %}
+                            </span>
+                            <span class="print-status-text print-only" style="display: none;">
+                                {% if reg.current_presence.0.attended %}PRESENTE{% else %}AUSENTE{% endif %}
+                            </span>
+                        </td>
+                        <td class="print-only col-signature">
+                            <span class="signature-line"></span>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="5" class="text-center py-4 text-muted">Nenhuma inscrição confirmada para este evento.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Rodapé da Impressão -->
+        <div class="print-only mt-5 text-center pt-4 border-top">
+            <p class="small text-muted">
+                Documento gerado em {{ now|date:"d/m/Y H:i" }} por {{ request.user.username }} - Plataforma GoCertificado
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    /**
+     * Copia o link de credenciamento público para o clipboard
+     */
+    function copyCheckinLink() {
+        const protocol = window.location.protocol;
+        const host = window.location.host;
+        const hash = "{{ session.checkin_hash }}";
+        const url = `${protocol}//${host}/credenciamento/sessao/${hash}/`;
+        
+        navigator.clipboard.writeText(url).then(() => {
+            const btn = document.getElementById('btnCopyLink');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="bi bi-check2-all me-1"></i> Link Copiado!';
+            btn.classList.replace('btn-primary', 'btn-success');
+            
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.classList.replace('btn-success', 'btn-primary');
+            }, 3000);
+        });
+    }
+
+    // Lógica de Impressão Multimodal
+    function printList(mode) {
+        const statusCols = document.querySelectorAll('.col-status');
+        const sigCols = document.querySelectorAll('.col-signature');
+        const toggles = document.querySelectorAll('.form-switch');
+        const badges = document.querySelectorAll('.status-badge');
+        const printTexts = document.querySelectorAll('.print-status-text');
+
+        if (mode === 'digital') {
+            statusCols.forEach(el => el.classList.remove('no-print'));
+            sigCols.forEach(el => el.classList.add('no-print'));
+            toggles.forEach(el => el.style.display = 'none');
+            badges.forEach(el => el.style.display = 'none');
+            printTexts.forEach(el => el.style.display = 'inline-block');
+        } else {
+            statusCols.forEach(el => el.classList.add('no-print'));
+            sigCols.forEach(el => el.classList.remove('no-print'));
+        }
+
+        window.print();
+
+        // Reverte as classes para o estado normal (Screen)
+        setTimeout(() => {
+            statusCols.forEach(el => el.classList.add('no-print'));
+            sigCols.forEach(el => el.classList.remove('no-print'));
+            toggles.forEach(el => el.style.display = 'inline-block');
+            badges.forEach(el => el.style.display = 'inline-block');
+            printTexts.forEach(el => el.style.display = 'none');
+        }, 1000);
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+        const masterCheckbox = document.getElementById('master-checkbox');
+        const selectedCountLabel = document.getElementById('selected-count');
+        const presenceSwitches = document.querySelectorAll(".presence-toggle");
+        const totalItems = presenceSwitches.length;
+
+        const updateStatusUI = (td, isAttended, checkinTime) => {
+            const badge = td.querySelector('.status-badge');
+            const printText = td.querySelector('.print-status-text');
+            const timeText = td.querySelector('.checkin-time-text');
+            if(isAttended) {
+                badge.className = 'badge status-badge bg-success';
+                badge.innerHTML = '✓ PRESENTE';
+                printText.innerText = 'PRESENTE';
+                if(timeText) timeText.innerText = checkinTime || '';
+            } else {
+                badge.className = 'badge status-badge bg-secondary';
+                badge.innerHTML = '⏱ AGUARDANDO';
+                printText.innerText = 'AUSENTE';
+                if(timeText) timeText.innerText = '';
+            }
+        };
+
+        const updateCounter = () => {
+            const checkedCount = document.querySelectorAll('.presence-toggle:checked').length;
+            if (selectedCountLabel) selectedCountLabel.innerText = `${checkedCount} selecionados`;
+            if(masterCheckbox && totalItems > 0) {
+                if(checkedCount === totalItems) {
+                    masterCheckbox.checked = true;
+                    masterCheckbox.indeterminate = false;
+                } else if (checkedCount > 0) {
+                    masterCheckbox.checked = false;
+                    masterCheckbox.indeterminate = true;
+                } else {
+                    masterCheckbox.checked = false;
+                    masterCheckbox.indeterminate = false;
+                }
+            }
+        };
+
+        if(masterCheckbox) {
+            masterCheckbox.addEventListener('change', function() {
+                const isChecked = this.checked;
+                const action = isChecked ? 'check_all' : 'uncheck_all';
+                const originalState = !isChecked;
+
+                if(!confirm(isChecked ? 'Confirmar check-in de TODOS os participantes?' : 'Remover presença de TODOS os participantes?')) {
+                    this.checked = originalState;
+                    updateCounter();
+                    return;
+                }
+
+                masterCheckbox.disabled = true;
+                selectedCountLabel.innerHTML = '<span class="spinner-border spinner-border-sm text-primary" role="status"></span> ...';
+
+                fetch("{% url 'registrations:toggle_mass_session_presence' session.checkin_hash %}", {
+                    method: 'POST',
+                    headers: {'X-CSRFToken': '{{ csrf_token }}', 'Content-Type': 'application/json'},
+                    body: JSON.stringify({action: action})
+                }).then(r=>r.json()).then(d=>{
+                    if(d.ok) {
+                        presenceSwitches.forEach(el => {
+                            el.checked = d.status;
+                            updateStatusUI(el.closest('td'), d.status, d.checkin_time);
+                        });
+                    } else {
+                        masterCheckbox.checked = originalState;
+                        alert('Erro ao processar em massa.');
+                    }
+                }).catch(()=>{
+                    masterCheckbox.checked = originalState;
+                    alert('Falha na conexão.');
+                }).finally(() => {
+                    masterCheckbox.disabled = false;
+                    updateCounter();
+                });
+            });
+        }
+
+        presenceSwitches.forEach(sw => {
+            sw.addEventListener("change", function() {
+                const isChecked = this.checked;
+                const td = this.closest('td');
+                const url = this.getAttribute("data-url");
+                this.disabled = true;
+
+                fetch(url, {
+                    method: "POST",
+                    headers: {
+                        "X-Requested-With": "XMLHttpRequest",
+                        "X-CSRFToken": "{{ csrf_token }}"
+                    }
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.ok) {
+                        updateStatusUI(td, data.attended, data.checkin_time);
+                        updateCounter();
+                    } else {
+                        this.checked = !isChecked; alert('Erro no servidor.'); updateCounter();
+                    }
+                })
+                .catch(e => {
+                    this.checked = !isChecked; alert('Falha na rede.'); updateCounter();
+                })
+                .finally(() => {
+                    this.disabled = false;
+                });
+            });
+        });
+
+        updateCounter();
+    });
+</script>
+{% endblock %}

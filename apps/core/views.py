@@ -12,16 +12,18 @@ from django.views.generic import ListView, CreateView, UpdateView, DeleteView, T
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.db.models import Prefetch
 from apps.certificates.services.pdf_generator import generate_preview_pdf
 from apps.certificates.models import CertificateTemplate
 from apps.certificates.tasks import issue_certificate_task
-from apps.registrations.models import Registration
-from .models import Company, Instructor, Course, NPSForm, NPSQuestion, DynamicForm, DynamicField
+from apps.registrations.models import Registration, SessionPresence
+from .models import Company, Instructor, Course, NPSForm, NPSQuestion, DynamicForm, DynamicField, RecurringEvent, EventSession
 from .forms import (
     CompanyForm, InstructorForm, CourseForm, 
     CertificateDesignForm, CertificateTemplateForm,
     NPSFormModelForm, NPSQuestionForm,
-    DynamicFormModelForm, DynamicFieldFormSet
+    DynamicFormModelForm, DynamicFieldFormSet,
+    RecurringEventForm, EventSessionFormSet
 )
 
 
@@ -890,3 +892,158 @@ class RecurringEventDeleteView(LoginRequiredMixin, DeleteView):
     def delete(self, request, *args, **kwargs):
         messages.success(self.request, "Evento recorrente removido com sucesso.")
         return super().delete(request, *args, **kwargs)
+
+
+class SessionPresenceListView(LoginRequiredMixin, ListView):
+    """
+    Lista de presença de um encontro (sessão) específico.
+    Utiliza Prefetch para injetar a presença atual do aluno no objeto de inscrição.
+    """
+    template_name = "core/session_presence_list.html"
+    context_object_name = "registrations"
+
+    def get_queryset(self):
+        # Validação Multi-tenant: Garante que o encontro pertença a um evento da empresa do usuário logado
+        self.session = get_object_or_404(
+            EventSession, 
+            pk=self.kwargs.get('pk'), 
+            recurring_event__company=self.request.user.profile.company
+        )
+        
+        # Otimização Sênior: Busca todos os alunos inscritos no evento pai e faz o prefetch 
+        # das presenças apenas deste encontro específico, injetando o resultado no atributo 'current_presence'.
+        return self.session.recurring_event.registrations.prefetch_related(
+            Prefetch(
+                'session_presences', 
+                queryset=SessionPresence.objects.filter(session=self.session), 
+                to_attr='current_presence'
+            )
+        ).order_by('full_name')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['session'] = self.session
+        context['course'] = self.session.recurring_event
+        return context
+
+
+class ToggleSessionPresenceView(LoginRequiredMixin, View):
+    """
+    Controlador AJAX para alternar o status de presença de um aluno em um encontro específico.
+    """
+    def post(self, request, session_id, reg_id):
+        from django.utils import timezone
+        from django.utils.timezone import localtime
+        from apps.certificates.tasks import issue_certificate_task
+        
+        # Validação de Segurança Multi-tenant
+        session = get_object_or_404(
+            EventSession, 
+            pk=session_id, 
+            recurring_event__company=request.user.profile.company
+        )
+        reg = get_object_or_404(
+            Registration, 
+            pk=reg_id, 
+            recurring_event=session.recurring_event
+        )
+        
+        # Recupera ou cria o registro de presença vínculo Aluno/Encontro
+        sp, created = SessionPresence.objects.get_or_create(
+            session=session, 
+            registration=reg
+        )
+        
+        # Inverte o status de presença
+        sp.attended = not sp.attended
+        sp.checkin_at = timezone.now() if sp.attended else None
+        sp.save()
+        
+        # Motor de Regras: Respeita a meta de horas (%) e as regras originais de emissão!
+        if reg.has_met_attendance and reg.status == 'pending' and reg.is_requested:
+            issue_certificate_task.delay(str(reg.id))
+            
+        checkin_str = localtime(sp.checkin_at).strftime('%d/%m/%y %H:%Mh') if sp.checkin_at else ""
+        
+        return JsonResponse({
+            "ok": True, 
+            "attended": sp.attended, 
+            "checkin_time": checkin_str
+        })
+
+
+class ResetSessionCheckinHashView(LoginRequiredMixin, View):
+    """
+    Invalida o link de credenciamento público atual de um encontro e gera um novo UUID.
+    """
+    def post(self, request, pk):
+        session = get_object_or_404(
+            EventSession, 
+            pk=pk, 
+            recurring_event__company=request.user.profile.company
+        )
+        session.checkin_hash = uuid.uuid4()
+        session.save(update_fields=['checkin_hash'])
+        
+        messages.success(request, f"O link de credenciamento do encontro '{session.theme}' foi resetado!")
+        return redirect('core:session_presence', pk=session.pk)
+
+
+class PublicSessionCheckinView(View):
+    template_name = "core/public_session_checkin.html"
+    def get(self, request, checkin_hash):
+        from django.shortcuts import render
+        from django.db.models import Prefetch
+        try:
+            session = EventSession.objects.get(checkin_hash=checkin_hash)
+        except EventSession.DoesNotExist:
+            return render(request, 'core/revoked_link.html', status=404)
+        registrations = session.recurring_event.registrations.prefetch_related(
+            Prefetch('session_presences', queryset=SessionPresence.objects.filter(session=session), to_attr='current_presence')
+        ).order_by('full_name')
+        return render(request, self.template_name, {'session': session, 'course': session.recurring_event, 'registrations': registrations})
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class ToggleMassSessionPresenceView(View):
+    def post(self, request, checkin_hash):
+        from django.http import JsonResponse
+        from apps.certificates.tasks import issue_certificate_task
+        from django.utils import timezone
+        from django.utils.timezone import localtime
+        import json
+        session = get_object_or_404(EventSession, checkin_hash=checkin_hash)
+        try:
+            data = json.loads(request.body)
+            new_status = True if data.get('action') == 'check_all' else False
+            now = timezone.now() if new_status else None
+            for reg in session.recurring_event.registrations.all():
+                sp, _ = SessionPresence.objects.get_or_create(session=session, registration=reg)
+                sp.attended = new_status
+                sp.checkin_at = now
+                sp.save()
+                if reg.has_met_attendance and reg.status == 'pending' and reg.is_requested:
+                    issue_certificate_task.delay(str(reg.id))
+            checkin_str = localtime(now).strftime('%d/%m/%y %H:%Mh') if now else ""
+            return JsonResponse({"ok": True, "status": new_status, "checkin_time": checkin_str})
+        except Exception as e:
+            return JsonResponse({"ok": False, "error": str(e)}, status=400)
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class PublicToggleSessionPresenceView(View):
+    def post(self, request, session_id, reg_id):
+        from django.http import JsonResponse
+        from apps.certificates.tasks import issue_certificate_task
+        from django.utils import timezone
+        from django.utils.timezone import localtime
+        session = get_object_or_404(EventSession, id=session_id)
+        reg = get_object_or_404(Registration, id=reg_id, recurring_event=session.recurring_event)
+        sp, _ = SessionPresence.objects.get_or_create(session=session, registration=reg)
+        sp.attended = not sp.attended
+        sp.checkin_at = timezone.now() if sp.attended else None
+        sp.save()
+        if reg.has_met_attendance and reg.status == 'pending' and reg.is_requested:
+            issue_certificate_task.delay(str(reg.id))
+        checkin_str = localtime(sp.checkin_at).strftime('%d/%m/%y %H:%Mh') if sp.checkin_at else ""
+        return JsonResponse({"ok": True, "attended": sp.attended, "checkin_time": checkin_str})

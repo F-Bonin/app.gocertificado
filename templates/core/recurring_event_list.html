@@ -56,24 +56,26 @@
                                             <div class="col-md-6">
                                                 <div class="p-3 bg-light rounded-3 border">
                                                     <label class="small fw-bold text-success mb-2 d-block text-uppercase">Link de Inscrição</label>
-                                                    <div class="alert alert-info py-2 mb-2 small border-info">
+                                                    <div class="input-group mb-2">
+                                                        <input type="text" class="form-control bg-white" readonly id="link-reg-{{ event.id }}" value="{% if event.slug %}{{ request.scheme }}://{{ request.get_host }}{% url 'registrations:recurring_event_form' event.slug %}{% else %}Edite e salve o evento para gerar o link{% endif %}">
+                                                        <button class="btn btn-sm btn-outline-success" onclick="copyToClipboard(this)"><i class="bi bi-copy"></i></button>
+                                                    </div>
+                                                    <div class="alert alert-info py-2 mb-0 small border-info">
                                                         <i class="bi bi-info-circle me-1"></i> Link global para novos participantes
                                                     </div>
-                                                    <button class="btn btn-sm btn-success w-100 fw-bold disabled opacity-50 shadow-none">
-                                                        <i class="bi bi-clipboard me-1"></i> Copiar Link (Em breve)
-                                                    </button>
                                                 </div>
                                             </div>
                                             <div class="col-md-6">
                                                 <div class="p-3 bg-light rounded-3 border">
                                                     <label class="small fw-bold text-primary mb-2 d-block text-uppercase">Link de Certificado</label>
                                                     {% if event.event_type == 'SCHEDULED' %}
-                                                        <div class="alert alert-info py-2 mb-2 small border-info">
+                                                        <div class="input-group mb-2">
+                                                            <input type="text" class="form-control bg-white" readonly id="link-cert-{{ event.id }}" value="{% if event.slug %}{{ request.scheme }}://{{ request.get_host }}{% url 'registrations:recurring_cert_form' event.slug %}{% else %}Edite e salve o evento para gerar o link{% endif %}">
+                                                            <button class="btn btn-sm btn-outline-primary" onclick="copyToClipboard(this)"><i class="bi bi-copy"></i></button>
+                                                        </div>
+                                                        <div class="alert alert-info py-2 mb-0 small border-info">
                                                             <i class="bi bi-info-circle me-1"></i> Liberação pós-encontros
                                                         </div>
-                                                        <button class="btn btn-sm btn-primary w-100 fw-bold disabled opacity-50 shadow-none">
-                                                            <i class="bi bi-clipboard me-1"></i> Copiar Link (Em breve)
-                                                        </button>
                                                     {% else %}
                                                         <div class="alert alert-warning py-2 mb-0 small fw-bold text-center border-warning text-dark">
                                                             <i class="bi bi-shield-x me-1"></i>Evento sem certificado
@@ -102,13 +104,12 @@
                                             </a>
                                         </div>
                                         
-                                        <!-- Bloco de Encontros (Presença) -->
                                         <div class="p-2 bg-light rounded border border-secondary border-opacity-10">
                                             <label class="small fw-bold text-muted text-uppercase mb-2 d-block" style="font-size: 0.65rem; letter-spacing: 0.5px;">Controle de Presença por Encontro</label>
                                             <div class="d-grid gap-1">
                                                 {% for session in event.sessions.all %}
-                                                    <a href="#" class="btn btn-sm btn-outline-dark text-start border-0 py-1 disabled opacity-75" style="font-size: 0.75rem;">
-                                                        <i class="bi bi-check2-square me-2 text-primary"></i>{{ session.theme|truncatechars:25 }}
+                                                    <a href="{% url 'core:session_presence' session.id %}" class="btn btn-sm btn-outline-primary text-start border-0 py-1" style="font-size: 0.75rem;">
+                                                        <i class="bi bi-list-check me-2"></i>{{ session.theme|truncatechars:25 }}
                                                     </a>
                                                 {% empty %}
                                                     <div class="text-center py-2">
@@ -135,4 +136,21 @@
         </div>
     </div>
 </div>
+
+<script>
+function copyToClipboard(btn) {
+    const input = btn.previousElementSibling;
+    input.select();
+    document.execCommand("copy");
+    const originalHTML = btn.innerHTML;
+    btn.innerHTML = '<i class="bi bi-check-lg"></i>';
+    btn.classList.replace('btn-outline-success', 'btn-success');
+    btn.classList.replace('btn-outline-primary', 'btn-primary');
+    setTimeout(() => {
+        btn.innerHTML = originalHTML;
+        btn.classList.replace('btn-success', 'btn-outline-success');
+        btn.classList.replace('btn-primary', 'btn-outline-primary');
+    }, 2000);
+}
+</script>
 {% endblock %}

@@ -36,6 +36,9 @@ from .views import (
     RecurringEventCreateView,
     RecurringEventUpdateView,
     RecurringEventDeleteView,
+    SessionPresenceListView,
+    ToggleSessionPresenceView,
+    ResetSessionCheckinHashView,
 )
 
 app_name = "core"
@@ -46,6 +49,12 @@ urlpatterns = [
     path("eventos-recorrentes/novo/", RecurringEventCreateView.as_view(), name="recurring_event_create"),
     path("eventos-recorrentes/<int:pk>/editar/", RecurringEventUpdateView.as_view(), name="recurring_event_update"),
     path("eventos-recorrentes/<int:pk>/excluir/", RecurringEventDeleteView.as_view(), name="recurring_event_delete"),
+    
+    # Encontros (Sessions) - Gestão de Presença
+    path("encontros/<int:pk>/presenca/", SessionPresenceListView.as_view(), name="session_presence"),
+    path("encontros/<int:session_id>/toggle-presenca/<uuid:reg_id>/", ToggleSessionPresenceView.as_view(), name="toggle_session_presence"),
+    path("encontros/<int:pk>/reset-checkin/", ResetSessionCheckinHashView.as_view(), name="reset_session_checkin_hash"),
+    
     path("empresa/modelo-certificado/", CertificateDesignView.as_view(), name="certificate_design"),
     path("empresa/modelo-certificado/preview/", CertificatePreviewView.as_view(), name="certificate_preview"),
     path("empresa/modelo-certificado/<int:pk>/excluir/", CertificateTemplateDeleteView.as_view(), name="template_delete"),

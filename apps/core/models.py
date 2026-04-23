@@ -397,7 +397,8 @@ class RecurringEvent(models.Model):
         choices=EVENT_TYPES, 
         default='SCHEDULED'
     )
-    hours = models.PositiveIntegerField("Carga horária total (horas)")
+    hours = models.PositiveIntegerField("Carga horária total (horas)", default=0)
+    min_frequency = models.PositiveIntegerField("Frequência Mínima Exigida (%)", default=75, help_text="Porcentagem mínima exigida para liberar o certificado.")
     
     signature_1 = models.ForeignKey(
         Instructor, 
@@ -473,6 +474,9 @@ class RecurringEvent(models.Model):
         return self.name
 
     def save(self, *args, **kwargs):
+        import uuid
+        from django.utils.text import slugify
+        
         # Trava Arquitetural: Eventos "Personalizados" são restritos à lista de presença.
         # O sistema liga o Kill-Switch de certificados automaticamente.
         if self.event_type == 'CUSTOM':
@@ -480,8 +484,6 @@ class RecurringEvent(models.Model):
             
         # Geração do slug dinâmico único herdado do comportamento do Course
         if not self.slug:
-            from django.utils.text import slugify
-            import uuid
             self.slug = f"{slugify(self.name)}-{str(uuid.uuid4())[:4]}"
             
         super().save(*args, **kwargs)
