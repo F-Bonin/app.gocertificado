@@ -138,6 +138,7 @@
 * [x] **Acessibilidade (Zebra Striping):** O contraste da cor do Zebra Striping foi ajustado (de `#f9f9f9` para `#dce4ec`) para tornar a alternância de linhas mais evidente e melhorar a acessibilidade visual na listagem de eventos [45].
 * [x] **Zebra Striping (Listagem):** O Zebra Striping na listagem de eventos foi resolvido de forma definitiva manipulando a variável `--bs-table-bg` inline via `forloop` do Django, garantindo compatibilidade total com o Bootstrap 5 e legibilidade superior [44].
 * [x] **Interface Mestre-Detalhe (Progressive Disclosure):** A interface de listagem de cursos (`course_list.html`) foi refatorada aplicando o padrão *Progressive Disclosure*. A visualização inicial foi simplificada para 3 colunas core (Nome, Data, Painel de Gestão), movendo metadados e controles administrativos (Editar, Clonar, Excluir, Presença) para uma gaveta expansível em formato *Split-Dashboard*, reduzindo a carga cognitiva e centralizando a gestão em um painel integrado. [20/04/2026]
+* [x] **Motor Avançado de Encontros (JS):** Implementado sistema de gestão dinâmica de sessões com suporte a Deep Clone (D+1) e exclusão híbrida. Sessões existentes utilizam Soft Delete (preservação no banco com flag `DELETE`), enquanto sessões novas utilizam Hard Delete com motor de re-indexação automática de prefixos do Django Formset, garantindo a integridade dos dados no salvamento. [NOVO]
 * [x] **Emissão Automática via Check-in:** A emissão de certificados agora é disparada automaticamente (via Celery) ao habilitar a chave de Check-in na Lista de Presença, caso o aluno já possua uma solicitação com status Pendente [38].
 * [x] **Otimização de Lógica:** Implementada propriedade `@property is_expired` no modelo `Course` para centralizar a regra de expiração [8].
 * [x] **Ajuste de Fluxo (Duplicidade):** O fluxo de duplicidade no backend foi refatorado para respeitar reversões de check-in e disparar o Celery corretamente, e o copy visual da tela de pendência foi ajustado para maior clareza [31].
@@ -183,6 +184,16 @@
 * [x] Envio de e-mails via SMTP assíncrono isolado da *view* web [17].
 
 ---
+
+### 2. Frontend (Templates e UI/UX)
+* [x] Interface de Encontros em "Accordion" (Sanfona) no formulário de Eventos Recorrentes para melhor usabilidade.
+* [x] Refinamento de UX (Cabeçalho de Encontros): Limpeza visual com Tema em destaque, remoção de contadores secundários no título e botões de ação (Clonar/Remover) movidos para o corpo da sanfona para reduzir a carga cognitiva.
+* [x] **Motor Avançado de Encontros (JS):** Implementado sistema de gestão dinâmica de sessões com suporte a Deep Clone (D+1) e exclusão híbrida. Sessões existentes utilizam Soft Delete (preservação no banco com flag `DELETE`), enquanto sessões novas utilizam Hard Delete com motor de re-indexação automática de prefixos do Django Formset, garantindo a integridade dos dados no salvamento. [NOVO]
+* [x] Adição de preview do título do Tema no cabeçalho dos encontros.
+* [x] **Data Binding Bidirecional:** Implementada sincronização em tempo real via JavaScript entre o campo "Tema" e o título do acordeão.
+* [x] **Motor de Deep Clone (D+1):** Implementada funcionalidade de clonagem profunda de encontros via JavaScript. O sistema agora permite duplicar uma sessão inteira, incluindo configurações de localização, avançando automaticamente a data em 1 dia (D+1), injetando o sufixo " (Cópia)" no nome da sessão clonada para melhor feedback visual e garantindo a reatividade de todos os campos.
+* [x] **Zebra Striping Dinâmico:** Implementado padrão visual de cores intercaladas nos encontros via JavaScript. O motor de striping ignora automaticamente sessões removidas ou ocultas, garantindo que a alternância de cores (#ffffff e #f1f5f9) permaneça íntegra. Os cabeçalhos das sanfonas foram convertidos para `bg-transparent` para permitir a visualização correta das cores tanto no estado aberto quanto recolhido, oferecendo contraste ideal de leitura.
+* [x] Melhoria visual nos campos de localização e carga horária automática.
 
 #### ⏳ O que está pausado / Em Standby
 * **Módulo de WhatsApp:** Preparado no `whatsapp_sender.py` para rodar na API WAHA, mas intencionalmente desativado via `.env` (`WAHA_ENABLED = False`) [15, 16].
