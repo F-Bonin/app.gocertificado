@@ -21,7 +21,7 @@
             <div class="text-center mb-4">
                 <img src="{% static 'images/logo.png' %}" alt="Logo da Empresa" class="mb-3" style="max-height: 80px; object-fit: contain; width: auto;">
                 <h2 class="fw-bold">Solicitação de Certificado</h2>
-                <p class="text-muted">Formulário Personalizado</p>
+                <p class="text-primary fw-bold">Por favor, preencha os dados abaixo com atenção:</p>
             </div>
 
             <!-- Card de Status e Cronômetro (Bidirecional) -->
@@ -53,7 +53,7 @@
                     </div>
 
                     {# Campos ocultos para integridade do POST do Django Form #}
-                    <div style="display: none;">
+                    <div>
                         {# Hack: Desativando requireds manuais para campos não utilizados no recorrente #}
                         <input type="hidden" name="course_name" value="{{ event.name }}">
                         <input type="hidden" name="course_workload" value="{{ event.hours }}">
@@ -85,6 +85,99 @@
                         </div>
                     </div>
 
+                    <!-- Dados Complementares e Endereço Avançado -->
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold small text-primary">{{ form.gender.label }}*</label>
+                            {{ form.gender }}
+                        </div>
+                        <div class="col-md-4" id="div_id_custom_gender" style="display: none;">
+                            <label class="form-label fw-bold small text-primary">{{ form.custom_gender.label }}</label>
+                            {{ form.custom_gender }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold small text-primary">{{ form.profession.label }}*</label>
+                            {{ form.profession }}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-primary">{{ form.whatsapp.label }}*</label>
+                            {{ form.whatsapp }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-primary">{{ form.rg.label }}*</label>
+                            {{ form.rg }}
+                        </div>
+
+                        <div class="col-md-12 mb-3">
+                            <label class="form-label fw-bold small text-primary mb-2">Seu Endereço*</label>
+                            <div class="d-flex flex-wrap gap-4 px-3 py-2 bg-light rounded border border-secondary border-opacity-25">
+                                {% for radio in form.location_type %}
+                                    <div class="form-check mb-0">
+                                        {{ radio.tag }}
+                                        <label class="form-check-label fw-semibold text-secondary mt-1" for="{{ radio.id_for_label }}">{{ radio.choice_label }}</label>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <div class="col-md-12 mb-2 condominio-only" style="display: none;">
+                            <label class="form-label fw-bold small text-primary">{{ form.condominium_name.label }}</label>
+                            {{ form.condominium_name }}
+                        </div>
+
+                        <div class="col-md-3 mb-2">
+                            <label class="form-label fw-bold small text-primary">{{ form.cep.label }}</label>
+                            {{ form.cep }}
+                            <div class="form-text small mt-1"><a href="https://buscacepinter.correios.com.br/app/endereco/index.php" target="_blank" class="text-decoration-none text-primary"><i class="bi bi-search me-1"></i>Não sabe seu CEP?</a></div>
+                        </div>
+
+                        <div class="col-md-7 mb-2">
+                            <label class="form-label fw-bold small text-primary">{{ form.street.label }}</label>
+                            {{ form.street }}
+                        </div>
+
+                        <div class="col-md-2 mb-2">
+                            <label class="form-label fw-bold small text-primary">{{ form.number.label }}</label>
+                            {{ form.number }}
+                        </div>
+
+                        <div class="col-md-12 mb-2 casa-only">
+                            <label class="form-label fw-bold small text-primary">{{ form.complement.label }}</label>
+                            {{ form.complement }}
+                        </div>
+
+                        <div class="col-md-4 mb-2 condominio-only" style="display: none;">
+                            <label class="form-label fw-bold small text-primary">{{ form.address_block.label }}</label>
+                            {{ form.address_block }}
+                        </div>
+                        <div class="col-md-4 mb-2 condominio-only" style="display: none;">
+                            <label class="form-label fw-bold small text-primary">{{ form.address_floor.label }}</label>
+                            {{ form.address_floor }}
+                        </div>
+                        <div class="col-md-4 mb-2 condominio-only" style="display: none;">
+                            <label class="form-label fw-bold small text-primary">{{ form.address_apt.label }}</label>
+                            {{ form.address_apt }}
+                        </div>
+
+                        <div class="col-md-4 mb-2">
+                            <label class="form-label fw-bold small text-primary">{{ form.neighborhood.label }}</label>
+                            {{ form.neighborhood }}
+                        </div>
+                        <div class="col-md-4 mb-2">
+                            <label class="form-label fw-bold small text-primary">{{ form.city.label }}</label>
+                            {{ form.city }}
+                        </div>
+                        <div class="col-md-2 mb-2">
+                            <label class="form-label fw-bold small text-primary">{{ form.state.label }}</label>
+                            {{ form.state }}
+                        </div>
+                        <div class="col-md-2 mb-2">
+                            <label class="form-label fw-bold small text-primary">{{ form.country.label }}</label>
+                            {{ form.country }}
+                        </div>
+                    </div>
+
                     {% if event.global_passkey %}
                     <div class="col-12 mb-4 bg-warning bg-opacity-10 p-3 rounded border border-warning border-opacity-50 shadow-sm">
                         <label for="global_passkey" class="form-label fw-bold text-dark fs-5"><i class="bi bi-key-fill text-warning me-2"></i>Senha de Acesso do Evento*</label>
@@ -105,7 +198,7 @@
                     <div class="row g-3">
                         {% for field in dynamic_fields %}
                         <div class="col-md-6 mb-3">
-                            <label class="form-label fw-bold small text-muted">
+                            <label class="form-label fw-bold small text-primary">
                                 {{ field.label }} {% if field.is_required %}<span class="text-danger">*</span>{% endif %}
                             </label>
                             
@@ -216,6 +309,29 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.querySelector('#certificate_form_wrapper form');
+
+    // Motor dinâmico para controle de exibição do Gênero Personalizado (UX)
+    const genderSelect = document.getElementById('id_gender');
+    const customGenderDiv = document.getElementById('div_id_custom_gender');
+    const customGenderInput = document.getElementById('id_custom_gender');
+
+    if (genderSelect && customGenderDiv) {
+        function toggleCustomGender() {
+            if (genderSelect.value === 'O') {
+                customGenderDiv.style.display = 'block';
+                if(customGenderInput) customGenderInput.setAttribute('required', 'required');
+            } else {
+                customGenderDiv.style.display = 'none';
+                if(customGenderInput) {
+                    customGenderInput.removeAttribute('required');
+                    customGenderInput.value = '';
+                }
+            }
+        }
+        genderSelect.addEventListener('change', toggleCustomGender);
+        toggleCustomGender(); // Executa ao carregar a página
+    }
+
     const confirmModalElement = document.getElementById('confirmDataModal');
     const confirmModal = new bootstrap.Modal(confirmModalElement);
     
@@ -346,6 +462,64 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     setInterval(updateCountdown, 1000);
     updateCountdown();
+
+    // Lógica do Endereço: Condomínio vs Casa
+    const locationRadios = document.querySelectorAll('input[name="location_type"]');
+    const condominioOnly = document.querySelectorAll('.condominio-only');
+    const casaOnly = document.querySelectorAll('.casa-only');
+
+    function toggleLocationFields() {
+        const selected = document.querySelector('input[name="location_type"]:checked');
+        if (!selected) return;
+
+        const isCondominio = selected.value === 'condominio';
+
+        condominioOnly.forEach(el => el.style.display = isCondominio ? 'block' : 'none');
+        casaOnly.forEach(el => el.style.display = isCondominio ? 'none' : 'block');
+
+        // Alterna Obrigatoriedade
+        const condFields = ['id_condominium_name', 'id_address_block', 'id_address_floor', 'id_address_apt'];
+        if (isCondominio) {
+            condFields.forEach(id => {
+                const input = document.getElementById(id);
+                if(input) input.required = true;
+            });
+        } else {
+            condFields.forEach(id => {
+                const input = document.getElementById(id);
+                if(input) { input.required = false; input.value = ''; }
+            });
+        }
+    }
+
+    if (locationRadios.length > 0) {
+        locationRadios.forEach(radio => radio.addEventListener('change', toggleLocationFields));
+        toggleLocationFields(); // Execução inicial
+    }
+
+    // Inicializa ViaCEP
+    const cepInput = document.getElementById('id_cep');
+    if(cepInput){
+        cepInput.addEventListener('blur', () => {
+            const cep = cepInput.value.replace(/\D/g, '');
+            if (cep.length !== 8) return;
+
+            document.getElementById('id_street').readOnly = true;
+            fetch(`https://viacep.com.br/ws/${cep}/json/`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.erro) {
+                        alert("CEP não encontrado.");
+                        return;
+                    }
+                    document.getElementById('id_street').value = data.logradouro;
+                    document.getElementById('id_neighborhood').value = data.bairro;
+                    document.getElementById('id_city').value = data.localidade;
+                    document.getElementById('id_state').value = data.uf;
+                    document.getElementById('id_number').focus();
+                });
+        });
+    }
 });
 </script>
 </body>

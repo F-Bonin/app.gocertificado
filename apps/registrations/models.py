@@ -32,7 +32,7 @@ class Registration(models.Model):
         null=True
     )
     custom_gender = models.CharField("Qual?", max_length=50, blank=True, null=True)
-    profession = models.CharField("Profissão", max_length=100, blank=True, null=True)
+    profession = models.CharField("Função/Profissão", max_length=100, blank=True, null=True)
     birth_date = models.DateField("Data de nascimento", blank=True, null=True)
     email = models.EmailField("E-mail")
     whatsapp = models.CharField(
@@ -53,6 +53,17 @@ class Registration(models.Model):
     neighborhood = models.CharField("Bairro", max_length=100, blank=True, null=True)
     city = models.CharField("Cidade", max_length=100, blank=True, null=True)
     state = models.CharField("UF", max_length=2, blank=True, null=True)
+    location_type = models.CharField(
+        "Onde fica o endereço?", 
+        max_length=20, 
+        choices=[('condominio', '🏢 Condomínio (apartamento ou casa em condomínio)'), ('casa', '🏠 Casa (fora de condomínio)')], 
+        default='casa'
+    )
+    condominium_name = models.CharField("Nome do Condomínio", max_length=200, blank=True, null=True)
+    address_block = models.CharField("Bloco", max_length=50, blank=True, null=True)
+    address_floor = models.CharField("Número/Letra do Andar", max_length=50, blank=True, null=True)
+    address_apt = models.CharField("Número do Apartamento/Casa", max_length=50, blank=True, null=True)
+    country = models.CharField("País", max_length=100, blank=True, null=True, default="Brasil")
 
     # Dados do Local
     institution_name = models.CharField("Nome do Local", max_length=200, null=True, blank=True)
