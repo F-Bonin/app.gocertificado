@@ -42,7 +42,7 @@ class CourseForm(forms.ModelForm):
         fields = [
             "name", "start_date", "end_date", "hours",
             "registration_start", "registration_end",
-            "certificate_start", "certificate_end", "no_certificate",
+            "certificate_start", "certificate_end", "no_certificate", "global_passkey",
             "cep", "institution_name", "institution_street", "institution_number",
             "institution_neighborhood", "institution_complement",
             "city", "state",
@@ -61,6 +61,7 @@ class CourseForm(forms.ModelForm):
             "certificate_start": forms.DateTimeInput(format='%Y-%m-%dT%H:%M', attrs={'type': 'datetime-local', 'class': 'form-control'}),
             "certificate_end": forms.DateTimeInput(format='%Y-%m-%dT%H:%M', attrs={'type': 'datetime-local', 'class': 'form-control'}),
             "no_certificate": forms.CheckboxInput(attrs={"class": "form-check-input", "id": "check_no_certificate"}),
+            "global_passkey": forms.TextInput(attrs={"class": "form-control", "placeholder": "Digite a senha do evento..."}),
             "cep": forms.TextInput(attrs={"class": "form-control", "placeholder": "00000-000", "id": "id_course_cep"}),
             "city": forms.TextInput(attrs={"class": "form-control", "id": "id_course_city", "readonly": True}),
             "state": forms.TextInput(attrs={"class": "form-control", "id": "id_course_state", "readonly": True}),
@@ -205,10 +206,11 @@ class DynamicFormModelForm(forms.ModelForm):
     """Formulário para o modelo DynamicForm (Entidade EAV)."""
     class Meta:
         model = DynamicForm
-        fields = ["name", "form_type"]
+        fields = ["name", "form_type", "layout_type"]
         widgets = {
             "name": forms.TextInput(attrs={"class": "form-control", "placeholder": "Ex: Inscrição Personalizada"}),
             "form_type": forms.RadioSelect(attrs={'class': 'form-check-input'}),
+            "layout_type": forms.HiddenInput(),
         }
 
 

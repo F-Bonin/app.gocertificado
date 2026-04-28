@@ -153,11 +153,12 @@ class DynamicForm(models.Model):
         default='REG', 
         verbose_name='Tipo de Formulário'
     )
+    layout_type = models.CharField('Layout do Formulário', max_length=20, choices=[('STRUCTURED', 'Formulário Estruturado (Automação de Certificado)'), ('FLEXIBLE', 'Formulário Flexível (Sem Certificado)')], default='STRUCTURED')
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        verbose_name = "Formulário Dinâmico"
-        verbose_name_plural = "Formulários Dinâmicos"
+        verbose_name = 'Formulário Personalizado'
+        verbose_name_plural = 'Formulários Personalizados'
         ordering = ['-created_at']
 
     def __str__(self):
@@ -338,6 +339,7 @@ class Course(models.Model):
     certificate_start = models.DateTimeField("Início da Solicitação", blank=True, null=True)
     certificate_end = models.DateTimeField("Término da Solicitação", blank=True, null=True)
     no_certificate = models.BooleanField("Este evento não terá certificado", default=False)
+    global_passkey = models.CharField("Chave de Acesso Global", max_length=50, blank=True, null=True, help_text="Se definida, esta senha será exigida para todas as solicitações de certificado deste evento.")
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

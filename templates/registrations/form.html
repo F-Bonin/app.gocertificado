@@ -61,7 +61,7 @@
 
                     <div class="section-title">Dados Pessoais</div>
                     
-                    <!-- Identidade Core: 4 Pilares Inalteráveis -->
+                    <!-- Identidade Core: 4 Pilares Inalteráveis (Exibição Obrigatória) -->
                     <div class="row g-3 mb-4">
                         <div class="col-12">
                             <label for="{{ form.full_name.id_for_label }}" class="form-label fw-bold small text-primary">{{ form.full_name.label }}*</label>
@@ -85,128 +85,146 @@
                         </div>
                     </div>
 
-                    {% if not course.custom_cert_form %}
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="{{ form.gender.id_for_label }}" class="form-label fw-bold small">{{ form.gender.label }}</label>
+                    <!-- Dados Complementares e Endereço Avançado -->
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold small text-primary">{{ form.gender.label }}*</label>
                             {{ form.gender }}
-                            {% if form.gender.errors %}<div class="text-danger small">{{ form.gender.errors.0 }}</div>{% endif %}
                         </div>
-                        <div class="col-md-6 mb-3" id="div_id_custom_gender" style="display: none;">
-                            <label for="{{ form.custom_gender.id_for_label }}" class="form-label fw-bold small">{{ form.custom_gender.label }}</label>
+                        <div class="col-md-4" id="div_id_custom_gender" style="display: none;">
+                            <label class="form-label fw-bold small text-primary">{{ form.custom_gender.label }}</label>
                             {{ form.custom_gender }}
-                            {% if form.custom_gender.errors %}<div class="text-danger small">{{ form.custom_gender.errors.0 }}</div>{% endif %}
                         </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="{{ form.profession.id_for_label }}" class="form-label fw-bold small">{{ form.profession.label }}</label>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold small text-primary">{{ form.profession.label }}*</label>
                             {{ form.profession }}
-                            {% if form.profession.errors %}<div class="text-danger small">{{ form.profession.errors.0 }}</div>{% endif %}
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="{{ form.rg.id_for_label }}" class="form-label fw-bold small">{{ form.rg.label }}</label>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-primary">{{ form.whatsapp.label }}*</label>
+                            {{ form.whatsapp }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-primary">{{ form.rg.label }}*</label>
                             {{ form.rg }}
-                            {% if form.rg.errors %}<div class="text-danger small">{{ form.rg.errors.0 }}</div>{% endif %}
+                        </div>
+
+                        <div class="col-md-12 mb-3">
+                            <label class="form-label fw-bold small text-primary mb-2">Seu Endereço*</label>
+                            <div class="d-flex flex-wrap gap-4 px-3 py-2 bg-light rounded border border-secondary border-opacity-25">
+                                {% for radio in form.location_type %}
+                                    <div class="form-check mb-0">
+                                        {{ radio.tag }}
+                                        <label class="form-check-label fw-semibold text-secondary mt-1" for="{{ radio.id_for_label }}">{{ radio.choice_label }}</label>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <div class="col-md-12 mb-2 condominio-only" style="display: none;">
+                            <label class="form-label fw-bold small text-primary">{{ form.condominium_name.label }}</label>
+                            {{ form.condominium_name }}
+                        </div>
+
+                        <div class="col-md-3 mb-2">
+                            <label class="form-label fw-bold small text-primary">{{ form.cep.label }}</label>
+                            {{ form.cep }}
+                            <div class="form-text small mt-1"><a href="https://buscacepinter.correios.com.br/app/endereco/index.php" target="_blank" class="text-decoration-none text-primary"><i class="bi bi-search me-1"></i>Não sabe seu CEP?</a></div>
+                        </div>
+
+                        <div class="col-md-7 mb-2">
+                            <label class="form-label fw-bold small text-primary">{{ form.street.label }}</label>
+                            {{ form.street }}
+                        </div>
+
+                        <div class="col-md-2 mb-2">
+                            <label class="form-label fw-bold small text-primary">{{ form.number.label }}</label>
+                            {{ form.number }}
+                        </div>
+
+                        <div class="col-md-12 mb-2 casa-only">
+                            <label class="form-label fw-bold small text-primary">{{ form.complement.label }}</label>
+                            {{ form.complement }}
+                        </div>
+
+                        <div class="col-md-4 mb-2 condominio-only" style="display: none;">
+                            <label class="form-label fw-bold small text-primary">{{ form.address_block.label }}</label>
+                            {{ form.address_block }}
+                        </div>
+                        <div class="col-md-4 mb-2 condominio-only" style="display: none;">
+                            <label class="form-label fw-bold small text-primary">{{ form.address_floor.label }}</label>
+                            {{ form.address_floor }}
+                        </div>
+                        <div class="col-md-4 mb-2 condominio-only" style="display: none;">
+                            <label class="form-label fw-bold small text-primary">{{ form.address_apt.label }}</label>
+                            {{ form.address_apt }}
+                        </div>
+
+                        <div class="col-md-4 mb-2">
+                            <label class="form-label fw-bold small text-primary">{{ form.neighborhood.label }}</label>
+                            {{ form.neighborhood }}
+                        </div>
+                        <div class="col-md-4 mb-2">
+                            <label class="form-label fw-bold small text-primary">{{ form.city.label }}</label>
+                            {{ form.city }}
+                        </div>
+                        <div class="col-md-2 mb-2">
+                            <label class="form-label fw-bold small text-primary">{{ form.state.label }}</label>
+                            {{ form.state }}
+                        </div>
+                        <div class="col-md-2 mb-2">
+                            <label class="form-label fw-bold small text-primary">{{ form.country.label }}</label>
+                            {{ form.country }}
                         </div>
                     </div>
 
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="{{ form.whatsapp.id_for_label }}" class="form-label fw-bold small">{{ form.whatsapp.label }}</label>
-                            {{ form.whatsapp }}
-                            {% if form.whatsapp.errors %}<div class="text-danger small">{{ form.whatsapp.errors.0 }}</div>{% endif %}
-                        </div>
+                    {% if course.global_passkey %}
+                    <div class="col-12 mb-4 bg-warning bg-opacity-10 p-3 rounded border border-warning border-opacity-50 shadow-sm">
+                        <label for="global_passkey" class="form-label fw-bold text-dark fs-5"><i class="bi bi-key-fill text-warning me-2"></i>Senha de Acesso do Evento*</label>
+                        <input type="text" name="global_passkey" id="global_passkey" class="form-control form-control-lg border-warning" required placeholder="Digite a senha fornecida pelo instrutor">
+                        {% if form.non_field_errors %}
+                            <div class="text-danger mt-2 fw-bold"><i class="bi bi-exclamation-circle me-1"></i>{{ form.non_field_errors.0 }}</div>
+                        {% endif %}
                     </div>
                     {% endif %}
 
-                    <div class="section-title mt-4">Endereço</div>
-                    <div class="row">
-                        <div class="col-md-5 mb-3">
-                            <label for="{{ form.cep.id_for_label }}" class="form-label fw-bold small">{{ form.cep.label }}</label>
-                            {{ form.cep }}
-                            <div class="form-text small"><a href="https://buscacepinter.correios.com.br/app/endereco/index.php" target="_blank">Não sabe seu CEP? Busque aqui</a></div>
-                            {% if form.cep.errors %}<div class="text-danger small">{{ form.cep.errors.0 }}</div>{% endif %}
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-9 mb-3">
-                            <label for="{{ form.street.id_for_label }}" class="form-label fw-bold small">{{ form.street.label }}</label>
-                            {{ form.street }}
-                            {% if form.street.errors %}<div class="text-danger small">{{ form.street.errors.0 }}</div>{% endif %}
-                        </div>
-                        <div class="col-md-3 mb-3">
-                            <label for="{{ form.number.id_for_label }}" class="form-label fw-bold small">{{ form.number.label }}</label>
-                            {{ form.number }}
-                            {% if form.number.errors %}<div class="text-danger small">{{ form.number.errors.0 }}</div>{% endif %}
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="{{ form.complement.id_for_label }}" class="form-label fw-bold small">{{ form.complement.label }}</label>
-                            {{ form.complement }}
-                            {% if form.complement.errors %}<div class="text-danger small">{{ form.complement.errors.0 }}</div>{% endif %}
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="{{ form.neighborhood.id_for_label }}" class="form-label fw-bold small">{{ form.neighborhood.label }}</label>
-                            {{ form.neighborhood }}
-                            {% if form.neighborhood.errors %}<div class="text-danger small">{{ form.neighborhood.errors.0 }}</div>{% endif %}
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-8 mb-3">
-                            <label for="{{ form.city.id_for_label }}" class="form-label fw-bold small">{{ form.city.label }}</label>
-                            {{ form.city }}
-                            {% if form.city.errors %}<div class="text-danger small">{{ form.city.errors.0 }}</div>{% endif %}
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label for="{{ form.state.id_for_label }}" class="form-label fw-bold small">{{ form.state.label }}</label>
-                            {{ form.state }}
-                            {% if form.state.errors %}<div class="text-danger small">{{ form.state.errors.0 }}</div>{% endif %}
-                        </div>
-                    </div>
-
                     <!-- Bloco de Campos Dinâmicos (EAV Injection via contexto) -->
-          {% if dynamic_fields %}
-          <div class="col-12 mt-4">
-              <div class="alert alert-secondary py-2 border-0 bg-light">
-                  <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-info-circle me-2"></i>Informações Adicionais</h6>
-              </div>
-          </div>
-          <div class="row g-3">
-              {% for field in dynamic_fields %}
-              <div class="col-md-6 mb-3">
-                  <label class="form-label fw-bold small text-muted">
-                      {{ field.label }} {% if field.is_required %}<span class="text-danger">*</span>{% endif %}
-                  </label>
-                  
-                  {% if field.field_type == 'select' %}
-                  <select name="dynamic_field_{{ field.id }}" class="form-select" {% if field.is_required %}required{% endif %}>
-                      <option value="">Selecione...</option>
-                      {% for option in field.get_options_list %}
-                      <option value="{{ option }}">{{ option }}</option>
-                      {% endfor %}
-                  </select>
-                  {% elif field.field_type == 'checkbox' %}
-                  <div class="form-check">
-                      <input class="form-check-input" type="checkbox" value="Sim" name="dynamic_field_{{ field.id }}" id="dyn_check_{{ field.id }}" {% if field.is_required %}required{% endif %}>
-                      <label class="form-check-label small" for="dyn_check_{{ field.id }}">
-                          Aceito os termos
-                      </label>
-                  </div>
-                  {% else %}
-                  <input type="{{ field.field_type }}" name="dynamic_field_{{ field.id }}" class="form-control" {% if field.is_required %}required{% endif %}>
-                  {% endif %}
-              </div>
-              {% endfor %}
-          </div>
-          {% endif %}
+                    {% if dynamic_fields %}
+                    <div class="col-12 mt-4">
+                        <div class="alert alert-secondary py-2 border-0 bg-light">
+                            <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-info-circle me-2"></i>Informações Adicionais</h6>
+                        </div>
+                    </div>
+                    <div class="row g-3">
+                        {% for field in dynamic_fields %}
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold small text-primary">
+                                {{ field.label }} {% if field.is_required %}<span class="text-danger">*</span>{% endif %}
+                            </label>
+                            
+                            {% if field.field_type == 'select' %}
+                            <select name="dynamic_field_{{ field.id }}" class="form-select" {% if field.is_required %}required{% endif %}>
+                                <option value="">Selecione...</option>
+                                {% for option in field.get_options_list %}
+                                <option value="{{ option }}">{{ option }}</option>
+                                {% endfor %}
+                            </select>
+                            {% elif field.field_type == 'checkbox' %}
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="Sim" name="dynamic_field_{{ field.id }}" id="dyn_check_{{ field.id }}" {% if field.is_required %}required{% endif %}>
+                                <label class="form-check-label small" for="dyn_check_{{ field.id }}">
+                                    Aceito os termos
+                                </label>
+                            </div>
+                            {% else %}
+                            <input type="{{ field.field_type }}" name="dynamic_field_{{ field.id }}" class="form-control" {% if field.is_required %}required{% endif %}>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
 
-          <div class="d-grid mt-4">
+                    <div class="d-grid mt-4">
                         <button type="submit" class="btn btn-primary btn-lg shadow-sm">Enviar</button>
                     </div>
 
@@ -439,6 +457,40 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     setInterval(updateCountdown, 1000);
     updateCountdown();
+
+    // Lógica do Endereço: Condomínio vs Casa
+    const locationRadios = document.querySelectorAll('input[name="location_type"]');
+    const condominioOnly = document.querySelectorAll('.condominio-only');
+    const casaOnly = document.querySelectorAll('.casa-only');
+
+    function toggleLocationFields() {
+        const selected = document.querySelector('input[name="location_type"]:checked');
+        if (!selected) return;
+
+        const isCondominio = selected.value === 'condominio';
+
+        condominioOnly.forEach(el => el.style.display = isCondominio ? 'block' : 'none');
+        casaOnly.forEach(el => el.style.display = isCondominio ? 'none' : 'block');
+
+        // Alterna Obrigatoriedade
+        const condFields = ['id_condominium_name', 'id_address_block', 'id_address_floor', 'id_address_apt'];
+        if (isCondominio) {
+            condFields.forEach(id => {
+                const input = document.getElementById(id);
+                if(input) input.required = true;
+            });
+        } else {
+            condFields.forEach(id => {
+                const input = document.getElementById(id);
+                if(input) { input.required = false; input.value = ''; }
+            });
+        }
+    }
+
+    if (locationRadios.length > 0) {
+        locationRadios.forEach(radio => radio.addEventListener('change', toggleLocationFields));
+        toggleLocationFields(); // Execução inicial
+    }
 
     const genderSelect = document.getElementById('id_gender');
     const customGenderDiv = document.getElementById('div_id_custom_gender');

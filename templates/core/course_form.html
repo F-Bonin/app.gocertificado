@@ -191,6 +191,29 @@
 </div>
 </div>
 </div> <!-- Fim do certificate_settings_wrapper -->
+
+<!-- Chave de Acesso Global (Segurança) -->
+<div class="card mb-4 border-warning shadow-sm">
+    <div class="card-header bg-warning bg-opacity-10 border-bottom py-3">
+        <h6 class="mb-0 text-dark fw-bold"><i class="bi bi-key-fill text-warning me-2"></i>Chave de Acesso (Senha)</h6>
+    </div>
+    <div class="card-body p-4">
+        <div class="form-check form-switch fs-5 mb-3">
+            <input class="form-check-input" type="checkbox" id="toggle-global-passkey" 
+                   onchange="document.getElementById('global-passkey-container').style.display = this.checked ? 'block' : 'none'; if(!this.checked) document.querySelector('[name=global_passkey]').value = '';"
+                   {% if form.global_passkey.value %}checked{% endif %}>
+            <label class="form-check-label fw-bold text-dark fs-6 ms-2 mt-1" for="toggle-global-passkey">Definir senha para emissão do certificado</label>
+        </div>
+        <div id="global-passkey-container" style="{% if not form.global_passkey.value %}display: none;{% endif %}">
+            {{ form.global_passkey }}
+            {% if form.global_passkey.errors %}<div class="text-danger small mt-1">{{ form.global_passkey.errors.0 }}</div>{% endif %}
+        </div>
+        <div class="form-text small mt-3">
+            <i class="bi bi-info-circle-fill me-1 text-warning"></i> Ao ativar, o participante precisará digitar esta senha no link/formulário de solicitação de certificado. Sem ela o certificado não será gerado e enviado. <strong class="text-dark">Não esqueça de comunicar esta senha ao participante do evento!</strong>
+        </div>
+    </div>
+</div>
+
 <!-- INÍCIO DO BLOCO DE SELEÇÃO DE NPS -->
 <div class="card bg-light border-0 mb-4 mt-4 shadow-sm">
 <div class="card-header bg-white py-3 border-bottom-0 d-flex align-items-center">

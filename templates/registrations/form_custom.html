@@ -239,7 +239,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (isValid) {
             displayNome.innerText = inputFullName.value;
-            displayCpf.innerText = inputCpf.value;
+            const cpfWrapper = displayCpf ? displayCpf.closest('p') : null;
+            if (inputCpf) {
+                displayCpf.innerText = inputCpf.value;
+                if(cpfWrapper) cpfWrapper.style.display = 'block';
+            } else {
+                if(cpfWrapper) cpfWrapper.style.display = 'none';
+            }
             confirmModal.show();
         } else {
             form.reportValidity();

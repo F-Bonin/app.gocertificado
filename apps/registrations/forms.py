@@ -167,12 +167,14 @@ class RegistrationForm(forms.ModelForm):
                         self.fields[field].required = True
 
     def clean_cpf(self):
-        cpf_val = self.cleaned_data.get("cpf") or ""
-        digits = re.sub(r"\D", "", cpf_val)
+        cpf = self.cleaned_data.get("cpf", "")
+        if not cpf:
+            return ""
+        digits = re.sub(r"\D", "", cpf)
         if len(digits) != 11:
             raise forms.ValidationError("CPF inválido. Informe os 11 dígitos.")
         # Validação de dígitos verificadores
-        if digits == digits[0] * 11:
+        if digits == digits * 11:
             raise forms.ValidationError("CPF inválido.")
         for i in range(9, 11):
             s = sum(int(digits[j]) * (i + 1 - j) for j in range(i))
