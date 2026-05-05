@@ -20,7 +20,7 @@
                 <thead class="bg-light">
                     <tr>
                         <th class="ps-4">Nome do Formulário</th>
-                        <th>Qtd. de Campos</th>
+                        <th>Tipo de Formulário</th>
                         <th>Criado em</th>
                         <th class="text-end pe-4">Ações</th>
                     </tr>
@@ -32,8 +32,8 @@
                             <span class="fw-bold text-primary">{{ dynamic_form.name }}</span>
                         </td>
                         <td>
-                            <span class="badge bg-info text-dark">
-                                {{ dynamic_form.fields.count }} campo(s)
+                            <span class="badge {% if dynamic_form.form_type == 'REG' %}bg-success{% else %}bg-primary{% endif %} shadow-sm" style="font-size: 0.8rem; letter-spacing: 0.5px;">
+                                {{ dynamic_form.get_form_type_display }}
                             </span>
                         </td>
                         <td>{{ dynamic_form.created_at|date:"d/m/Y H:i" }}</td>
