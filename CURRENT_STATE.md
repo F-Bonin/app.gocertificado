@@ -2,7 +2,7 @@
 
 **Atualize este arquivo após cada sessão de desenvolvimento.** A IA deve ler este arquivo para entender o escopo completo.
 
-#### 🗓️ Última atualização: 2026-04-28 (Blindagem de Segurança e UX) [15]
+#### 🗓️ Última atualização: 2026-05-05 (Refatoração de Frontend Recorrente) [16]
 
 ---
 
@@ -14,9 +14,10 @@
 * [x] **Persistência de Layout (Backend):** Campo `layout_type` exposto no `DynamicFormModelForm` como `HiddenInput`, permitindo a captura e salvamento da escolha de layout (Estruturado vs Flexível) via Django Forms. [28/04/2026]
 * [x] **Bifurcação de UX (Split):** Implementado Modal de escolha na listagem de Formulários Personalizados, permitindo ao usuário optar entre o layout "Estruturado" (com automação de certificados) ou "Flexível" (sem certificados) no momento da criação. [28/04/2026]
 * [x] **Inteligência de Interface (Fase 2):** Template `dynamic_form_form.html` refatorado com renderização condicional via Django (Backend) para layouts Estruturado/Flexível. Implementada correção de precedência na variável `layout_type` (URL parameter > Database > Default), garantindo a distinção correta entre os modos e mantendo a arquitetura DRY. [28/04/2026]
-* [x] **Views Públicas Flexíveis:** Injetada lógica de layout nas Views `RegistrationCreateView` e `EventRegistrationCreateView`. O sistema agora detecta o modo "Flexível" e remove a obrigatoriedade de campos core (CPF, E-mail, Nascimento) em tempo de execução, permitindo salvamentos diretos e ignorando travas de duplicidade e automação de certificados para este layout específico. Implementado **Method Overriding** rigoroso na `EventRegistrationCreateView` para suporte total ao processamento simplificado do modo Flexível. [28/04/2026]
+* [x] **Views Públicas Flexíveis:** Injetada lógica de layout nas Views `RegistrationCreateView`, `EventRegistrationCreateView`, `RecurringEventRegistrationView` e `RecurringEventCertificateView`. O sistema agora detecta o modo "Flexível" e remove a obrigatoriedade de campos core (CPF, E-mail, Nascimento) em tempo de execução, permitindo salvamentos diretos e ignorando travas de duplicidade e automação de certificados para este layout específico. [05/05/2026]
 * [x] **Frontend Inscrição Flexível:** Template `event_form_custom.html` consolidado com renderização condicional backend para os pilares da identidade (CPF, E-mail, Nascimento) e blindagem JavaScript no motor de submissão para tratamento de inputs invisíveis, garantindo integridade visual no modo Flexível. [28/04/2026]
 * [x] **Frontend Solicitação Flexível:** Template `form_custom.html` refatorado para obedecer às regras de Layout Flexível. Implementada renderização condicional backend para CPF, E-mail e Nascimento, e blindagem JavaScript no modal de confirmação para tratamento de inputs invisíveis. [28/04/2026]
+* [x] **Frontend Recorrente Flexível:** Refatorados os templates `recurring_event_form.html` e `recurring_cert_form.html` para suporte ao Layout Flexível. Implementada renderização condicional para CPF, E-mail e Nascimento, e blindagem JavaScript no motor de submissão para ocultação dinâmica de dados no modal de confirmação, garantindo a paridade visual com os fluxos de eventos padrão e customizados. [05/05/2026]
 * [x] **Consolidação de Interface (Listagem):** Reescrita completa do template `dynamic_form_list.html` com a injeção rígida do `modalNewFormType`, garantindo o fluxo de bifurcação (Estruturado vs Flexível) e a adoção definitiva da nomenclatura "Formulários Personalizados". [28/04/2026]
 
 **Estrutura Base e SaaS:**

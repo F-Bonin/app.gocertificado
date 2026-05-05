@@ -208,10 +208,21 @@ class RecurringEventRegistrationView(CreateView):
             context['dynamic_fields'] = self.recurring_event.custom_reg_form.fields.all().order_by('order')
         return context
 
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        if self.recurring_event.custom_reg_form and self.recurring_event.custom_reg_form.layout_type == 'FLEXIBLE':
+            if 'cpf' in form.fields: form.fields['cpf'].required = False
+            if 'email' in form.fields: form.fields['email'].required = False
+            if 'birth_date' in form.fields: form.fields['birth_date'].required = False
+        return form
+
     def form_valid(self, form):
-        if Registration.objects.filter(cpf=form.instance.cpf, recurring_event=self.recurring_event).exists():
+        is_flexible = self.recurring_event.custom_reg_form and self.recurring_event.custom_reg_form.layout_type == 'FLEXIBLE'
+        
+        if not is_flexible and Registration.objects.filter(cpf=form.instance.cpf, recurring_event=self.recurring_event).exists():
             form.add_error('cpf', 'Este CPF já está inscrito neste evento recorrente.')
             return self.form_invalid(form)
+
         inscricao = form.save(commit=False)
         inscricao.recurring_event = self.recurring_event
         inscricao.course_name = self.recurring_event.name
@@ -258,10 +269,37 @@ class RecurringEventCertificateView(CreateView):
             context['dynamic_fields'] = self.recurring_event.custom_cert_form.fields.all().order_by('order')
         return context
 
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        if self.recurring_event.custom_cert_form and self.recurring_event.custom_cert_form.layout_type == 'FLEXIBLE':
+            if 'cpf' in form.fields: form.fields['cpf'].required = False
+            if 'email' in form.fields: form.fields['email'].required = False
+            if 'birth_date' in form.fields: form.fields['birth_date'].required = False
+        return form
+
     def form_valid(self, form):
+        is_flexible = self.recurring_event.custom_cert_form and self.recurring_event.custom_cert_form.layout_type == 'FLEXIBLE'
         cpf = form.cleaned_data.get('cpf')
         name_parts = form.cleaned_data.get('full_name', '').split()
         first_name = name_parts[0] if name_parts else ""
+
+        if is_flexible:
+            reg = form.save(commit=False)
+            reg.recurring_event = self.recurring_event
+            reg.course_name = self.recurring_event.name
+            reg.course_workload = self.recurring_event.hours
+            reg.is_requested = True
+            reg.save()
+
+            if self.recurring_event.custom_cert_form:
+                from apps.registrations.models import DynamicResponse
+                for field in self.recurring_event.custom_cert_form.fields.all():
+                    val = self.request.POST.get(f'dynamic_field_{field.id}')
+                    if val: DynamicResponse.objects.update_or_create(registration=reg, field=field, defaults={'value': val})
+            
+            self.request.session['success_message'] = f"{first_name}, sua solicitação foi registrada com sucesso no evento {self.recurring_event.name}."
+            self.object = reg
+            return HttpResponseRedirect(self.get_success_url())
 
         reg = Registration.objects.filter(cpf=cpf, recurring_event=self.recurring_event).first()
         if not reg:
@@ -294,34 +332,6 @@ class RecurringEventCertificateView(CreateView):
         if self.recurring_event.nps_form:
             from apps.registrations.models import NPSResponse
             for key, value in self.request.POST.items():
-                if key.startswith('nps_question_') and value:
-                    try:
-                        q_id = int(key.replace('nps_question_', ''))
-                        q = self.recurring_event.nps_form.questions.filter(id=q_id).first()
-                        if q:
-                            defaults = {'answer_score': int(value)} if q.question_type == 'score' else {'answer_text': value}
-                            NPSResponse.objects.update_or_create(registration=reg, question=q, defaults=defaults)
-                    except ValueError:
-                        pass
-
-        from apps.certificates.tasks import issue_certificate_task
-        reg.is_requested = True
-        reg.save()
-
-        if reg.has_met_attendance:
-            if reg.status == 'pending':
-                msg = f"{first_name}, seus dados foram confirmados! Você atingiu a frequência mínima ({self.recurring_event.min_frequency}%) e seu certificado está sendo gerado."
-                issue_certificate_task.delay(str(reg.id))
-            else:
-                msg = f"{first_name}, você já solicitou o certificado. Verifique sua caixa de entrada ou SPAM."
-        else:
-            msg = f"{first_name}, sua solicitação foi registrada! A emissão só ocorrerá caso você atinja a frequência mínima exigida pelo evento ({self.recurring_event.min_frequency}%)."
-
-        self.request.session['success_message'] = msg
-        self.object = reg
-        return HttpResponseRedirect(self.get_success_url())
-        from apps.registrations.models import NPSResponse
-        for key, value in self.request.POST.items():
                 if key.startswith('nps_question_') and value:
                     try:
                         q_id = int(key.replace('nps_question_', ''))

@@ -72,28 +72,30 @@
                         
                         <div class="section-title">Seus Dados Pessoais</div>
 
-                        <!-- Identidade Core: 4 Pilares Inalteráveis (Exibição Obrigatória) -->
+                        <!-- Identidade Core: Exibição Condicional -->
                         <div class="row g-3 mb-4">
                             <div class="col-12">
                                 <label for="{{ form.full_name.id_for_label }}" class="form-label fw-bold small text-success">{{ form.full_name.label }}*</label>
                                 {{ form.full_name }}
                                 {% if form.full_name.errors %}<div class="text-danger small">{{ form.full_name.errors.0 }}</div>{% endif %}
                             </div>
-                            <div class="col-md-4">
+                            {% if event.custom_reg_form.layout_type != 'FLEXIBLE' %}
+                            <div class="col-md-4 mt-3">
                                 <label for="{{ form.cpf.id_for_label }}" class="form-label fw-bold small text-success">{{ form.cpf.label }}*</label>
                                 {{ form.cpf }}
                                 {% if form.cpf.errors %}<div class="text-danger small">{{ form.cpf.errors.0 }}</div>{% endif %}
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-4 mt-3">
                                 <label for="{{ form.email.id_for_label }}" class="form-label fw-bold small text-success">{{ form.email.label }}*</label>
                                 {{ form.email }}
                                 {% if form.email.errors %}<div class="text-danger small">{{ form.email.errors.0 }}</div>{% endif %}
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-4 mt-3">
                                 <label for="{{ form.birth_date.id_for_label }}" class="form-label fw-bold small text-success">{{ form.birth_date.label }}*</label>
                                 {{ form.birth_date }}
                                 {% if form.birth_date.errors %}<div class="text-danger small">{{ form.birth_date.errors.0 }}</div>{% endif %}
                             </div>
+                            {% endif %}
                         </div>
 
                         <!-- Bloco de Campos Dinâmicos (EAV Injection via contexto) -->
@@ -185,7 +187,13 @@
                 if (form.checkValidity()) {
                     e.preventDefault();
                     displayNome.innerText = inputFullName.value;
-                    displayCpf.innerText = inputCpf.value;
+                    const cpfWrapper = displayCpf ? displayCpf.closest('p') : null;
+                    if (inputCpf) {
+                        displayCpf.innerText = inputCpf.value;
+                        if(cpfWrapper) cpfWrapper.style.display = 'block';
+                    } else {
+                        if(cpfWrapper) cpfWrapper.style.display = 'none';
+                    }
                     confirmModal.show();
                 }
             });
