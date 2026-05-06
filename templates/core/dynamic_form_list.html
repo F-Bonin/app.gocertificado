@@ -39,6 +39,10 @@
                         <td>{{ dynamic_form.created_at|date:"d/m/Y H:i" }}</td>
                         <td class="text-end pe-4">
                             <div class="btn-group">
+                                <!-- Sênior Fix: Botão de Pré-visualização do Formulário -->
+                                <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#previewModal{{ dynamic_form.pk }}" title="Pré-visualizar Formulário">
+                                    <i class="bi bi-eye"></i>
+                                </button>
                                 <a href="{% url 'core:dynamic_form_update' dynamic_form.pk %}" class="btn btn-sm btn-outline-primary" title="Editar">
                                     <i class="bi bi-pencil"></i>
                                 </a>
@@ -48,6 +52,82 @@
                             </div>
                         </td>
                     </tr>
+
+                    <!-- Modal de Preview Específico para este Formulário -->
+                    <div class="modal fade" id="previewModal{{ dynamic_form.pk }}" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered modal-lg">
+                            <div class="modal-content border-0 shadow-lg">
+                                <div class="modal-header bg-light border-bottom-0">
+                                    <h5 class="modal-title fw-bold text-primary"><i class="bi bi-eye me-2"></i>Pré-visualização</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body p-4 bg-light">
+                                    <div class="card border-0 shadow-sm">
+                                        <div class="card-body p-4">
+                                            <div class="alert alert-warning small mb-4 border-warning border-opacity-25">
+                                                <i class="bi bi-info-circle-fill me-1"></i> Este é apenas um <strong>molde visual</strong>. Dados reais como o nome do evento, local e horários serão injetados aqui automaticamente quando este formulário for vinculado a um evento.
+                                            </div>
+                                            <h6 class="fw-bold mb-3 border-bottom pb-2">Seus Dados Pessoais</h6>
+                                            <div class="row g-3 mb-4">
+                                                <!-- Campos Estáticos do Sistema Mimetizados -->
+                                                <div class="col-12">
+                                                    <label class="form-label fw-bold small {% if dynamic_form.form_type == 'REG' %}text-success{% else %}text-primary{% endif %}">Nome completo*</label>
+                                                    <input type="text" class="form-control bg-light" disabled placeholder="Ex: João da Silva">
+                                                </div>
+                                                {% if dynamic_form.layout_type != 'FLEXIBLE' %}
+                                                <div class="col-md-4">
+                                                    <label class="form-label fw-bold small {% if dynamic_form.form_type == 'REG' %}text-success{% else %}text-primary{% endif %}">CPF*</label>
+                                                    <input type="text" class="form-control bg-light" disabled placeholder="000.000.000-00">
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label fw-bold small {% if dynamic_form.form_type == 'REG' %}text-success{% else %}text-primary{% endif %}">E-mail*</label>
+                                                    <input type="email" class="form-control bg-light" disabled placeholder="email@exemplo.com">
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label fw-bold small {% if dynamic_form.form_type == 'REG' %}text-success{% else %}text-primary{% endif %}">Data de nascimento*</label>
+                                                    <input type="date" class="form-control bg-light" disabled>
+                                                </div>
+                                                {% endif %}
+                                            </div>
+
+                                            {% if dynamic_form.fields.count > 0 %}
+                                            <h6 class="fw-bold mb-3 border-bottom pb-2 mt-4 text-primary">Informações Adicionais (Personalizadas)</h6>
+                                            <div class="row g-3">
+                                                <!-- Renderizando os campos criados pelo usuário -->
+                                                {% for field in dynamic_form.fields.all|dictsort:"order" %}
+                                                <div class="col-md-6 mb-3">
+                                                    <label class="form-label fw-bold small text-muted">
+                                                        {{ field.label }} {% if field.is_required %}<span class="text-danger">*</span>{% endif %}
+                                                    </label>
+                                                    {% if field.field_type == 'select' %}
+                                                    <select class="form-select bg-light" disabled>
+                                                        <option>Selecione uma opção...</option>
+                                                    </select>
+                                                    {% elif field.field_type == 'checkbox' %}
+                                                    <div class="form-check mt-2">
+                                                        <input class="form-check-input" type="checkbox" disabled>
+                                                        <label class="form-check-label small text-muted">Aceito os termos</label>
+                                                    </div>
+                                                    {% else %}
+                                                    <input type="{{ field.field_type }}" class="form-control bg-light" disabled placeholder="Resposta do aluno...">
+                                                    {% endif %}
+                                                </div>
+                                                {% endfor %}
+                                            </div>
+                                            {% else %}
+                                            <div class="text-center text-muted small mt-4">
+                                                Nenhum campo personalizado adicionado a este formulário.
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="modal-footer border-top-0 justify-content-center">
+                                    <button type="button" class="btn btn-secondary px-5" data-bs-dismiss="modal">Fechar</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     {% empty %}
                     <tr>
                         <td colspan="4" class="text-center py-5 text-muted">
