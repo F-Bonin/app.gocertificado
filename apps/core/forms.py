@@ -155,9 +155,10 @@ class NPSQuestionForm(forms.ModelForm):
 class CertificateDesignForm(forms.ModelForm):
     class Meta:
         model = Company
-        fields = ['logo', 'logo_position', 'custom_template', 'custom_title', 'custom_text_1', 'custom_text_2', 'custom_text_3', 'custom_text_4', 'custom_text_5', 'custom_text_6']
+        fields = ['logo', 'logo_position', 'default_certificate_color', 'custom_template', 'custom_title', 'custom_text_1', 'custom_text_2', 'custom_text_3', 'custom_text_4', 'custom_text_5', 'custom_text_6']
         widgets = {
             'logo_position': forms.Select(attrs={'class': 'form-select'}),
+            'default_certificate_color': forms.RadioSelect(attrs={'class': 'form-check-input'}),
             'logo': forms.FileInput(attrs={'class': 'form-control'}),
             'custom_title': forms.TextInput(attrs={'class': 'form-control fw-bold text-center'}),
             'custom_text_1': forms.TextInput(attrs={'class': 'form-control'}),

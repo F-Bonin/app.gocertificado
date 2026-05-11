@@ -278,7 +278,18 @@ class CertificateDesignView(LoginRequiredMixin, View):
                 form.save()
                 messages.success(request, "Logomarca atualizada com sucesso!")
             else:
-                messages.error(request, "Erro ao salvar logomarca.")
+                messages.error(request, "Erro ao salvar as configurações da logomarca.")
+            return redirect('core:certificate_design')
+
+        elif acao == 'save_default':
+            color = request.POST.get('default_certificate_color')
+            if color in ['gray', 'blue', 'red']:
+                company.default_certificate_color = color
+                company.save(update_fields=['default_certificate_color'])
+                messages.success(request, "Cor do modelo padrão salva com sucesso!")
+            else:
+                messages.error(request, "Cor de modelo inválida.")
+            return redirect('core:certificate_design')
 
         elif acao == 'save_template':
             # Busca instância se ID for passado (edição), senão cria (instancia vazia)
@@ -358,30 +369,20 @@ class ToggleCertificateLinkView(LoginRequiredMixin, View):
 class CertificatePreviewView(LoginRequiredMixin, View):
     def get(self, request):
         model_type = request.GET.get('type', 'default')
+        color = request.GET.get('color', None)
         company = request.user.profile.company
         template = None
 
-        # ==========================================
-        # LÓGICA DO MODELO PERSONALIZADO
-        # ==========================================
         if model_type == 'custom':
             template_id = request.GET.get('template_id')
-
             if template_id:
                 template = CertificateTemplate.objects.filter(id=template_id, company=company).first()
             else:
                 template = CertificateTemplate.objects.filter(company=company).order_by('-id').first()
-
             if not template:
                 return HttpResponse("Nenhum modelo personalizado encontrado. Salve um modelo primeiro.", status=404)
 
-        # ==========================================
-        # CORREÇÃO SÊNIOR: EMPACOTANDO O PDF
-        # ==========================================
-        # 1. Geramos os bytes crus do arquivo PDF
-        pdf_bytes = generate_preview_pdf(company, model_type, template)
-
-        # 2. Empacotamos numa resposta HTTP válida para o navegador ler como PDF
+        pdf_bytes = generate_preview_pdf(company, model_type, template, color=color)
         return HttpResponse(pdf_bytes, content_type='application/pdf')
 
 

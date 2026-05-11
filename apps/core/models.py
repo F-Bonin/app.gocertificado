@@ -47,6 +47,12 @@ class Company(models.Model):
         ], 
         default='center'
     )
+    default_certificate_color = models.CharField(
+        "Cor do Modelo Padrão",
+        max_length=20,
+        choices=[('gray', 'Cinza'), ('blue', 'Azul Escuro'), ('red', 'Vermelho')],
+        default='gray'
+    )
     certificate_model = models.CharField(
         "Modelo de Certificado Ativo", 
         max_length=20, 

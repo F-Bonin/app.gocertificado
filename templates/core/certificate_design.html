@@ -84,10 +84,36 @@
             </h2>
             <div id="collapseDefault" class="accordion-collapse collapse" aria-labelledby="headingDefault" data-bs-parent="#accordionCertConfig">
                 <div class="accordion-body p-4 bg-white">
-                    <p class="text-muted small mb-3">Este é o layout profissional nativo do GoCertificado. Ele é ativado automaticamente quando você não seleciona um modelo personalizado na configuração do seu Evento.</p>
-                    <a href="{% url 'core:certificate_preview' %}?type=default" class="btn btn-outline-secondary btn-sm" target="_blank">
-                        <i class="bi bi-eye me-1"></i> Visualizar Layout Padrão
-                    </a>
+                    <p class="text-muted small mb-4">Este é o layout profissional nativo do GoCertificado. Escolha a cor predominante do modelo:</p>
+                    
+                    <form method="post" action="{% url 'core:certificate_design' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="save_default">
+                        
+                        <div class="row g-3 mb-4">
+                            {% for radio in form.default_certificate_color %}
+                            <div class="col-md-12">
+                                <div class="d-flex align-items-center justify-content-between p-3 border rounded shadow-sm bg-light">
+                                    <div class="form-check mb-0">
+                                        {{ radio.tag }}
+                                        <label class="form-check-label fw-bold text-dark mt-1 ms-1" style="cursor: pointer;" for="{{ radio.id_for_label }}">
+                                            Modelo Padrão {{ radio.choice_label }}
+                                        </label>
+                                    </div>
+                                    <div class="preview-btn-container" id="preview-btn-{{ radio.data.value }}" style="{% if not radio.data.selected %}display: none;{% endif %}">
+                                        <a href="{% url 'core:certificate_preview' %}?type=default&color={{ radio.data.value }}" class="btn btn-sm btn-outline-secondary shadow-sm fw-bold" target="_blank">
+                                            <i class="bi bi-eye me-1"></i> Visualizar Layout {{ radio.choice_label }}
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <button type="submit" class="btn btn-primary shadow-sm fw-bold">
+                            <i class="bi bi-save me-1"></i> Salvar Cor do Modelo Padrão
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>
@@ -292,6 +318,21 @@ document.addEventListener("DOMContentLoaded", function() {
 
     if (logoInput) logoInput.addEventListener('change', togglePositionField);
     togglePositionField();
+
+    // 2. Inteligência Dinâmica dos Botões de Preview (Modelo Padrão)
+    const colorRadios = document.querySelectorAll('input[name="default_certificate_color"]');
+    function togglePreviewBtns() {
+        document.querySelectorAll('.preview-btn-container').forEach(el => el.style.display = 'none');
+        const selected = document.querySelector('input[name="default_certificate_color"]:checked');
+        if (selected) {
+            const btn = document.getElementById('preview-btn-' + selected.value);
+            if (btn) btn.style.display = 'block';
+        }
+    }
+    if (colorRadios.length > 0) {
+        colorRadios.forEach(radio => radio.addEventListener('change', togglePreviewBtns));
+        togglePreviewBtns();
+    }
 });
 </script>
 {% endblock %}
