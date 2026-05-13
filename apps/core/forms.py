@@ -338,14 +338,16 @@ class EventSessionForm(forms.ModelForm):
     class Meta:
         model = EventSession
         fields = [
-            'theme', 'content', 'date', 'start_time', 'end_time', 'hours', 
-            'location_type', 'condominium_name', 'cep', 
-            'institution_name', 'institution_street', 'institution_number', 
-            'address_block', 'address_floor', 'address_apt', 'institution_neighborhood', 
-            'institution_complement', 'city', 'state', 'country'
+            'theme', 'content', 'date', 'start_time', 'end_time', 'hours', 'event_format', 'platform_name', 'platform_link',
+            'session_passkey', 'location_type', 'condominium_name', 'cep', 'institution_name', 'institution_street',
+            'institution_number', 'address_block', 'address_floor', 'address_apt', 'institution_neighborhood', 'institution_complement',
+            'city', 'state', 'country'
         ]
         widgets = {
             'theme': forms.TextInput(attrs={'class': 'form-control'}),
+            'event_format': forms.RadioSelect(attrs={'class': 'form-check-input event-format-radio'}),
+            'platform_name': forms.TextInput(attrs={'class': 'form-control', 'list': 'platformsList', 'placeholder': 'Ex: Zoom, Google Meet...'}),
+            'platform_link': forms.URLInput(attrs={'class': 'form-control', 'placeholder': 'https://...'}),
             'content': forms.Textarea(attrs={'rows': 2, 'class': 'form-control'}),
             'date': forms.DateInput(format='%Y-%m-%d', attrs={'type': 'date', 'class': 'form-control'}),
             'start_time': forms.TimeInput(format='%H:%M', attrs={'type': 'time', 'class': 'form-control'}),

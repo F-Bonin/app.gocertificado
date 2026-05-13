@@ -535,6 +535,14 @@ class EventSession(models.Model):
     end_time = models.TimeField("Hora de Término")
     # Carga horária refatorada para aceitar texto livre
     hours = models.CharField("Carga horária do encontro", max_length=50, default="0")
+    event_format = models.CharField(
+        "Formato do Encontro",
+        max_length=20,
+        choices=[('online', 'Online'), ('presencial', 'Presencial'), ('hibrido', 'Híbrido')],
+        default='presencial'
+    )
+    platform_name = models.CharField("Nome da Plataforma", max_length=100, blank=True, null=True)
+    platform_link = models.URLField("Link do Evento", max_length=500, blank=True, null=True)
     session_passkey = models.CharField("Chave de Acesso", max_length=50, blank=True, null=True)
     
     # Endereço do encontro

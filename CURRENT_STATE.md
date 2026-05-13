@@ -2,11 +2,13 @@
 
 **Atualize este arquivo após cada sessão de desenvolvimento.** A IA deve ler este arquivo para entender o escopo completo.
 
-#### 🗓️ Última atualização: 2026-05-13 (Correção de Bug Crítico FieldError) [17]
+#### 🗓️ Última atualização: 2026-05-13 (Injeção de Granularidade de Formatos) [19]
 
 ---
 
 #### ✅ O que já está implementado [6]
+* [x] **Granularidade de Formatos em Eventos Recorrentes (UI/UX):** Template `recurring_event_form.html` atualizado com controles compactos para formato de encontro (Online, Presencial, Híbrido). Injetada lógica JavaScript para exibição condicional de blocos de plataforma e localização, garantindo que cada sessão possa ser configurada individualmente. Template de clonagem (`session-template`) também atualizado para suportar os novos campos, mantendo a integridade do fluxo D+1. [13/05/2026]
+* [x] **Granularidade de Formatos em Encontros (Model/Forms):** O modelo `EventSession` e o formulário `EventSessionForm` foram atualizados para suportar a granularidade de formatos (Online, Presencial, Híbrido) por encontro individual. Adicionados campos para Nome da Plataforma, Link do Evento e Chave de Acesso (`session_passkey`) em cada sessão. [13/05/2026]
 * [x] **Bugfix Crítico (FieldError):** Corrigido o erro `FieldError: Unknown field(s) (expires_at)` no `CourseForm`. O campo legado foi removido e a integridade da lista de campos foi restabelecida com os novos atributos de controle de expiração bidirecional (`certificate_start` e `certificate_end`), normalizando a inicialização do servidor Django. [13/05/2026]
 * [x] **Modularidade de Endereço (Course):** Implementada a modularidade de endereços no modelo `Course`, adicionando campos para tipo de local (`location_type`), nome do prédio (`condominium_name`), bloco, andar e sala/espaço. O `CourseForm` foi integralmente refatorado para suportar esta nova estrutura, removendo as travas de `readonly` nos campos de Cidade/Estado e integrando Datatlists HTML5 para suporte a sugestões dinâmicas. [13/05/2026]
 * [x] **Reconstrução do Template CourseForm:** Template `course_form.html` reconstruído com interface moderna e modular. Implementada lógica reativa para alternância de blocos de endereço (Prédio vs. Casa), integração profunda com a API do IBGE para autocompletar Estados e Cidades, e manutenção da inteligência de Formato de Evento e ViaCEP. A UI agora conta com Datalists HTML5 para Carga Horária e Plataformas, elevando a experiência do administrador. [13/05/2026]
