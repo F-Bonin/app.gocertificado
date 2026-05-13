@@ -263,7 +263,19 @@ class Course(models.Model):
     end_date = models.DateField("Data de Término", null=True, blank=True)
     city = models.CharField("Cidade", max_length=100)
     state = models.CharField("Estado (UF)", max_length=2)
-    hours = models.PositiveIntegerField("Carga horária (horas)")
+    # Formato do evento para modularização da interface e exibição de campos de endereço/plataforma
+    event_format = models.CharField(
+        "Formato do Evento",
+        max_length=20,
+        choices=[('online', 'Online'), ('presencial', 'Presencial'), ('hibrido', 'Híbrido')],
+        default='presencial'
+    )
+    # Campos para suporte a transmissões em eventos Online e Híbridos
+    platform_name = models.CharField("Nome da Plataforma", max_length=100, blank=True, null=True)
+    platform_link = models.URLField("Link do Evento", max_length=500, blank=True, null=True)
+    
+    # Carga horária refatorada para aceitar texto livre (ex: "30 min", "1.5h")
+    hours = models.CharField("Carga horária", max_length=50)
     
     # Dados do Local
     cep = models.CharField('CEP', max_length=9, blank=True, null=True)
@@ -272,6 +284,16 @@ class Course(models.Model):
     institution_number = models.CharField("Número", max_length=50, null=True, blank=True)
     institution_neighborhood = models.CharField("Bairro", max_length=100, null=True, blank=True)
     institution_complement = models.CharField("Complemento", max_length=100, null=True, blank=True)
+    location_type = models.CharField(
+        "Onde fica o local do evento?",
+        max_length=20,
+        choices=[('condominio', '🏢 Prédio Comercial (sala ou espaço em condomínio)'), ('casa', '🏠 Sala Comercial (sala ou espaço fora de condomínio)')],
+        default='casa'
+    )
+    condominium_name = models.CharField("Nome do Prédio Comercial", max_length=200, blank=True, null=True)
+    address_block = models.CharField("Bloco", max_length=50, blank=True, null=True)
+    address_floor = models.CharField("Andar", max_length=50, blank=True, null=True)
+    address_apt = models.CharField("Sala/Espaço", max_length=50, blank=True, null=True)
     
     signature_1 = models.ForeignKey(
         Instructor, 
@@ -405,7 +427,8 @@ class RecurringEvent(models.Model):
         choices=EVENT_TYPES, 
         default='SCHEDULED'
     )
-    hours = models.PositiveIntegerField("Carga horária total (horas)", default=0)
+    # Carga horária refatorada para aceitar texto livre
+    hours = models.CharField("Carga horária total", max_length=50, default="0")
     min_frequency = models.PositiveIntegerField("Frequência Mínima Exigida (%)", default=75, help_text="Porcentagem mínima exigida para liberar o certificado.")
     
     signature_1 = models.ForeignKey(
@@ -510,7 +533,8 @@ class EventSession(models.Model):
     date = models.DateField("Data do Encontro")
     start_time = models.TimeField("Hora de Início")
     end_time = models.TimeField("Hora de Término")
-    hours = models.PositiveIntegerField("Carga horária do encontro", default=0)
+    # Carga horária refatorada para aceitar texto livre
+    hours = models.CharField("Carga horária do encontro", max_length=50, default="0")
     session_passkey = models.CharField("Chave de Acesso", max_length=50, blank=True, null=True)
     
     # Endereço do encontro

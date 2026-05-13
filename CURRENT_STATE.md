@@ -2,12 +2,17 @@
 
 **Atualize este arquivo após cada sessão de desenvolvimento.** A IA deve ler este arquivo para entender o escopo completo.
 
-#### 🗓️ Última atualização: 2026-05-05 (Refatoração de Frontend Recorrente) [16]
+#### 🗓️ Última atualização: 2026-05-13 (Correção de Bug Crítico FieldError) [17]
 
 ---
 
 #### ✅ O que já está implementado [6]
+* [x] **Bugfix Crítico (FieldError):** Corrigido o erro `FieldError: Unknown field(s) (expires_at)` no `CourseForm`. O campo legado foi removido e a integridade da lista de campos foi restabelecida com os novos atributos de controle de expiração bidirecional (`certificate_start` e `certificate_end`), normalizando a inicialização do servidor Django. [13/05/2026]
+* [x] **Modularidade de Endereço (Course):** Implementada a modularidade de endereços no modelo `Course`, adicionando campos para tipo de local (`location_type`), nome do prédio (`condominium_name`), bloco, andar e sala/espaço. O `CourseForm` foi integralmente refatorado para suportar esta nova estrutura, removendo as travas de `readonly` nos campos de Cidade/Estado e integrando Datatlists HTML5 para suporte a sugestões dinâmicas. [13/05/2026]
+* [x] **Reconstrução do Template CourseForm:** Template `course_form.html` reconstruído com interface moderna e modular. Implementada lógica reativa para alternância de blocos de endereço (Prédio vs. Casa), integração profunda com a API do IBGE para autocompletar Estados e Cidades, e manutenção da inteligência de Formato de Evento e ViaCEP. A UI agora conta com Datalists HTML5 para Carga Horária e Plataformas, elevando a experiência do administrador. [13/05/2026]
 **Fase 1 - Formulários Flexíveis:**
+* [x] **UX Completa da Criação de Evento (Fase 3):** Refatoração integral do template `course_form.html` com a implementação de Cards Interativos para seleção de Formato (Online, Presencial, Híbrido). Introduzida lógica reativa para exibição condicional de blocos (Plataforma vs. Localização) e integrados Datalists HTML5 para autocompletar Carga Horária e Nome da Plataforma. Reestruturação limpa do motor JavaScript para gerenciamento de datas, ViaCEP, toggles de link vitalício e validação de assinaturas. [13/05/2026]
+* [x] **Flexibilização de Carga Horária e Formatos:** Refatorados os modelos `Course`, `RecurringEvent` e `EventSession` (app `core`) e o modelo `Registration` (app `registrations`) para aceitar carga horária em formato de texto livre (`CharField`), permitindo maior flexibilidade (ex: "30 min", "1.5h"). O modelo `Course` foi expandido para suportar formatos de evento (Online, Presencial, Híbrido) e campos dedicados para Nome da Plataforma e Link do Evento. Formulários de backend (`CourseForm`, `RecurringEventForm`, `EventSessionForm`) atualizados com novos campos e suporte a `datalist` HTML5 para sugestões inteligentes. Migrações aplicadas com sucesso no banco de dados. [13/05/2026]
 * [x] **Flexibilidade de Cadastro:** Campos `cpf` e `email` no modelo `Registration` agora permitem valores nulos (`null=True`, `blank=True`). Validador `clean_cpf` em `RegistrationForm` atualizado para perdoar valores em branco, suportando o modelo de formulários flexíveis. [28/04/2026]
 * [x] **Controle de Layout EAV:** Adicionado o campo `layout_type` ao modelo `DynamicForm` (Estruturado vs Flexível) e renomeado o modelo para "Formulário Personalizado" no painel administrativo para maior clareza semântica. [NOVO]
 * [x] **Refatoração Visual (Naming):** Expurgada a nomenclatura antiga "Formulários Dinâmicos" de toda a interface administrativa (menu lateral, títulos de página, breadcrumbs e mensagens de retorno), substituindo-a definitivamente por "Formulários Personalizados" para elevar o valor percebido pelo usuário. [28/04/2026]

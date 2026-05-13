@@ -75,7 +75,8 @@ class Registration(models.Model):
     # Dados do treinamento (Campos Legados - Manter Null para não quebrar novas inscrições)
     course_name = models.CharField("Nome do curso/treinamento", max_length=300, null=True, blank=True)
     course_date = models.DateField(null=True, blank=True)
-    course_workload = models.PositiveIntegerField("Carga horária (horas)", null=True, blank=True)
+    # Recebe a carga horária em texto livre do evento para espelhar perfeitamente no certificado
+    course_workload = models.CharField("Carga horária", max_length=50, blank=True, null=True)
 
     # Vínculo com treinamento persistente
     course = models.ForeignKey(
