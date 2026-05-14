@@ -2,11 +2,12 @@
 
 **Atualize este arquivo após cada sessão de desenvolvimento.** A IA deve ler este arquivo para entender o escopo completo.
 
-#### 🗓️ Última atualização: 2026-05-13 (Injeção de Granularidade de Formatos) [19]
+#### 🗓️ Última atualização: 2026-05-13 (Refatoração da Sidebar e Granularidade de Formatos) [20]
 
 ---
 
 #### ✅ O que já está implementado [6]
+* [x] **Refatoração da Sidebar (Arquitetura de Informação):** A Sidebar do painel administrativo em `base_painel.html` foi integralmente refatorada. Os labels foram atualizados para maior clareza (ex: "Minha Organização", "Form NPS", "Form Personalizado") e a ordem dos itens foi reorganizada para otimizar o fluxo de trabalho do administrador, agrupando configurações, criação de eventos e gestão de participantes de forma mais intuitiva. [13/05/2026]
 * [x] **Granularidade de Formatos em Eventos Recorrentes (UI/UX):** Template `recurring_event_form.html` atualizado com controles compactos para formato de encontro (Online, Presencial, Híbrido). Injetada lógica JavaScript para exibição condicional de blocos de plataforma e localização, garantindo que cada sessão possa ser configurada individualmente. Template de clonagem (`session-template`) também atualizado para suportar os novos campos, mantendo a integridade do fluxo D+1. [13/05/2026]
 * [x] **Granularidade de Formatos em Encontros (Model/Forms):** O modelo `EventSession` e o formulário `EventSessionForm` foram atualizados para suportar a granularidade de formatos (Online, Presencial, Híbrido) por encontro individual. Adicionados campos para Nome da Plataforma, Link do Evento e Chave de Acesso (`session_passkey`) em cada sessão. [13/05/2026]
 * [x] **Bugfix Crítico (FieldError):** Corrigido o erro `FieldError: Unknown field(s) (expires_at)` no `CourseForm`. O campo legado foi removido e a integridade da lista de campos foi restabelecida com os novos atributos de controle de expiração bidirecional (`certificate_start` e `certificate_end`), normalizando a inicialização do servidor Django. [13/05/2026]

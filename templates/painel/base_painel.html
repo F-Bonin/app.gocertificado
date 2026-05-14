@@ -111,40 +111,61 @@
         <i class="bi bi-patch-check-fill me-2 text-warning"></i>GoCertificado
       </div>
       <div class="list-group list-group-flush">
-        <a href="{% url 'certificates:dashboard' %}" class="list-group-item list-group-item-action {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
-          <i class="bi bi-speedometer2"></i> Dashboard
-        </a>
-        <a href="{% url 'core:company_edit' %}" class="list-group-item list-group-item-action {% if request.resolver_match.view_name == 'core:company_edit' %}active{% endif %}">
-          <i class="bi bi-building"></i> Minha Empresa
-        </a>
-        <a href="{% url 'core:certificate_design' %}" class="list-group-item list-group-item-action {% if request.resolver_match.view_name == 'core:certificate_design' %}active{% endif %}">
-          <i class="bi bi-palette"></i> Configurar Certificado
-        </a>
-        <a href="{% url 'core:instructor_list' %}" class="list-group-item list-group-item-action {% if 'instructor' in request.resolver_match.view_name %}active{% endif %}">
-          <i class="bi bi-people"></i> Assinaturas Certificado
-        </a>
-        <a href="{% url 'core:nps_form_list' %}" class="list-group-item list-group-item-action {% if 'nps' in request.resolver_match.view_name %}active{% endif %}">
-          <i class="bi bi-chat-square-text"></i> Formulários de NPS
-        </a>
-        <a href="{% url 'core:dynamic_form_list' %}" class="list-group-item list-group-item-action {% if 'dynamic_form' in request.resolver_match.view_name %}active{% endif %}">
-          <i class="bi bi-ui-checks"></i> Formulários Personalizados
-        </a>
-        <a href="{% url 'core:course_create' %}" class="list-group-item list-group-item-action {% if request.resolver_match.view_name == 'core:course_create' %}active{% endif %}">
-          <i class="bi bi-journal-plus"></i> Criar Evento (Curso)
-        </a>
-        <a href="{% url 'core:course_list' %}" class="list-group-item list-group-item-action {% if request.resolver_match.view_name == 'core:course_list' %}active{% endif %}">
-          <i class="bi bi-journal-check"></i> Meus Eventos
-        </a>
-        <a href="{% url 'core:recurring_event_list' %}" class="list-group-item list-group-item-action {% if 'recurring_event' in request.resolver_match.view_name %}active{% endif %}">
-          <i class="bi bi-calendar-range"></i> Eventos Recorrentes
-        </a>
-        <a href="{% url 'certificates:participants' %}" class="list-group-item list-group-item-action {% if request.resolver_match.url_name == 'participants' %}active{% endif %}">
-          <i class="bi bi-people-fill"></i> Alunos / Participantes
-        </a>
-        <a href="{% url 'certificates:panel' %}" class="list-group-item list-group-item-action {% if request.resolver_match.url_name == 'panel' %}active{% endif %}">
-          <i class="bi bi-award"></i> Central de Certificados
-        </a>
-      </div>
+    <!-- 1. Dashboard -->
+    <a href="{% url 'certificates:dashboard' %}" class="list-group-item list-group-item-action {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+        <i class="bi bi-speedometer2"></i> Dashboard
+    </a>
+
+    <!-- 2. Minha Organização -->
+    <a href="{% url 'core:company_edit' %}" class="list-group-item list-group-item-action {% if request.resolver_match.view_name == 'core:company_edit' %}active{% endif %}">
+        <i class="bi bi-building"></i> Minha Organização
+    </a>
+
+    <!-- 3. Configurar Certificado -->
+    <a href="{% url 'core:certificate_design' %}" class="list-group-item list-group-item-action {% if request.resolver_match.view_name == 'core:certificate_design' %}active{% endif %}">
+        <i class="bi bi-palette"></i> Configurar Certificado
+    </a>
+
+    <!-- 4. Assinatura Certificado -->
+    <a href="{% url 'core:instructor_list' %}" class="list-group-item list-group-item-action {% if 'instructor' in request.resolver_match.view_name %}active{% endif %}">
+        <i class="bi bi-people"></i> Assinatura Certificado
+    </a>
+
+    <!-- 5. Form NPS -->
+    <a href="{% url 'core:nps_form_list' %}" class="list-group-item list-group-item-action {% if 'nps' in request.resolver_match.view_name %}active{% endif %}">
+        <i class="bi bi-chat-square-text"></i> Form NPS
+    </a>
+
+    <!-- 6. Form Personalizado -->
+    <a href="{% url 'core:dynamic_form_list' %}" class="list-group-item list-group-item-action {% if 'dynamic_form' in request.resolver_match.view_name %}active{% endif %}">
+        <i class="bi bi-ui-checks"></i> Form Personalizado
+    </a>
+
+    <!-- 7. Criar Evento Padrão -->
+    <a href="{% url 'core:course_create' %}" class="list-group-item list-group-item-action {% if request.resolver_match.view_name == 'core:course_create' %}active{% endif %}">
+        <i class="bi bi-journal-plus"></i> Criar Evento Padrão
+    </a>
+
+    <!-- 8. Criar Evento Recorrente -->
+    <a href="{% url 'core:recurring_event_list' %}" class="list-group-item list-group-item-action {% if 'recurring_event' in request.resolver_match.view_name %}active{% endif %}">
+        <i class="bi bi-calendar-range"></i> Criar Evento Recorrente
+    </a>
+
+    <!-- 9. Meus Eventos -->
+    <a href="{% url 'core:course_list' %}" class="list-group-item list-group-item-action {% if request.resolver_match.view_name == 'core:course_list' %}active{% endif %}">
+        <i class="bi bi-journal-check"></i> Meus Eventos
+    </a>
+
+    <!-- 10. Alunos/Participantes -->
+    <a href="{% url 'certificates:participants' %}" class="list-group-item list-group-item-action {% if request.resolver_match.url_name == 'participants' %}active{% endif %}">
+        <i class="bi bi-people-fill"></i> Alunos / Participantes
+    </a>
+
+    <!-- 11. Central de Certificados -->
+    <a href="{% url 'certificates:panel' %}" class="list-group-item list-group-item-action {% if request.resolver_match.url_name == 'panel' %}active{% endif %}">
+        <i class="bi bi-award"></i> Central de Certificados
+    </a>
+</div>
     </div>
     <!-- /#sidebar-wrapper -->
 
