@@ -2,6 +2,7 @@ import io
 import uuid
 import csv
 import json
+from django.db.models import Q
 from django.http import FileResponse, HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
@@ -9,26 +10,27 @@ from django.views import View
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, TemplateView
-from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
-from django.db.models import Prefetch
+from django.utils import timezone
+from django.utils.timezone import localtime
+
+from apps.accounts.mixins import RoleRequiredMixin
 from apps.certificates.services.pdf_generator import generate_preview_pdf
 from apps.certificates.models import CertificateTemplate
 from apps.certificates.tasks import issue_certificate_task
-from apps.registrations.models import Registration, SessionPresence
-from .models import Company, Instructor, Course, NPSForm, NPSQuestion, DynamicForm, DynamicField, RecurringEvent, EventSession
+from apps.registrations.models import Registration
+from .models import Company, Instructor, Course, NPSForm, NPSQuestion, DynamicForm, RecurringEvent, EventSession
 from .forms import (
-    CompanyForm, InstructorForm, CourseForm, 
+    CompanyForm, InstructorForm, CourseForm,
     CertificateDesignForm, CertificateTemplateForm,
-    NPSFormModelForm, NPSQuestionForm,
-    DynamicFormModelForm, DynamicFieldFormSet,
+    NPSFormModelForm, NPSQuestionForm, DynamicFormModelForm, DynamicFieldFormSet,
     RecurringEventForm, EventSessionFormSet
 )
 
-
-class CompanyUpdateView(LoginRequiredMixin, UpdateView):
-    """Edita os dados da empresa vinculada ao usuário logado."""
+class CompanyUpdateView(RoleRequiredMixin, UpdateView):
+    required_role = 'perm_company'
     model = Company
     form_class = CompanyForm
     template_name = "core/company_form.html"
@@ -42,8 +44,8 @@ class CompanyUpdateView(LoginRequiredMixin, UpdateView):
         return super().form_valid(form)
 
 
-class InstructorListView(LoginRequiredMixin, ListView):
-    """Lista instrutores da empresa do usuário."""
+class InstructorListView(RoleRequiredMixin, ListView):
+    required_role = 'perm_instructors'
     model = Instructor
     template_name = "core/instructor_list.html"
     context_object_name = "instructors"
@@ -52,8 +54,8 @@ class InstructorListView(LoginRequiredMixin, ListView):
         return Instructor.objects.filter(company=self.request.user.profile.company)
 
 
-class InstructorCreateView(LoginRequiredMixin, CreateView):
-    """Cria novo instrutor vinculado à empresa do usuário."""
+class InstructorCreateView(RoleRequiredMixin, CreateView):
+    required_role = 'perm_instructors'
     model = Instructor
     form_class = InstructorForm
     template_name = "core/instructor_form.html"
@@ -65,8 +67,8 @@ class InstructorCreateView(LoginRequiredMixin, CreateView):
         return super().form_valid(form)
 
 
-class InstructorUpdateView(LoginRequiredMixin, UpdateView):
-    """Edita instrutor (apenas da empresa do usuário)."""
+class InstructorUpdateView(RoleRequiredMixin, UpdateView):
+    required_role = 'perm_instructors'
     model = Instructor
     form_class = InstructorForm
     template_name = "core/instructor_form.html"
@@ -80,8 +82,8 @@ class InstructorUpdateView(LoginRequiredMixin, UpdateView):
         return super().form_valid(form)
 
 
-class InstructorDeleteView(LoginRequiredMixin, DeleteView):
-    """Exclui instrutor (apenas da empresa do usuário)."""
+class InstructorDeleteView(RoleRequiredMixin, DeleteView):
+    required_role = 'perm_instructors'
     model = Instructor
     template_name = "core/instructor_confirm_delete.html"
     success_url = reverse_lazy("core:instructor_list")
@@ -94,8 +96,8 @@ class InstructorDeleteView(LoginRequiredMixin, DeleteView):
         return super().delete(request, *args, **kwargs)
 
 
-class CourseListView(LoginRequiredMixin, ListView):
-    """Lista treinamentos da empresa do usuário com filtros e exportação CSV."""
+class CourseListView(RoleRequiredMixin, ListView):
+    required_role = 'perm_my_events'
     model = Course
     template_name = "core/course_list.html"
     context_object_name = "courses"
@@ -105,7 +107,6 @@ class CourseListView(LoginRequiredMixin, ListView):
             company=self.request.user.profile.company
         ).order_by("-created_at")
 
-        # Filtros via GET
         name = self.request.GET.get("name")
         date = self.request.GET.get("date")
         instructor = self.request.GET.get("instructor")
@@ -113,10 +114,9 @@ class CourseListView(LoginRequiredMixin, ListView):
         if name:
             queryset = queryset.filter(name__icontains=name)
         if date:
-            queryset = queryset.filter(course_date=date)
+            queryset = queryset.filter(start_date=date)
         if instructor:
-            queryset = queryset.filter(instructor_id=instructor)
-
+            queryset = queryset.filter(Q(signature_1_id=instructor) | Q(signature_2_id=instructor) | Q(signature_3_id=instructor))
         return queryset
 
     def render_to_response(self, context, **response_kwargs):
@@ -127,35 +127,29 @@ class CourseListView(LoginRequiredMixin, ListView):
     def export_csv(self, queryset):
         response = HttpResponse(content_type="text/csv")
         response["Content-Disposition"] = 'attachment; filename="meus_treinamentos.csv"'
-        response.write("\ufeff".encode("utf8"))  # BOM para Excel ler UTF-8
-
-        writer = csv.writer(response)
-        writer.writerow(["Nome", "Data", "Cidade", "Estado", "Instrutor", "Carga Horária"])
+        response.write("\ufeff".encode("utf8"))
+        writer = csv.writer(response, delimiter=";")
+        writer.writerow(["Nome", "Data de Inicio", "Local", "Estado", "Carga Horária"])
 
         for course in queryset:
             writer.writerow([
                 course.name,
-                course.course_date.strftime("%d/%m/%Y") if course.course_date else "N/A",
-                course.city,
+                course.start_date.strftime("%d/%m/%Y") if course.start_date else "N/A",
+                course.institution_name or course.city,
                 course.state,
-                course.instructor.full_name if course.instructor else "N/A",
                 f"{course.hours}h"
             ])
-
         return response
 
     def get_context_data(self, **kwargs):
-        from django.utils import timezone
         context = super().get_context_data(**kwargs)
-        context["instructors"] = Instructor.objects.filter(
-            company=self.request.user.profile.company
-        )
+        context["instructors"] = Instructor.objects.filter(company=self.request.user.profile.company)
         context["now"] = timezone.now()
         return context
 
 
-class CourseCreateView(LoginRequiredMixin, CreateView):
-    """Cria novo treinamento vinculado à empresa do usuário."""
+class CourseCreateView(RoleRequiredMixin, CreateView):
+    required_role = 'perm_standard_events'
     model = Course
     form_class = CourseForm
     template_name = "core/course_form.html"
@@ -173,8 +167,8 @@ class CourseCreateView(LoginRequiredMixin, CreateView):
         return super().form_valid(form)
 
 
-class CourseUpdateView(LoginRequiredMixin, UpdateView):
-    """Edita treinamento (apenas da empresa do usuário)."""
+class CourseUpdateView(RoleRequiredMixin, UpdateView):
+    required_role = 'perm_my_events'
     model = Course
     form_class = CourseForm
     template_name = "core/course_form.html"
@@ -193,8 +187,8 @@ class CourseUpdateView(LoginRequiredMixin, UpdateView):
         return super().form_valid(form)
 
 
-class CourseDeleteView(LoginRequiredMixin, DeleteView):
-    """Exclui treinamento (apenas da empresa do usuário)."""
+class CourseDeleteView(RoleRequiredMixin, DeleteView):
+    required_role = 'perm_my_events'
     model = Course
     template_name = "core/course_confirm_delete.html"
     success_url = reverse_lazy("core:course_list")
@@ -209,10 +203,11 @@ class CourseDeleteView(LoginRequiredMixin, DeleteView):
 
 @login_required
 def clone_course(request, pk):
-    """Clona um treinamento existente."""
     course = get_object_or_404(Course, pk=pk, company=request.user.profile.company)
     course.pk = None
-    course.link_hash = None  # Será gerado um novo se necessário ou no Create
+    course.link_hash = uuid.uuid4()
+    course.checkin_hash = uuid.uuid4()
+    course.slug = None
     course.name = f"{course.name} (Cópia)"
     course.save()
     messages.success(request, "Treinamento clonado com sucesso!")
@@ -221,7 +216,6 @@ def clone_course(request, pk):
 
 @login_required
 def generate_course_link(request, pk):
-    """Gera um novo hash único para o link de inscrição do curso."""
     course = get_object_or_404(Course, pk=pk, company=request.user.profile.company)
     course.link_hash = uuid.uuid4()
     course.save()
@@ -229,36 +223,30 @@ def generate_course_link(request, pk):
     return redirect("core:course_list")
 
 
-class CourseLinkGeneratorView(LoginRequiredMixin, TemplateView):
-    """Tela para geração dinâmica de links de inscrição multitenant."""
+class CourseLinkGeneratorView(RoleRequiredMixin, TemplateView):
+    required_role = 'perm_my_events'
     template_name = "core/course_link_generator.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # Passa os treinamentos que já possuem link_hash gerado
         context["courses"] = Course.objects.filter(
             company=self.request.user.profile.company,
             link_hash__isnull=False
         ).order_by("-start_date")
         return context
-
-
-class CertificateDesignView(LoginRequiredMixin, View):
-    """Gerencia as configurações de design do certificado da empresa."""
+class CertificateDesignView(RoleRequiredMixin, View):
+    required_role = 'perm_cert_design'
     template_name = 'core/certificate_design.html'
 
     def get(self, request):
         company = request.user.profile.company
         form = CertificateDesignForm(instance=company)
-
-        # Lógica de seleção de modelo para edição (CRUD)
         template_id = request.GET.get('edit_template')
         if template_id:
             instance = get_object_or_404(CertificateTemplate, id=template_id, company=company)
             template_form = CertificateTemplateForm(instance=instance)
         else:
             template_form = CertificateTemplateForm()
-
         modelos_salvos = CertificateTemplate.objects.filter(company=company).order_by('-created_at')
 
         return render(request, self.template_name, {
@@ -278,21 +266,8 @@ class CertificateDesignView(LoginRequiredMixin, View):
                 form.save()
                 messages.success(request, "Logomarca atualizada com sucesso!")
             else:
-                messages.error(request, "Erro ao salvar as configurações da logomarca.")
-            return redirect('core:certificate_design')
-
-        elif acao == 'save_default':
-            color = request.POST.get('default_certificate_color')
-            if color in ['gray', 'blue', 'red']:
-                company.default_certificate_color = color
-                company.save(update_fields=['default_certificate_color'])
-                messages.success(request, "Cor do modelo padrão salva com sucesso!")
-            else:
-                messages.error(request, "Cor de modelo inválida.")
-            return redirect('core:certificate_design')
-
+                messages.error(request, "Erro ao salvar logomarca.")
         elif acao == 'save_template':
-            # Busca instância se ID for passado (edição), senão cria (instancia vazia)
             template_id = request.POST.get('template_id')
             instance = None
             if template_id:
@@ -307,12 +282,11 @@ class CertificateDesignView(LoginRequiredMixin, View):
                 messages.success(request, msg)
             else:
                 messages.error(request, "Erro ao salvar modelo personalizado.")
-
         return redirect('core:certificate_design')
 
 
-class CertificateTemplateDeleteView(LoginRequiredMixin, DeleteView):
-    """Exclui um modelo personalizado da empresa."""
+class CertificateTemplateDeleteView(RoleRequiredMixin, DeleteView):
+    required_role = 'perm_cert_design'
     model = CertificateTemplate
     success_url = reverse_lazy("core:certificate_design")
 
@@ -324,55 +298,13 @@ class CertificateTemplateDeleteView(LoginRequiredMixin, DeleteView):
         return super().delete(request, *args, **kwargs)
 
 
-class ToggleRegistrationLinkView(LoginRequiredMixin, View):
-    """View para encerrar ou reabrir links de INSCRIÇÃO (Pré-Evento)."""
-    def post(self, request, pk):
-        from django.utils import timezone
-        course = get_object_or_404(Course, pk=pk, company=self.request.user.profile.company)
-        now = timezone.now()
+class CertificatePreviewView(RoleRequiredMixin, View):
+    required_role = 'perm_cert_design'
 
-        # Lógica de Inversão:
-        # Se o término já passou (encerrado), reabre (None)
-        if course.registration_end and course.registration_end < now:
-            course.registration_end = None
-            messages.success(request, f"Inscrições para '{course.name}' reabertas com sucesso.")
-        # Se está ativo (None ou futuro), encerra (now)
-        else:
-            course.registration_end = now
-            messages.warning(request, f"Inscrições para '{course.name}' encerradas.")
-
-        course.save(update_fields=['registration_end'])
-        return redirect('core:course_list')
-
-
-class ToggleCertificateLinkView(LoginRequiredMixin, View):
-    """View para encerrar ou reabrir links de SOLICITAÇÃO (Certificado)."""
-    def post(self, request, pk):
-        from django.utils import timezone
-        course = get_object_or_404(Course, pk=pk, company=self.request.user.profile.company)
-        now = timezone.now()
-
-        # Lógica de Inversão:
-        # Se o término já passou (encerrado), reabre (None)
-        if course.certificate_end and course.certificate_end < now:
-            course.certificate_end = None
-            messages.success(request, f"Solicitações de certificado para '{course.name}' reabertas.")
-        # Se está ativo (None ou futuro), encerra (now)
-        else:
-            course.certificate_end = now
-            messages.warning(request, f"Solicitações de certificado para '{course.name}' encerradas.")
-
-        course.save(update_fields=['certificate_end'])
-        return redirect('core:course_list')
-
-
-class CertificatePreviewView(LoginRequiredMixin, View):
     def get(self, request):
         model_type = request.GET.get('type', 'default')
-        color = request.GET.get('color', None)
         company = request.user.profile.company
         template = None
-
         if model_type == 'custom':
             template_id = request.GET.get('template_id')
             if template_id:
@@ -381,91 +313,87 @@ class CertificatePreviewView(LoginRequiredMixin, View):
                 template = CertificateTemplate.objects.filter(company=company).order_by('-id').first()
             if not template:
                 return HttpResponse("Nenhum modelo personalizado encontrado. Salve um modelo primeiro.", status=404)
-
-        pdf_bytes = generate_preview_pdf(company, model_type, template, color=color)
+        pdf_bytes = generate_preview_pdf(company, model_type, template)
         return HttpResponse(pdf_bytes, content_type='application/pdf')
 
 
-class EventPresenceListView(LoginRequiredMixin, ListView):
-    """
-    Lista de presença de um evento específico.
-    Exibe todos os participantes inscritos e permite realizar o check-in.
-    """
+class ToggleRegistrationLinkView(RoleRequiredMixin, View):
+    required_role = 'perm_my_events'
+    def post(self, request, pk):
+        course = get_object_or_404(Course, pk=pk, company=self.request.user.profile.company)
+        now = timezone.now()
+        if course.registration_end and course.registration_end < now:
+            course.registration_end = None
+            messages.success(request, f"Inscrições para '{course.name}' reabertas com sucesso.")
+        else:
+            course.registration_end = now
+            messages.warning(request, f"Inscrições para '{course.name}' encerradas.")
+        course.save(update_fields=['registration_end'])
+        return redirect('core:course_list')
+
+
+class ToggleCertificateLinkView(RoleRequiredMixin, View):
+    required_role = 'perm_my_events'
+    def post(self, request, pk):
+        course = get_object_or_404(Course, pk=pk, company=self.request.user.profile.company)
+        now = timezone.now()
+        cert_end = getattr(course, 'certificate_end', getattr(course, 'expires_at', None))
+        if cert_end and cert_end < now:
+            if hasattr(course, 'certificate_end'):
+                course.certificate_end = None
+            else:
+                course.expires_at = None
+            messages.success(request, f"Solicitações de certificado para '{course.name}' reabertas.")
+        else:
+            if hasattr(course, 'certificate_end'):
+                course.certificate_end = now
+            else:
+                course.expires_at = now
+            messages.warning(request, f"Solicitações de certificado para '{course.name}' encerradas.")
+        
+        update_fields = ['certificate_end'] if hasattr(course, 'certificate_end') else ['expires_at']
+        course.save(update_fields=update_fields)
+        return redirect('core:course_list')
+
+
+class EventPresenceListView(RoleRequiredMixin, ListView):
+    required_role = 'perm_my_events'
     model = Registration
     template_name = "core/presence_list.html"
     context_object_name = "registrations"
 
     def get_queryset(self):
-        # Validação Multi-tenant: Busca o curso garantindo que pertence à empresa do usuário
         self.course = get_object_or_404(
-            Course, 
-            pk=self.kwargs.get('pk'), 
+            Course,
+            pk=self.kwargs.get('pk'),
             company=self.request.user.profile.company
         )
-        # Retorna as inscrições vinculadas a este curso, ordenadas por nome
         return self.course.registrations.all().order_by('full_name')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # Injeta o objeto course no contexto para exibição de cabeçalhos no template
         context['course'] = self.course
+        context['now'] = timezone.now()
         return context
 
 
-class TogglePresenceView(LoginRequiredMixin, View):
-    """
-    Lógica de Check-in via AJAX (Online).
-    Inverte o status de 'attended' (presença) de um participante.
-    Segurança Multi-tenant: Garante que a inscrição pertença a um curso da empresa do usuário.
-    """
+class TogglePresenceView(RoleRequiredMixin, View):
+    required_role = 'perm_my_events'
     def post(self, request, reg_id):
-        # Recupera a inscrição validando o vínculo com a empresa do usuário logado
         registration = get_object_or_404(
-            Registration, 
-            id=reg_id, 
+            Registration,
+            id=reg_id,
             course__company=request.user.profile.company
         )
-
-        # Inverte o valor de attended (True vira False, e vice-versa)
         registration.attended = not registration.attended
-
-        # Otimização: Salva apenas o campo alterado
         registration.save(update_fields=['attended'])
-
-        # DISPARO AUTOMÁTICO (CELERY): Se o check-in foi habilitado e o aluno já possui 
-        # uma solicitaçãp de certificado pendente, dispara a emissão assíncrona imediatamente.
-        if registration.attended and registration.status == Registration.Status.PENDING and registration.is_requested:
+        if registration.attended and registration.status == Registration.Status.PENDING and getattr(registration, 'is_requested', False):
             issue_certificate_task.delay(str(registration.id))
-
-        # Retorna resposta JSON para atualização reativa na interface (JS)
-        return JsonResponse({
-            "ok": True, 
-            "attended": registration.attended
-        })
+        return JsonResponse({"ok": True, "attended": registration.attended})
 
 
-class PublicCheckinView(View):
-    """View pública para credenciamento via Magic Link (Hash)."""
-    template_name = "core/public_checkin.html"
-
-    def get(self, request, checkin_hash):
-        from django.shortcuts import render
-        from apps.core.models import Course
-
-        try:
-            course = Course.objects.get(checkin_hash=checkin_hash)
-        except Course.DoesNotExist:
-            return render(request, 'core/revoked_link.html', status=404)
-
-        registrations = course.registrations.all().order_by('full_name')
-        return render(request, self.template_name, {
-            'course': course,
-            'registrations': registrations
-        })
-
-
-class ResetCheckinHashView(LoginRequiredMixin, View):
-    """Gera um novo Hash de Credenciamento para o curso, invalidando o anterior."""
+class ResetCheckinHashView(RoleRequiredMixin, View):
+    required_role = 'perm_my_events'
     def post(self, request, pk):
         course = get_object_or_404(Course, pk=pk, company=request.user.profile.company)
         course.checkin_hash = uuid.uuid4()
@@ -474,27 +402,30 @@ class ResetCheckinHashView(LoginRequiredMixin, View):
         return redirect('core:course_list')
 
 
+class PublicCheckinView(View):
+    template_name = "core/public_checkin.html"
+    def get(self, request, checkin_hash):
+        try:
+            course = Course.objects.get(checkin_hash=checkin_hash)
+        except Course.DoesNotExist:
+            return render(request, 'core/revoked_link.html', status=404)
+        registrations = course.registrations.all().order_by('full_name')
+        return render(request, self.template_name, {
+            'course': course,
+            'registrations': registrations
+        })
+
+
 @method_decorator(csrf_exempt, name='dispatch')
 class ToggleMassPresenceView(View):
-    """
-    Check-in em Massa via AJAX para o Painel Público.
-    """
     def post(self, request, checkin_hash):
-        from django.http import JsonResponse
-        from django.shortcuts import get_object_or_404
-        from apps.core.models import Course
-        from apps.certificates.tasks import issue_certificate_task
-        from django.utils import timezone
-        from django.utils.timezone import localtime
-        import json
-
         course = get_object_or_404(Course, checkin_hash=checkin_hash)
         try:
             data = json.loads(request.body)
             action = data.get('action')
             new_status = True if action == 'check_all' else False
             now = timezone.now() if new_status else None
-
+            
             registrations = course.registrations.all()
             registrations.update(attended=new_status, checkin_at=now)
 
@@ -502,7 +433,6 @@ class ToggleMassPresenceView(View):
                 for reg in registrations.filter(status='pending', is_requested=True):
                     issue_certificate_task.delay(str(reg.id))
 
-            # Sênior Fix: Converte UTC para a hora local (America/Sao_Paulo) antes de formatar a string
             checkin_str = localtime(now).strftime('%d/%m/%y %H:%Mh') if now else ""
             return JsonResponse({"ok": True, "status": new_status, "checkin_time": checkin_str})
         except Exception as e:
@@ -511,49 +441,31 @@ class ToggleMassPresenceView(View):
 
 @method_decorator(csrf_exempt, name='dispatch')
 class PublicTogglePresenceView(View):
-    """
-    Check-in Individual via AJAX para o Painel Público.
-    Protegido pelo ID da inscrição (UUID único).
-    """
     def post(self, request, reg_id):
-        from apps.registrations.models import Registration
-        from django.shortcuts import get_object_or_404
-        from django.http import JsonResponse
-        from apps.certificates.tasks import issue_certificate_task
-        from django.utils import timezone
-        from django.utils.timezone import localtime
-
         registration = get_object_or_404(Registration, id=reg_id)
-
         registration.attended = not registration.attended
         registration.checkin_at = timezone.now() if registration.attended else None
         registration.save(update_fields=['attended', 'checkin_at'])
 
-        if registration.attended and registration.status == Registration.Status.PENDING and registration.is_requested:
+        if registration.attended and registration.status == Registration.Status.PENDING and getattr(registration, 'is_requested', False):
             issue_certificate_task.delay(str(registration.id))
 
-        # Sênior Fix: Converte UTC para a hora local (America/Sao_Paulo) antes de formatar a string
         checkin_str = localtime(registration.checkin_at).strftime('%d/%m/%y %H:%Mh') if registration.checkin_at else ""
         return JsonResponse({"ok": True, "attended": registration.attended, "checkin_time": checkin_str})
 
 
 @method_decorator(csrf_exempt, name='dispatch')
 class PublicSendLinkEmailView(View):
-    """
-    Endpoint para envio rápido de links (Inscrição ou Certificado) via e-mail.
-    Chamado pelo painel de credenciamento público.
-    """
     def post(self, request, checkin_hash):
         from django.core.mail import send_mail
         from django.conf import settings
-
+        
         course = get_object_or_404(Course, checkin_hash=checkin_hash)
-
         try:
             data = json.loads(request.body)
             email_destinatario = data.get('email')
-            tipo_link = data.get('type') # 'inscricao' ou 'certificado'
-
+            tipo_link = data.get('type')
+            
             if not email_destinatario:
                 return JsonResponse({"ok": False, "error": "E-mail não informado."}, status=400)
 
@@ -580,24 +492,20 @@ class PublicSendLinkEmailView(View):
                 [email_destinatario],
                 fail_silently=False,
             )
-
             return JsonResponse({"ok": True})
         except Exception as e:
             return JsonResponse({"ok": False, "error": str(e)}, status=400)
-
-
-class NPSFormListView(LoginRequiredMixin, ListView):
-    """Lista formulários NPS da empresa do usuário."""
+class NPSFormListView(RoleRequiredMixin, ListView):
+    required_role = 'perm_nps'
     model = NPSForm
     template_name = "core/nps_form_list.html"
     context_object_name = "nps_forms"
 
     def get_queryset(self):
-        return NPSForm.objects.filter(company=self.request.user.profile.company)
+        return NPSForm.objects.filter(company=self.request.user.profile.company).order_by("-created_at")
 
-
-class NPSFormCreateView(LoginRequiredMixin, CreateView):
-    """Cria novo formulário NPS vinculado à empresa do usuário."""
+class NPSFormCreateView(RoleRequiredMixin, CreateView):
+    required_role = 'perm_nps'
     model = NPSForm
     form_class = NPSFormModelForm
     template_name = "core/nps_form_form.html"
@@ -608,9 +516,8 @@ class NPSFormCreateView(LoginRequiredMixin, CreateView):
         messages.success(self.request, "Formulário NPS criado com sucesso!")
         return super().form_valid(form)
 
-
-class NPSFormUpdateView(LoginRequiredMixin, UpdateView):
-    """Edita formulário NPS e gerencia suas perguntas."""
+class NPSFormUpdateView(RoleRequiredMixin, UpdateView):
+    required_role = 'perm_nps'
     model = NPSForm
     form_class = NPSFormModelForm
     template_name = "core/nps_form_form.html"
@@ -629,9 +536,8 @@ class NPSFormUpdateView(LoginRequiredMixin, UpdateView):
         messages.success(self.request, "Formulário NPS atualizado!")
         return super().form_valid(form)
 
-
-class NPSFormDeleteView(LoginRequiredMixin, DeleteView):
-    """Exclui formulário NPS."""
+class NPSFormDeleteView(RoleRequiredMixin, DeleteView):
+    required_role = 'perm_nps'
     model = NPSForm
     template_name = "core/nps_form_confirm_delete.html"
     success_url = reverse_lazy("core:nps_form_list")
@@ -643,19 +549,14 @@ class NPSFormDeleteView(LoginRequiredMixin, DeleteView):
         messages.success(self.request, "Formulário NPS removido com sucesso.")
         return super().delete(request, *args, **kwargs)
 
-
-class NPSQuestionCreateView(LoginRequiredMixin, CreateView):
-    """Cria uma nova pergunta para um formulário NPS específico."""
+class NPSQuestionCreateView(RoleRequiredMixin, CreateView):
+    required_role = 'perm_nps'
     model = NPSQuestion
     form_class = NPSQuestionForm
 
     def form_valid(self, form):
         nps_form_id = self.kwargs.get('nps_form_id')
-        nps_form = get_object_or_404(
-            NPSForm, 
-            id=nps_form_id, 
-            company=self.request.user.profile.company
-        )
+        nps_form = get_object_or_404(NPSForm, id=nps_form_id, company=self.request.user.profile.company)
         form.instance.nps_form = nps_form
         messages.success(self.request, "Pergunta adicionada com sucesso!")
         return super().form_valid(form)
@@ -663,9 +564,8 @@ class NPSQuestionCreateView(LoginRequiredMixin, CreateView):
     def get_success_url(self):
         return reverse_lazy('core:nps_form_update', kwargs={'pk': self.kwargs.get('nps_form_id')})
 
-
-class NPSQuestionDeleteView(LoginRequiredMixin, DeleteView):
-    """Exclui uma pergunta NPS."""
+class NPSQuestionDeleteView(RoleRequiredMixin, DeleteView):
+    required_role = 'perm_nps'
     model = NPSQuestion
 
     def get_queryset(self):
@@ -679,88 +579,76 @@ class NPSQuestionDeleteView(LoginRequiredMixin, DeleteView):
         return super().delete(request, *args, **kwargs)
 
 
-class DynamicFormListView(LoginRequiredMixin, ListView):
-    """Lista os formulários dinâmicos da empresa do usuário (Proteção Multitenant)."""
+# ==========================================
+# GESTÃO EAV: FORMULÁRIOS DINÂMICOS
+# ==========================================
+class DynamicFormListView(RoleRequiredMixin, ListView):
+    required_role = 'perm_custom_forms'
     model = DynamicForm
     template_name = "core/dynamic_form_list.html"
     context_object_name = "dynamic_forms"
 
     def get_queryset(self):
-        # Regra de Ouro: Filtra apenas formulários da empresa vinculada ao perfil do usuário logado.
-        return DynamicForm.objects.filter(company=self.request.user.profile.company)
+        return DynamicForm.objects.filter(company=self.request.user.profile.company).order_by("-created_at")
 
-
-class DynamicFormCreateView(LoginRequiredMixin, CreateView):
-    """Cria um novo formulário dinâmico e gerencia seus campos via Inline Formset."""
+class DynamicFormCreateView(RoleRequiredMixin, CreateView):
+    required_role = 'perm_custom_forms'
     model = DynamicForm
     form_class = DynamicFormModelForm
     template_name = "core/dynamic_form_form.html"
     success_url = reverse_lazy("core:dynamic_form_list")
 
     def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
+        data = super().get_context_data(**kwargs)
         if self.request.POST:
-            # Ao reenviar o formulário (POST), carrega o formset com os dados enviados.
-            context["formset"] = DynamicFieldFormSet(self.request.POST)
+            data['formset'] = DynamicFieldFormSet(self.request.POST)
         else:
-            # Em acessos GET, inicia um formset vazio.
-            context["formset"] = DynamicFieldFormSet()
-        return context
+            data['formset'] = DynamicFieldFormSet()
+        return data
 
     def form_valid(self, form):
         context = self.get_context_data()
-        formset = context["formset"]
-
-        # Atribui a empresa do usuário logado à instância do formulário dinâmico.
-        form.instance.company = self.request.user.profile.company
-
-        if formset.is_valid():
-            # Salva o formulário pai (Entidade EAV)
+        formset = context['formset']
+        if form.is_valid() and formset.is_valid():
+            form.instance.company = self.request.user.profile.company
             self.object = form.save()
-            # Vincula o formset (Atributos EAV) à instância salva e salva os campos.
             formset.instance = self.object
             formset.save()
-            messages.success(self.request, "Formulário dinâmico criado com sucesso!")
-            return redirect(self.get_success_url())
-        else:
-            # Se o formset for inválido, renderiza novamente com erros.
-            return self.render_to_response(self.get_context_data(form=form))
+            messages.success(self.request, "Formulário Dinâmico criado com sucesso!")
+            return redirect(self.success_url)
+        return self.render_to_response(self.get_context_data(form=form))
 
-
-class DynamicFormUpdateView(LoginRequiredMixin, UpdateView):
-    """Edita um formulário dinâmico existente e seus campos associados."""
+class DynamicFormUpdateView(RoleRequiredMixin, UpdateView):
+    required_role = 'perm_custom_forms'
     model = DynamicForm
     form_class = DynamicFormModelForm
     template_name = "core/dynamic_form_form.html"
     success_url = reverse_lazy("core:dynamic_form_list")
 
     def get_queryset(self):
-        # Garante que o usuário só edite formulários de sua própria empresa.
         return DynamicForm.objects.filter(company=self.request.user.profile.company)
 
     def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
+        data = super().get_context_data(**kwargs)
         if self.request.POST:
-            context["formset"] = DynamicFieldFormSet(self.request.POST, instance=self.object)
+            data['formset'] = DynamicFieldFormSet(self.request.POST, instance=self.object)
         else:
-            context["formset"] = DynamicFieldFormSet(instance=self.object)
-        return context
+            data['formset'] = DynamicFieldFormSet(instance=self.object)
+        return data
 
     def form_valid(self, form):
         context = self.get_context_data()
-        formset = context["formset"]
-
-        if formset.is_valid():
+        formset = context['formset']
+        if form.is_valid() and formset.is_valid():
             self.object = form.save()
+            formset.instance = self.object
             formset.save()
-            messages.success(self.request, "Formulário dinâmico atualizado com sucesso!")
-            return redirect(self.get_success_url())
-        else:
-            return self.render_to_response(self.get_context_data(form=form))
+            messages.success(self.request, "Formulário Dinâmico atualizado com sucesso!")
+            return redirect(self.success_url)
+        return self.render_to_response(self.get_context_data(form=form))
 
-
-class DynamicFormDeleteView(LoginRequiredMixin, DeleteView):
-    """Exclui um formulário dinâmico (Proteção Multitenant)."""
+class DynamicFormDeleteView(RoleRequiredMixin, DeleteView):
+    required_role = 'perm_custom_forms'
     model = DynamicForm
     template_name = "core/dynamic_form_confirm_delete.html"
     success_url = reverse_lazy("core:dynamic_form_list")
@@ -769,27 +657,24 @@ class DynamicFormDeleteView(LoginRequiredMixin, DeleteView):
         return DynamicForm.objects.filter(company=self.request.user.profile.company)
 
     def delete(self, request, *args, **kwargs):
-        messages.success(self.request, "Formulário dinâmico removido com sucesso.")
+        messages.success(self.request, "Formulário removido com sucesso.")
         return super().delete(request, *args, **kwargs)
 
 
-from .models import RecurringEvent, EventSession
-from .forms import RecurringEventForm, EventSessionFormSet
-
-class RecurringEventListView(LoginRequiredMixin, ListView):
-    """Lista eventos recorrentes da empresa do usuário."""
+# ==========================================
+# EVENTOS RECORRENTES (Sessões e Diários)
+# ==========================================
+class RecurringEventListView(RoleRequiredMixin, ListView):
+    required_role = 'perm_my_events'
     model = RecurringEvent
     template_name = "core/recurring_event_list.html"
     context_object_name = "events"
 
     def get_queryset(self):
-        return RecurringEvent.objects.filter(
-            company=self.request.user.profile.company
-        ).order_by("-created_at")
+        return RecurringEvent.objects.filter(company=self.request.user.profile.company).order_by("-created_at")
 
-
-class RecurringEventCreateView(LoginRequiredMixin, CreateView):
-    """Cria um novo evento recorrente e gerencia suas sessões via Inline Formset."""
+class RecurringEventCreateView(RoleRequiredMixin, CreateView):
+    required_role = 'perm_recurring_events'
     model = RecurringEvent
     form_class = RecurringEventForm
     template_name = "core/recurring_event_form.html"
@@ -801,88 +686,61 @@ class RecurringEventCreateView(LoginRequiredMixin, CreateView):
         return kwargs
 
     def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
+        data = super().get_context_data(**kwargs)
         if self.request.POST:
-            context["formset"] = EventSessionFormSet(self.request.POST)
+            data['formset'] = EventSessionFormSet(self.request.POST)
         else:
-            context["formset"] = EventSessionFormSet()
-        return context
+            data['formset'] = EventSessionFormSet()
+        return data
 
-    def post(self, request, *args, **kwargs):
-        self.object = None
-        form = self.get_form()
+    def form_valid(self, form):
         context = self.get_context_data()
         formset = context['formset']
         if form.is_valid() and formset.is_valid():
-            return self.form_valid(form, formset)
-        else:
-            return self.form_invalid(form, formset)
+            form.instance.company = self.request.user.profile.company
+            self.object = form.save()
+            formset.instance = self.object
+            formset.save()
+            messages.success(self.request, "Evento Recorrente criado com sucesso!")
+            return redirect(self.success_url)
+        return self.render_to_response(self.get_context_data(form=form))
 
-    def form_valid(self, form, formset):
-        from django.contrib import messages
-        self.object = form.save(commit=False)
-        self.object.company = self.request.user.profile.company
-        self.object.save()
-        formset.instance = self.object
-        formset.save()
-        messages.success(self.request, "Evento Recorrente criado com sucesso!")
-        return redirect('core:recurring_event_list')
-
-    def form_invalid(self, form, formset):
-        from django.contrib import messages
-        messages.error(self.request, "Erro ao salvar o evento. Verifique os formulários e garanta que todos os campos obrigatórios foram preenchidos.")
-        return self.render_to_response(self.get_context_data(form=form, formset=formset))
-
-
-class RecurringEventUpdateView(LoginRequiredMixin, UpdateView):
-    """Edita um evento recorrente existente e gerencia suas sessões associadas."""
+class RecurringEventUpdateView(RoleRequiredMixin, UpdateView):
+    required_role = 'perm_my_events'
     model = RecurringEvent
     form_class = RecurringEventForm
     template_name = "core/recurring_event_form.html"
     success_url = reverse_lazy("core:recurring_event_list")
-
-    def get_form_kwargs(self):
-        kwargs = super().get_form_kwargs()
-        kwargs["company"] = self.request.user.profile.company
-        return kwargs
 
     def get_queryset(self):
-        # Proteção Multitenant: Garante acesso apenas aos eventos da empresa logada.
         return RecurringEvent.objects.filter(company=self.request.user.profile.company)
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        if self.request.POST:
-            context["formset"] = EventSessionFormSet(self.request.POST, instance=self.object)
-        else:
-            context["formset"] = EventSessionFormSet(instance=self.object)
-        return context
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["company"] = self.request.user.profile.company
+        return kwargs
 
-    def post(self, request, *args, **kwargs):
-        self.object = self.get_object()
-        form = self.get_form()
+    def get_context_data(self, **kwargs):
+        data = super().get_context_data(**kwargs)
+        if self.request.POST:
+            data['formset'] = EventSessionFormSet(self.request.POST, instance=self.object)
+        else:
+            data['formset'] = EventSessionFormSet(instance=self.object)
+        return data
+
+    def form_valid(self, form):
         context = self.get_context_data()
         formset = context['formset']
         if form.is_valid() and formset.is_valid():
-            return self.form_valid(form, formset)
-        else:
-            return self.form_invalid(form, formset)
+            self.object = form.save()
+            formset.instance = self.object
+            formset.save()
+            messages.success(self.request, "Evento Recorrente atualizado com sucesso!")
+            return redirect(self.success_url)
+        return self.render_to_response(self.get_context_data(form=form))
 
-    def form_valid(self, form, formset):
-        from django.contrib import messages
-        self.object = form.save()
-        formset.save()
-        messages.success(self.request, "Evento Recorrente atualizado com sucesso!")
-        return redirect('core:recurring_event_list')
-
-    def form_invalid(self, form, formset):
-        from django.contrib import messages
-        messages.error(self.request, "Erro ao salvar o evento. Verifique os formulários e garanta que todos os campos obrigatórios foram preenchidos.")
-        return self.render_to_response(self.get_context_data(form=form, formset=formset))
-
-
-class RecurringEventDeleteView(LoginRequiredMixin, DeleteView):
-    """Exclui um evento recorrente (Proteção Multitenant)."""
+class RecurringEventDeleteView(RoleRequiredMixin, DeleteView):
+    required_role = 'perm_my_events'
     model = RecurringEvent
     template_name = "core/recurring_event_confirm_delete.html"
     success_url = reverse_lazy("core:recurring_event_list")
@@ -891,140 +749,27 @@ class RecurringEventDeleteView(LoginRequiredMixin, DeleteView):
         return RecurringEvent.objects.filter(company=self.request.user.profile.company)
 
     def delete(self, request, *args, **kwargs):
-        messages.success(self.request, "Evento recorrente removido com sucesso.")
+        messages.success(self.request, "Evento Recorrente removido com sucesso.")
         return super().delete(request, *args, **kwargs)
-
-
-class SessionPresenceListView(LoginRequiredMixin, ListView):
-    """
-    Lista de presença de um encontro (sessão) específico.
-    Utiliza Prefetch para injetar a presença atual do aluno no objeto de inscrição.
-    """
-    template_name = "core/session_presence_list.html"
-    context_object_name = "registrations"
-
-    def get_queryset(self):
-        # Validação Multi-tenant: Garante que o encontro pertença a um evento da empresa do usuário logado
-        self.session = get_object_or_404(
-            EventSession, 
-            pk=self.kwargs.get('pk'), 
-            recurring_event__company=self.request.user.profile.company
-        )
-        
-        # Otimização Sênior: Busca todos os alunos inscritos no evento pai e faz o prefetch 
-        # das presenças apenas deste encontro específico, injetando o resultado no atributo 'current_presence'.
-        return self.session.recurring_event.registrations.prefetch_related(
-            Prefetch(
-                'session_presences', 
-                queryset=SessionPresence.objects.filter(session=self.session), 
-                to_attr='current_presence'
-            )
-        ).order_by('full_name')
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['session'] = self.session
-        context['course'] = self.session.recurring_event
-        return context
-
-
-class ToggleSessionPresenceView(LoginRequiredMixin, View):
-    """
-    Controlador AJAX para alternar o status de presença de um aluno em um encontro específico.
-    """
-    def post(self, request, session_id, reg_id):
-        from django.utils import timezone
-        from django.utils.timezone import localtime
-        from apps.certificates.tasks import issue_certificate_task
-        
-        # Validação de Segurança Multi-tenant
-        session = get_object_or_404(
-            EventSession, 
-            pk=session_id, 
-            recurring_event__company=request.user.profile.company
-        )
-        reg = get_object_or_404(
-            Registration, 
-            pk=reg_id, 
-            recurring_event=session.recurring_event
-        )
-        
-        # Recupera ou cria o registro de presença vínculo Aluno/Encontro
-        sp, created = SessionPresence.objects.get_or_create(
-            session=session, 
-            registration=reg
-        )
-        
-        # Inverte o status de presença
-        sp.attended = not sp.attended
-        sp.checkin_at = timezone.now() if sp.attended else None
-        sp.save()
-        
-        # Motor de Regras: Respeita a meta de horas (%) e as regras originais de emissão!
-        if reg.has_met_attendance and reg.status == 'pending' and reg.is_requested:
-            issue_certificate_task.delay(str(reg.id))
-            
-        checkin_str = localtime(sp.checkin_at).strftime('%d/%m/%y %H:%Mh') if sp.checkin_at else ""
-        
-        return JsonResponse({
-            "ok": True, 
-            "attended": sp.attended, 
-            "checkin_time": checkin_str
-        })
-
-
-class ResetSessionCheckinHashView(LoginRequiredMixin, View):
-    """
-    Invalida o link de credenciamento público atual de um encontro e gera um novo UUID.
-    """
-    def post(self, request, pk):
-        session = get_object_or_404(
-            EventSession, 
-            pk=pk, 
-            recurring_event__company=request.user.profile.company
-        )
-        session.checkin_hash = uuid.uuid4()
-        session.save(update_fields=['checkin_hash'])
-        
-        messages.success(request, f"O link de credenciamento do encontro '{session.theme}' foi resetado!")
-        return redirect('core:session_presence', pk=session.pk)
-
-
-class PublicSessionCheckinView(View):
-    template_name = "core/public_session_checkin.html"
-    def get(self, request, checkin_hash):
-        from django.shortcuts import render
-        from django.db.models import Prefetch
-        try:
-            session = EventSession.objects.get(checkin_hash=checkin_hash)
-        except EventSession.DoesNotExist:
-            return render(request, 'core/revoked_link.html', status=404)
-        registrations = session.recurring_event.registrations.prefetch_related(
-            Prefetch('session_presences', queryset=SessionPresence.objects.filter(session=session), to_attr='current_presence')
-        ).order_by('full_name')
-        return render(request, self.template_name, {'session': session, 'course': session.recurring_event, 'registrations': registrations})
 
 
 @method_decorator(csrf_exempt, name='dispatch')
 class ToggleMassSessionPresenceView(View):
     def post(self, request, checkin_hash):
-        from django.http import JsonResponse
-        from apps.certificates.tasks import issue_certificate_task
-        from django.utils import timezone
-        from django.utils.timezone import localtime
-        import json
         session = get_object_or_404(EventSession, checkin_hash=checkin_hash)
         try:
             data = json.loads(request.body)
-            new_status = True if data.get('action') == 'check_all' else False
+            action = data.get('action')
+            new_status = True if action == 'check_all' else False
             now = timezone.now() if new_status else None
+            
+            from apps.registrations.models import SessionPresence
             for reg in session.recurring_event.registrations.all():
-                sp, _ = SessionPresence.objects.get_or_create(session=session, registration=reg)
-                sp.attended = new_status
-                sp.checkin_at = now
-                sp.save()
-                if reg.has_met_attendance and reg.status == 'pending' and reg.is_requested:
-                    issue_certificate_task.delay(str(reg.id))
+                pres, _ = SessionPresence.objects.get_or_create(registration=reg, session=session)
+                pres.attended = new_status
+                pres.checkin_at = now
+                pres.save()
+
             checkin_str = localtime(now).strftime('%d/%m/%y %H:%Mh') if now else ""
             return JsonResponse({"ok": True, "status": new_status, "checkin_time": checkin_str})
         except Exception as e:
@@ -1032,19 +777,118 @@ class ToggleMassSessionPresenceView(View):
 
 
 @method_decorator(csrf_exempt, name='dispatch')
-class PublicToggleSessionPresenceView(View):
+class ToggleSessionPresenceView(View):
     def post(self, request, session_id, reg_id):
+        from apps.registrations.models import SessionPresence
+        session = get_object_or_404(EventSession, id=session_id)
+        reg = get_object_or_404(Registration, id=reg_id)
+        
+        pres, _ = SessionPresence.objects.get_or_create(registration=reg, session=session)
+        pres.attended = not pres.attended
+        pres.checkin_at = timezone.now() if pres.attended else None
+        pres.save(update_fields=['attended', 'checkin_at'])
+
+        checkin_str = localtime(pres.checkin_at).strftime('%d/%m/%y %H:%Mh') if pres.checkin_at else ""
+        return JsonResponse({"ok": True, "attended": pres.attended, "checkin_time": checkin_str})
+
+
+class ResetSessionCheckinHashView(RoleRequiredMixin, View):
+    required_role = 'perm_my_events'
+    def post(self, request, pk):
+        session = get_object_or_404(EventSession, pk=pk, recurring_event__company=request.user.profile.company)
+        session.checkin_hash = uuid.uuid4()
+        session.save(update_fields=['checkin_hash'])
+        messages.success(request, f"O link de credenciamento do encontro '{session.theme}' foi resetado!")
+        return redirect('core:recurring_event_list')
+    
+class PublicSessionCheckinView(View):
+    """View pública para credenciamento via Magic Link de uma Sessão específica (Evento Recorrente)."""
+    template_name = "core/public_session_checkin.html"
+
+    def get(self, request, checkin_hash):
+        from django.shortcuts import render
+        from django.db.models import Prefetch
+        from apps.core.models import EventSession
+        from apps.registrations.models import SessionPresence
+
+        try:
+            session = EventSession.objects.get(checkin_hash=checkin_hash)
+        except EventSession.DoesNotExist:
+            return render(request, 'core/revoked_link.html', status=404)
+
+        course = session.recurring_event
+        
+        # Busca as inscrições e faz um "join" virtual inteligente (Prefetch) 
+        # apenas com a presença desta sessão específica para exibição no HTML.
+        registrations = course.registrations.prefetch_related(
+            Prefetch(
+                'session_presences',
+                queryset=SessionPresence.objects.filter(session=session),
+                to_attr='current_presence'
+            )
+        ).order_by('full_name')
+
+        return render(request, self.template_name, {
+            'course': course,
+            'session': session,
+            'registrations': registrations
+        })    
+
+@method_decorator(csrf_exempt, name='dispatch')
+class PublicToggleSessionPresenceView(View):
+    """View pública de check-in individual via AJAX para Sessões (Eventos Recorrentes)."""
+    def post(self, request, session_id, reg_id):
+        from django.shortcuts import get_object_or_404
         from django.http import JsonResponse
-        from apps.certificates.tasks import issue_certificate_task
         from django.utils import timezone
         from django.utils.timezone import localtime
+        from apps.core.models import EventSession
+        from apps.registrations.models import Registration, SessionPresence
+
         session = get_object_or_404(EventSession, id=session_id)
-        reg = get_object_or_404(Registration, id=reg_id, recurring_event=session.recurring_event)
-        sp, _ = SessionPresence.objects.get_or_create(session=session, registration=reg)
-        sp.attended = not sp.attended
-        sp.checkin_at = timezone.now() if sp.attended else None
-        sp.save()
-        if reg.has_met_attendance and reg.status == 'pending' and reg.is_requested:
-            issue_certificate_task.delay(str(reg.id))
-        checkin_str = localtime(sp.checkin_at).strftime('%d/%m/%y %H:%Mh') if sp.checkin_at else ""
-        return JsonResponse({"ok": True, "attended": sp.attended, "checkin_time": checkin_str})
+        reg = get_object_or_404(Registration, id=reg_id)
+        
+        pres, _ = SessionPresence.objects.get_or_create(registration=reg, session=session)
+        pres.attended = not pres.attended
+        pres.checkin_at = timezone.now() if pres.attended else None
+        pres.save(update_fields=['attended', 'checkin_at'])
+
+        checkin_str = localtime(pres.checkin_at).strftime('%d/%m/%y %H:%Mh') if pres.checkin_at else ""
+        return JsonResponse({"ok": True, "attended": pres.attended, "checkin_time": checkin_str})
+
+class SessionPresenceListView(RoleRequiredMixin, ListView):
+    """Lista de presença administrativa para uma Sessão (Evento Recorrente)."""
+    required_role = 'perm_my_events'
+    model = Registration
+    template_name = "core/session_presence_list.html"
+    context_object_name = "registrations"
+
+    def get_queryset(self):
+        from django.shortcuts import get_object_or_404
+        from django.db.models import Prefetch
+        from apps.core.models import EventSession
+        from apps.registrations.models import SessionPresence
+
+        self.session = get_object_or_404(
+            EventSession,
+            pk=self.kwargs.get('pk'),
+            recurring_event__company=self.request.user.profile.company
+        )
+
+        # Busca as inscrições e faz um "join" virtual inteligente (Prefetch)
+        # apenas com a presença desta sessão específica para exibição no HTML.
+        return self.session.recurring_event.registrations.prefetch_related(
+            Prefetch(
+                'session_presences',
+                queryset=SessionPresence.objects.filter(session=self.session),
+                to_attr='current_presence'
+            )
+        ).order_by('full_name')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        from django.utils import timezone
+        context['session'] = self.session
+        context['course'] = self.session.recurring_event
+        context['now'] = timezone.now()
+        return context

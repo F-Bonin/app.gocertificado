@@ -1,0 +1,70 @@
+{% extends 'painel/base_painel.html' %}
+{% block title %}{% if object %}Editar Membro{% else %}Novo Membro{% endif %} | GoCertificado{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-9">
+        <div class="d-flex align-items-center mb-4">
+            <a href="{% url 'accounts:team_list' %}" class="btn btn-outline-secondary btn-sm me-3"><i class="bi bi-arrow-left"></i> Voltar</a>
+            <h2 class="h4 mb-0 text-primary">
+                <i class="bi bi-person-gear me-2"></i>{% if object %}Editar Permissões do Membro{% else %}Adicionar Novo Membro{% endif %}
+            </h2>
+        </div>
+        <form method="post" novalidate>
+            {% csrf_token %}
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-white py-3 border-bottom-0"><h6 class="mb-0 fw-bold text-dark"><i class="bi bi-person me-2"></i>Dados do Acesso</h6></div>
+                <div class="card-body p-4 pt-0">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-muted">{{ form.first_name.label }}</label>
+                            {{ form.first_name }}
+                            {% if form.first_name.errors %}<div class="text-danger small mt-1">{{ form.first_name.errors.0 }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-muted">{{ form.email.label }}</label>
+                            {{ form.email }}
+                            {% if form.email.errors %}<div class="text-danger small mt-1">{{ form.email.errors.0 }}</div>{% endif %}
+                        </div>
+                    </div>
+                    {% if not object %}
+                    <div class="alert alert-warning mt-3 mb-0 border-warning border-opacity-25 small">
+                        <i class="bi bi-info-circle-fill me-1"></i> A senha gerada automaticamente será <strong>Go123456%</strong>. O sistema forçará a troca no primeiro acesso.
+                    </div>
+                    {% endif %}
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger mt-3 mb-0 small">{{ form.non_field_errors.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white py-3 border-bottom-0 d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-sliders me-2"></i>Permissões Granulares</h6>
+                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="document.querySelectorAll('.form-switch input').forEach(chk => chk.checked = true);">Marcar Todas</button>
+                </div>
+                <div class="card-body p-4 pt-0">
+                    <p class="text-muted small mb-4">Desative as opções abaixo para ocultar menus e bloquear o acesso deste membro a ferramentas específicas.</p>
+                    <div class="row g-4">
+                        {% for field in form %}
+                            {% if field.name != 'first_name' and field.name != 'email' %}
+                            <div class="col-md-6">
+                                <div class="p-3 border rounded bg-light d-flex align-items-center justify-content-between h-100">
+                                    <span class="fw-bold text-dark d-block">{{ field.label }}</span>
+                                    <div class="form-check form-switch fs-4 mb-0 ms-3">{{ field }}</div>
+                                </div>
+                            </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4 mb-5">
+                <a href="{% url 'accounts:team_list' %}" class="btn btn-light px-4">Cancelar</a>
+                <button type="submit" class="btn btn-primary px-5 shadow-sm">
+                    <i class="bi bi-check2-circle me-1"></i> Salvar Membro
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

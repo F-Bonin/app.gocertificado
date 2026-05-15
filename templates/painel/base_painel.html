@@ -112,46 +112,70 @@
       </div>
       <div class="list-group list-group-flush">
     <!-- 1. Dashboard -->
+    {% if request.user.profile.perm_dashboard %}
     <a href="{% url 'certificates:dashboard' %}" class="list-group-item list-group-item-action {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
         <i class="bi bi-speedometer2"></i> Dashboard
     </a>
+    {% endif %}
 
     <!-- 2. Minha Organização -->
+    {% if request.user.profile.perm_company %}
     <a href="{% url 'core:company_edit' %}" class="list-group-item list-group-item-action {% if request.resolver_match.view_name == 'core:company_edit' %}active{% endif %}">
         <i class="bi bi-building"></i> Minha Organização
     </a>
+    {% endif %}
+
+    <!-- NOVO: Minha Equipe (Apenas Admin do Plano) -->
+    {% if request.user.profile.is_company_admin %}
+    <a href="{% url 'accounts:team_list' %}" class="list-group-item list-group-item-action {% if 'team' in request.resolver_match.view_name %}active{% endif %}">
+        <i class="bi bi-person-lines-fill"></i> Minha Equipe
+    </a>
+    {% endif %}
 
     <!-- 3. Configurar Certificado -->
+    {% if request.user.profile.perm_cert_design %}
     <a href="{% url 'core:certificate_design' %}" class="list-group-item list-group-item-action {% if request.resolver_match.view_name == 'core:certificate_design' %}active{% endif %}">
         <i class="bi bi-palette"></i> Configurar Certificado
     </a>
+    {% endif %}
 
     <!-- 4. Assinatura Certificado -->
+    {% if request.user.profile.perm_instructors %}
     <a href="{% url 'core:instructor_list' %}" class="list-group-item list-group-item-action {% if 'instructor' in request.resolver_match.view_name %}active{% endif %}">
         <i class="bi bi-people"></i> Assinatura Certificado
     </a>
+    {% endif %}
 
     <!-- 5. Form NPS -->
+    {% if request.user.profile.perm_nps %}
     <a href="{% url 'core:nps_form_list' %}" class="list-group-item list-group-item-action {% if 'nps' in request.resolver_match.view_name %}active{% endif %}">
         <i class="bi bi-chat-square-text"></i> Form NPS
     </a>
+    {% endif %}
 
     <!-- 6. Form Personalizado -->
+    {% if request.user.profile.perm_custom_forms %}
     <a href="{% url 'core:dynamic_form_list' %}" class="list-group-item list-group-item-action {% if 'dynamic_form' in request.resolver_match.view_name %}active{% endif %}">
         <i class="bi bi-ui-checks"></i> Form Personalizado
     </a>
+    {% endif %}
 
     <!-- 7. Criar Evento Padrão -->
+    {% if request.user.profile.perm_standard_events %}
     <a href="{% url 'core:course_create' %}" class="list-group-item list-group-item-action {% if request.resolver_match.view_name == 'core:course_create' %}active{% endif %}">
         <i class="bi bi-journal-plus"></i> Criar Evento Padrão
     </a>
+    {% endif %}
 
     <!-- 8. Criar Evento Recorrente (Apontado para o Form de Criação) -->
+    {% if request.user.profile.perm_recurring_events %}
     <a href="{% url 'core:recurring_event_create' %}" class="list-group-item list-group-item-action {% if request.resolver_match.view_name == 'core:recurring_event_create' %}active{% endif %}">
         <i class="bi bi-calendar-plus"></i> Criar Evento Recorrente
     </a>
+    {% endif %}
 
     <!-- 9. Meus Eventos (Menu Expansível Avançado) -->
+    {% if request.user.profile.perm_my_events %}
     <a href="#collapseMeusEventos" data-bs-toggle="collapse" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center {% if request.resolver_match.view_name == 'core:course_list' or request.resolver_match.view_name == 'core:recurring_event_list' %}active{% endif %}" role="button" aria-expanded="{% if request.resolver_match.view_name == 'core:course_list' or request.resolver_match.view_name == 'core:recurring_event_list' %}true{% else %}false{% endif %}">
         <span><i class="bi bi-journal-check"></i> Meus Eventos</span>
         <i class="bi bi-chevron-down" style="font-size: 0.75rem;"></i>
@@ -164,16 +188,21 @@
             <i class="bi bi-dot fs-5" style="vertical-align: middle;"></i> Eventos Recorrentes
         </a>
     </div>
+    {% endif %}
 
     <!-- 10. Alunos/Participantes -->
+    {% if request.user.profile.perm_participants %}
     <a href="{% url 'certificates:participants' %}" class="list-group-item list-group-item-action {% if request.resolver_match.url_name == 'participants' %}active{% endif %}">
         <i class="bi bi-people-fill"></i> Alunos / Participantes
     </a>
+    {% endif %}
 
     <!-- 11. Central de Certificados -->
+    {% if request.user.profile.perm_certificates_panel %}
     <a href="{% url 'certificates:panel' %}" class="list-group-item list-group-item-action {% if request.resolver_match.url_name == 'panel' %}active{% endif %}">
         <i class="bi bi-award"></i> Central de Certificados
     </a>
+    {% endif %}
 </div>
     </div>
     <!-- /#sidebar-wrapper -->

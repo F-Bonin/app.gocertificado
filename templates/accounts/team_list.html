@@ -1,0 +1,86 @@
+{% extends 'painel/base_painel.html' %}
+{% block title %}Minha Equipe | GoCertificado{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="h4 mb-0 text-primary"><i class="bi bi-person-lines-fill me-2"></i> Minha Equipe</h2>
+    {% if team.count < 3 %}
+    <a href="{% url 'accounts:team_create' %}" class="btn btn-primary shadow-sm"><i class="bi bi-person-plus me-1"></i> Novo Membro</a>
+    {% else %}
+    <button class="btn btn-secondary shadow-sm" disabled title="Limite de 3 usuários atingido"><i class="bi bi-person-x me-1"></i> Limite Atingido (3/3)</button>
+    {% endif %}
+</div>
+<div class="alert alert-info border-info border-opacity-25 shadow-sm mb-4">
+    <i class="bi bi-info-circle-fill me-2"></i> Seu plano atual permite até <strong>3 usuários</strong> (Você + 2 membros) gerenciando a plataforma simultaneamente.
+</div>
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="ps-4">Nome do Usuário</th>
+                        <th>E-mail</th>
+                        <th class="text-center">Nível de Acesso</th>
+                        <th class="text-center">Status</th>
+                        <th class="text-end pe-4">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for member in team %}
+                    <tr>
+                        <td class="ps-4 fw-bold text-dark">
+                            {{ member.user.first_name|default:member.user.username }}
+                            {% if request.user == member.user %}<span class="badge bg-secondary ms-1">Você</span>{% endif %}
+                        </td>
+                        <td class="text-muted">{{ member.user.email }}</td>
+                        <td class="text-center">
+                            {% if member.is_company_admin %}
+                            <span class="badge bg-primary">Administrador</span>
+                            {% else %}
+                            <span class="badge bg-info text-dark">Membro</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if member.must_change_password %}
+                            <span class="badge bg-warning text-dark"><i class="bi bi-clock-history me-1"></i>Pendente (1º Acesso)</span>
+                            {% else %}
+                            <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Ativo</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end pe-4">
+                            <div class="btn-group">
+                                {% if not member.is_company_admin %}
+                                <button class="btn btn-outline-success btn-sm btn-send-invite" data-url="{% url 'accounts:team_send_invite' member.pk %}" title="Reenviar E-mail de Acesso"><i class="bi bi-envelope-paper"></i></button>
+                                <a href="{% url 'accounts:team_update' member.pk %}" class="btn btn-outline-primary btn-sm" title="Editar Permissões"><i class="bi bi-sliders"></i></a>
+                                <a href="{% url 'accounts:team_delete' member.pk %}" class="btn btn-outline-danger btn-sm" title="Excluir Membro"><i class="bi bi-trash"></i></a>
+                                {% else %}
+                                <button class="btn btn-outline-secondary btn-sm" disabled title="Dono da Conta"><i class="bi bi-shield-lock"></i></button>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.btn-send-invite').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const url = this.dataset.url;
+            this.disabled = true; this.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+            fetch(url, { method: 'POST', headers: {'X-CSRFToken': '{{ csrf_token }}', 'X-Requested-With': 'XMLHttpRequest'} })
+            .then(r => r.json()).then(data => {
+                if(data.ok) alert(data.msg); else alert("Erro: " + data.error);
+            }).catch(e => alert("Falha na comunicação com o servidor.")).finally(() => {
+                this.disabled = false; this.innerHTML = '<i class="bi bi-envelope-paper"></i>';
+            });
+        });
+    });
+});
+</script>
+{% endblock %}

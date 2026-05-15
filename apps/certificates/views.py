@@ -18,6 +18,7 @@ from django.views import View
 from django.views.generic import UpdateView
 from django.urls import reverse_lazy
 
+from apps.accounts.mixins import RoleRequiredMixin
 from apps.registrations.models import Registration
 from apps.registrations.forms import RegistrationForm
 from apps.certificates.models import Certificate
@@ -31,8 +32,9 @@ logger = logging.getLogger(__name__)
 
 
 @method_decorator(login_required, name="dispatch")
-class LinkGeneratorView(View):
+class LinkGeneratorView(RoleRequiredMixin, View):
     """Gera um link de inscrição pré-preenchido com dados do treinamento."""
+    required_role = 'perm_my_events'
     template_name = "certificates/link_generator.html"
 
     def get(self, request):
@@ -71,8 +73,9 @@ class LinkGeneratorView(View):
 
 
 @method_decorator(login_required, name="dispatch")
-class BulkIssueCertificateView(View):
+class BulkIssueCertificateView(RoleRequiredMixin, View):
     """Emite certificados em massa para registros filtrados e pendentes."""
+    required_role = 'perm_certificates_panel'
 
     def post(self, request):
         # Filtros atuais vindos do GET (mesma lógica do painel)
@@ -106,8 +109,9 @@ class BulkIssueCertificateView(View):
 
 
 @method_decorator(login_required, name="dispatch")
-class DashboardView(View):
+class DashboardView(RoleRequiredMixin, View):
     """Exibe métricas e estatísticas do sistema com isolamento SaaS."""
+    required_role = 'perm_dashboard'
     template_name = "certificates/dashboard.html"
 
     def get(self, request):
@@ -152,8 +156,9 @@ class DashboardView(View):
 
 
 @method_decorator(login_required, name="dispatch")
-class AdminPanelView(View):
+class AdminPanelView(RoleRequiredMixin, View):
     """Painel do responsável: lista participantes e permite emitir certificados."""
+    required_role = 'perm_certificates_panel'
     template_name = "certificates/admin_panel.html"
 
     def get(self, request):
@@ -187,11 +192,12 @@ class AdminPanelView(View):
 
 
 @method_decorator(login_required, name="dispatch")
-class SendCertificateView(View):
+class SendCertificateView(RoleRequiredMixin, View):
     """
     Acionado pelo botão "Enviar Certificado" no painel.
     Verifica se há instrutor vinculado e dispara a tarefa Celery.
     """
+    required_role = 'perm_certificates_panel'
 
     def post(self, request, registration_id):
         # Multitenancy validation
@@ -223,8 +229,9 @@ class SendCertificateView(View):
 
 
 @method_decorator(login_required, name="dispatch")
-class ResetCertificateStatusView(View):
+class ResetCertificateStatusView(RoleRequiredMixin, View):
     """Retorna o status para Pendente e exclui o certificado para permitir nova emissão."""
+    required_role = 'perm_certificates_panel'
 
     def post(self, request, registration_id):
         reg = get_object_or_404(
@@ -248,8 +255,9 @@ class ResetCertificateStatusView(View):
 
 
 @method_decorator(login_required, name="dispatch")
-class DeleteRegistrationView(View):
+class DeleteRegistrationView(RoleRequiredMixin, View):
     """Exclui uma inscrição e seu certificado associado (via cascata)."""
+    required_role = 'perm_certificates_panel'
 
     def post(self, request, registration_id):
         from apps.registrations.models import Registration
@@ -269,8 +277,9 @@ class DeleteRegistrationView(View):
 
 
 @method_decorator(login_required, name="dispatch")
-class ExportRegistrationsCSVView(View):
+class ExportRegistrationsCSVView(RoleRequiredMixin, View):
     """Gera um arquivo CSV com os participantes filtrados."""
+    required_role = 'perm_certificates_panel'
 
     def get(self, request):
         # Multitenancy
@@ -342,8 +351,9 @@ class VerifyCertificateView(View):
 
 
 @method_decorator(login_required, name="dispatch")
-class ParticipantListView(View):
+class ParticipantListView(RoleRequiredMixin, View):
     """Listagem de participantes únicos com estatísticas de treinamentos."""
+    required_role = 'perm_participants'
     template_name = "certificates/participant_list.html"
 
     def get(self, request):
@@ -375,8 +385,9 @@ class ParticipantListView(View):
 
 
 @method_decorator(login_required, name="dispatch")
-class ExportParticipantsCSVView(View):
+class ExportParticipantsCSVView(RoleRequiredMixin, View):
     """Gera um CSV consolidado de todos os participantes únicos da empresa."""
+    required_role = 'perm_participants'
 
     def get(self, request):
         company = request.user.profile.company
@@ -442,8 +453,9 @@ class BulkSendCertificatesView(View):
 
 
 @method_decorator(login_required, name="dispatch")
-class CheckRegistrationStatusView(View):
+class CheckRegistrationStatusView(RoleRequiredMixin, View):
     """Retorna o status atual de uma lista de inscrições para atualização em tempo real."""
+    required_role = 'perm_certificates_panel'
     def get(self, request):
         ids_str = request.GET.get('ids', '')
         if not ids_str:
@@ -459,8 +471,9 @@ class CheckRegistrationStatusView(View):
 
 
 @method_decorator(login_required, name="dispatch")
-class RegistrationUpdateView(UpdateView):
+class RegistrationUpdateView(RoleRequiredMixin, UpdateView):
     """View para o administrador editar os dados de um participante."""
+    required_role = 'perm_participants'
     model = Registration
     form_class = RegistrationForm
     template_name = "certificates/participant_form.html"
